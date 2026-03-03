@@ -4,7 +4,16 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
     ports:
       - 3000:3000
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+    external: true
