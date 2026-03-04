@@ -2,62 +2,77 @@
 
 ## Description
 
-This is the Test Server built by Nest.
+This is the Test Server built with NestJS framework. It serves as a skeleton project setup for building scalable server-side applications.
 
-## Project setup
+## Technology
+
+- **NestJS** - Progressive Node.js framework
+- **Prisma** - Next-generation ORM
+- **Docker** - Containerization platform
+- **PostgreSQL** - Relational database
+
+## Project Setup
 
 ```bash
-$ npm install
+# Clone the repository and create .env from .env.example
+cp .env.example .env
+
+# Create Docker network
+docker network create test-network
+
+# Set up infrastructure and database
+docker compose -f compose.infra.yaml up -d
 ```
 
-## Compile and run the project
+## Compile and Run the Project
+
+### Using Docker Compose
 
 ```bash
+# Build and start the project with Docker
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop the project
+docker compose down
+```
+
+### Local Development
+
+```bash
+# Install dependencies and generate Prisma client
+npm install
+npm run prisma:generate
+
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
 
-## Run tests
+## Run Tests
 
 ```bash
 # unit tests
-$ npm run test
+npm run test
 
 # e2e tests
-$ npm run test:e2e
+npm run test:e2e
 
 # test coverage
-$ npm run test:cov
+npm run test:cov
 ```
 
-## Resources
+## Stay in Touch
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Author - [Tran Tuan Phong]
+- Email - [phongtt@runsystem.net](phongtt@runsystem.net)
 
 ## License
 
