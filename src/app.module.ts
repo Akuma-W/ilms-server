@@ -8,6 +8,8 @@ import { ValidationPipe } from './common/pipes/validation.pipe';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HealthModule } from './health/health.module';
+import { PrismaService } from './prisma/prisma.service';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { HealthModule } from './health/health.module';
       ],
     }),
     HealthModule,
+    PrismaModule,
   ],
   controllers: [],
   providers: [
@@ -47,6 +50,7 @@ import { HealthModule } from './health/health.module';
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
     },
+    PrismaService,
   ],
 })
 export class AppModule {}
