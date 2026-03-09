@@ -1,0 +1,386 @@
+[
+  {
+    "name": "Đại học Kinh tế Thành phố Hồ Chí Minh",
+    "shortname": "UEH",
+    "address": "CsA: 59C Nguyễn Đình Chiểu, Phường Xuân Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học An ninh nhân dân",
+    "shortname": "PSU",
+    "address": "Km18 Xa Lộ Hà Nội, Phường Linh Xuân",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Bách khoa (ĐHQG TP.HCM)",
+    "shortname": "HCMUT",
+    "address": "Cs1: 268 Lý Thường Kiệt, Phường Diên Hồng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Cảnh sát nhân dân",
+    "shortname": "VPPU",
+    "address": "Cs chính: Số 36 Nguyễn Hữu Thọ, Phường Tân Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Công nghiệp TP.HCM",
+    "shortname": "IUH",
+    "address": "12 Nguyễn Văn Bảo, Phường Hạnh Thông",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Công nghệ Thông tin (ĐHQG TP.HCM)",
+    "shortname": "UIT",
+    "address": "Khu phố 34, Phường Linh Xuân",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Công Thương TP.HCM",
+    "shortname": "HUIT",
+    "address": "Cs1: 140 Lê Trọng Tấn, Phường Tây Thạnh, Quận Tân Phú",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Giao thông Vận tải TP.HCM",
+    "shortname": "UTH",
+    "address": "Cs1: 10 đường số 12, Phường An Khánh",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Giao thông Vận tải - Phân hiệu TP.HCM",
+    "shortname": "UTC2",
+    "address": "450-451 Lê Văn Việt, Phường Tăng Nhơn Phú",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Khoa học Tự nhiên (ĐHQG TP.HCM)",
+    "shortname": "HCMUS",
+    "address": "Cs1: 227 đường Nguyễn Văn Cừ, Phường Chợ Quán",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Khoa học Xã hội và Nhân văn (ĐHQG TP.HCM)",
+    "shortname": "HCMUSSH",
+    "address": "Cs1: 10-12 Đinh Tiên Hoàng, Phường Sài Gòn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Kinh tế – Luật (ĐHQG TP.HCM)",
+    "shortname": "HCMUEL",
+    "address": "669 Đỗ Mười, Khu phố 13, Phường Linh Xuân",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Kiến trúc TP.HCM",
+    "shortname": "UAH",
+    "address": "196 Pasteur, Phường Xuân Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Lao động – Xã hội (Cơ sở 2)",
+    "shortname": "ULSA2",
+    "address": "1018 Tô Ký, Phường Trung Mỹ Tây",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Luật TP.HCM",
+    "shortname": "ULAW",
+    "address": "Cs1: 02 Nguyễn Tất Thành, phường Xóm Chiếu",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Mở TP.HCM",
+    "shortname": "OU",
+    "address": "Cs1: 97 Võ Văn Tần, Phường Xuân Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Mỹ thuật TP.HCM",
+    "shortname": "HCMUFA",
+    "address": " 05 Phan Đăng Lưu, Phường Gia Định",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Ngoại thương (Cơ sở 2)",
+    "shortname": "FTU2",
+    "address": "15 Đường D5 , Phường Thạnh Mỹ Tây",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Ngân hàng TP.HCM",
+    "shortname": "HUB",
+    "address": "Cs chính: 36 Tôn Thất Đạm, Phường Sài Gòn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Nông Lâm TP.HCM",
+    "shortname": "NLU",
+    "address": "Cs chính: Khu Phố 33, Phường Linh Xuân",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Quốc tế (ĐHQG TP.HCM)",
+    "shortname": "HCMIU",
+    "address": "Khu phố 33, Phường Linh Xuân",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Sài Gòn",
+    "shortname": "SGU",
+    "address": "Cs chính: 273 An Dương Vương, Phường Chợ Quán",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Sân khấu – Điện ảnh TP.HCM",
+    "shortname": "SKDAHCM",
+    "address": "125 Cống Quỳnh, Phường Cầu Ông Lãnh",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Công nghệ Kỹ thuật TP.HCM",
+    "shortname": "HCMUTE",
+    "address": "1 Võ Văn Ngân, Phường Thủ Đức",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Sư phạm Thể dục Thể thao",
+    "shortname": "UPES",
+    "address": "Cs1: 639 Nguyễn Trãi, phường Chợ Lớn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Sư phạm TP.HCM",
+    "shortname": "HCMUE",
+    "address": "Cs1: 280 An Dương Vương, Phường Chợ Quán",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Thể dục Thể thao TP. HCM",
+    "shortname": "USH",
+    "address": "Khu phố 33, Phường Linh Xuân",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Phân hiệu Trường Đại học Thủy lợi",
+    "shortname": "TLUS",
+    "address": "2 Trường Sa, Phường Gia Định",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Trần Đại Nghĩa",
+    "shortname": "TDNU",
+    "address": "189 Nguyễn Oanh, Phường Gò Vấp",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Tài chính – Marketing",
+    "shortname": "UFM",
+    "address": "778 Nguyễn Kiệm, Phường Đức Nhuận",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Tài nguyên và Môi trường TP.HCM",
+    "shortname": "HCMUNRE",
+    "address": "236B Lê Văn Sỹ, Phường Tân Sơn Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Tôn Đức Thắng",
+    "shortname": "TDTU",
+    "address": "19 Nguyễn Hữu Thọ, phường Tân Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Văn hóa TP.HCM",
+    "shortname": "HCMUC",
+    "address": " Cs1: Số 51 đường Quốc Hương, phường An Khánh",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Việt - Đức",
+    "shortname": "VGU",
+    "address": "Đường vành đai 4, Khu phố 4, Phường Thới Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Thủ Dầu Một",
+    "shortname": "TDMU",
+    "address": "06 Trần Văn Ơn, Phường Phú Lợi",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Đại học Y Dược TP.HCM",
+    "shortname": "UMP",
+    "address": "217 Hồng Bàng, Phường Chợ Lớn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Y khoa Phạm Ngọc Thạch",
+    "shortname": "PNT",
+    "address": "CsA: 02 Dương Quang Trung, Phường Hòa Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Khoa học Sức khỏe (ĐHQG TP.HCM)",
+    "shortname": "QSY",
+    "address": "Tòa nhà hành chính YA1, Đường Hải Thượng Lãn Ông, Khu Đô thị ĐHQG-HCM, Phường Đông Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Bà Rịa - Vũng Tàu",
+    "shortname": "BVU",
+    "address": "80 Trương Công Định, Phường Vũng Tàu",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Học viện Cán bộ Thành phố Hồ Chí Minh",
+    "shortname": "HCA",
+    "address": "324 Chu Văn An, Phường Bình Thạnh",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Học viện Công nghệ Bưu chính Viễn thông (cơ sở 2)",
+    "shortname": "PTIT",
+    "address": "11 Nguyễn Đình Chiểu, Phường Sài Gòn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Học viện Hàng không Việt Nam",
+    "shortname": "VAA",
+    "address": "104 Nguyễn Văn Trỗi, Phường Phú Nhuận",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Phân hiệu Học viện Hành chính và Quản trị công tại TP.HCM",
+    "shortname": "APAG",
+    "address": "10 đường 3 Tháng 2, phường Hòa Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Phân hiệu Học viện Kỹ thuật Mật mã tại TP.HCM",
+    "shortname": "KMA",
+    "address": "17A Cộng Hòa, Phường Tân Sơn Nhất",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Học viện Kỹ thuật Quân sự (cơ sở 3)",
+    "shortname": "MTA",
+    "address": "243A Đường Hoàng Văn Thụ, Phường Tân Sơn Hòa",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Nhạc viện TP.HCM",
+    "shortname": "HCMCONS",
+    "address": "112 Nguyễn Du, Phường Bến Thành",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Phân hiệu Học viện Thanh thiếu niên Việt Nam tại TP.HCM",
+    "shortname": "VYA",
+    "address": "261 Hoàng Hữu Nam, Phường Tăng Nhơn Phú",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Hoa Sen",
+    "shortname": "HSU",
+    "address": "Cs chính: 08 Nguyễn Văn Tráng, Phường Bến Thành",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Ngoại ngữ – Tin học TP.HCM",
+    "shortname": "HUFLIT",
+    "address": "Cs chính: 828 Sư Vạn Hạnh, Phường Hòa Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Hùng Vương TP.HCM",
+    "shortname": "DHV",
+    "address": "Cs chính: 194 Lê Đức Thọ, Phường An Nhơn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Văn Lang",
+    "shortname": "VLU",
+    "address": "Cs chính: 69/68 Đặng Thùy Trâm, Phường Bình Lợi Trung\n80/68 Dương Quảng Hàm, Phường An Nhơn",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Công nghệ TP.HCM",
+    "shortname": "HUTECH",
+    "address": "Cs chính: 475A Điện Biên Phủ, Phường Thạnh Mỹ Tây",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Quốc tế Hồng Bàng",
+    "shortname": "HIU",
+    "address": "Cs chính: 215 Điện Biên Phủ, Phường Gia Định",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Văn Hiến",
+    "shortname": "VHU",
+    "address": "Cs chính: 613 Âu Cơ, phường Tân Phú",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Công nghệ Sài Gòn",
+    "shortname": "STU",
+    "address": "180 Cao Lỗ, Phường Chánh Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Nguyễn Tất Thành",
+    "shortname": "NTTU",
+    "address": "300A Nguyễn Tất Thành, Phường Xóm Chiếu",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học FPT",
+    "shortname": "FPTU",
+    "address": "Lô E2a-7, Đường D1, Khu Công nghệ cao, Phường Tăng Nhơn Phú",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Gia Định",
+    "shortname": "GDU",
+    "address": "371 Nguyễn Kiệm, Phường Hạnh Thông",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Kinh tế – Tài chính",
+    "shortname": "UEF",
+    "address": "Cs chính: 141 - 145 Điện Biên Phủ, Phường Gia Định",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Quốc tế Sài Gòn",
+    "shortname": "SIU",
+    "address": "Tống Hữu Định, phường An Khánh",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Trường Đại học Quản lý và Công nghệ TP.HCM",
+    "shortname": "UMT",
+    "address": "Số 2 đường số 60CL, Khu phố 9, Phường Cát Lái",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Đại học RMIT Việt Nam",
+    "shortname": "RMIT",
+    "address": "702 đại lộ Nguyễn Văn Linh, Phường Tân Hưng",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Đại học Fulbright Việt Nam",
+    "shortname": "FUV",
+    "address": "Tầng 2, 105 Tôn Dật Tiên, Phường Tân Mỹ",
+    "city": "Thành phố Hồ Chí Minh"
+  },
+  {
+    "name": "Đại học Greenwich Việt Nam",
+    "shortname": "GRE",
+    "address": "Tòa nhà Cộng Hòa Garden, 20 Cộng Hòa, Phường Bảy Hiền",
+    "city": "Thành phố Hồ Chí Minh"
+  }
+]

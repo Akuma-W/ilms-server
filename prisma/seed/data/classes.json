@@ -1,0 +1,25 @@
+[
+  {
+    "title": "Nhập môn Lập trình",
+    "description": "Giới thiệu các khái niệm cơ bản của lập trình",
+    "semester": "HK 1 2025",
+    "courseCode": "IIT001",
+    "schoolId": "936f0c34-c7ae-4fc9-b1fb-14574e2d1798",
+    "teacherId": "edce09d3-e519-4a19-9d3a-8dbe169106d4"
+  },
+  {
+    "title": "Cấu trúc dữ liệu và giải thuật",
+    "description": "Học về các cấu trúc dữ liệu cơ bản và thuật toán",
+    "semester": "HK 1 2025",
+    "schoolId": "936f0c34-c7ae-4fc9-b1fb-14574e2d1798",
+    "teacherId": "edce09d3-e519-4a19-9d3a-8dbe169106d4"
+  },
+  {
+    "title": "Lập trình Web nâng cao",
+    "description": "Xây dựng ứng dụng web fullstack",
+    "semester": "HK hè 2026",
+    "isPrivate": true,
+    "schoolId": "936f0c34-c7ae-4fc9-b1fb-14574e2d1798",
+    "teacherId": "edce09d3-e519-4a19-9d3a-8dbe169106d4"
+  }
+]
