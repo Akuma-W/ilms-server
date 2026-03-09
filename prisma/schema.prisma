@@ -1,15 +1,731 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
   moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "academic", "auth", "learning", "quiz", "assign", "forum", "chat", "notification", "ai"]
+}
+
+// Enum
+enum Role {
+  admin
+  student
+  teacher
+
+  @@schema("auth")
+}
+
+enum UserStatus {
+  locked
+  active
+  banned
+
+  @@schema("auth")
+}
+
+enum EnrollmentStatus {
+  pending
+  approved
+  rejected
+
+  @@schema("academic")
+}
+
+enum FileType {
+  video
+  pdf
+  link
+  slide
+  document
+
+  @@schema("learning")
+}
+
+enum Visibility {
+  public
+  private
+
+  @@schema("quiz")
+}
+
+enum QuizStatus {
+  draft
+  published
+
+  @@schema("quiz")
+}
+
+enum QuestionType {
+  multiple_choice
+  multiple_select
+  true_false
+
+  @@schema("quiz")
+}
+
+enum MessageType {
+  text
+  image
+
+  @@schema("chat")
+}
+
+enum NotificationType {
+  class_join_requested
+  class_join_approved
+  class_join_rejected
+  forum_replied
+  assignment_submitted
+  assignment_graded
+  assignment_due_soon
+  quiz_submitted
+  quiz_graded
+  grade_released
+  system_announcement
+
+  @@schema("notification")
+}
+
+enum RelatedType {
+  quiz
+  assignment
+  forum
+  grade
+  class
+  system
+
+  @@schema("notification")
+}
+
+enum AIRequestType {
+  chat
+  generate_outline
+  generate_exercise
+  generate_quiz
+  generate_slide
+  recommendation
+
+  @@schema("ai")
+}
+
+model School {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  shortname String?   @unique
+  address   String?
+  city      String
+  createdAt DateTime? @map("created_at") @db.Timestamptz()
+
+  users   User[]
+  classes Class[]
+
+  @@map("schools")
+  @@schema("academic")
+}
+
+model Class {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  courseCode  String?   @map("course_code")
+  semester    String?
+  isPrivate   Boolean   @default(false) @map("is_private")
+  createdAt   DateTime? @map("created_at") @db.Timestamptz()
+
+  schoolId  String @map("school_id") @db.Uuid
+  teacherId String @map("teacher_id") @db.Uuid
+
+  school  School @relation(fields: [schoolId], references: [id])
+  teacher User   @relation(name: "ClassTeacher", fields: [teacherId], references: [id])
+
+  gradeCategories  GradeCategory[]
+  topics           Topic[]
+  enrollments      Enrollment[]
+  quizPublications QuizPublication[]
+  assignments      Assignment[]
+  forums           Forum[]
+  conversations    Conversation[]
+
+  @@index([teacherId])
+  @@index([courseCode])
+  @@map("classes")
+  @@schema("academic")
+}
+
+model Enrollment {
+  id        String           @id @default(uuid()) @db.Uuid
+  roleIn    Role             @map("role_in")
+  isStarred Boolean          @default(false) @map("is_starred")
+  joinedAt  DateTime?        @map("joined_at")
+  status    EnrollmentStatus @default(pending)
+
+  classId String @map("class_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+
+  class Class @relation(fields: [classId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([classId, userId])
+  @@map("enrollments")
+  @@schema("academic")
+}
+
+model GradeCategory {
+  id      String @id @default(uuid()) @db.Uuid
+  name    String
+  weight  Float
+  classId String @map("class_id") @db.Uuid
+
+  class  Class   @relation(fields: [classId], references: [id])
+  grades Grade[]
+
+  @@map("grade_categories")
+  @@schema("academic")
+}
+
+model Grade {
+  id         String @id @default(uuid()) @db.Uuid
+  score      Float
+  categoryId String @map("category_id") @db.Uuid
+  studentId  String @map("student_id") @db.Uuid
+
+  category GradeCategory @relation(fields: [categoryId], references: [id])
+  student  User          @relation(fields: [studentId], references: [id])
+
+  @@index([categoryId, studentId])
+  @@map("grades")
+  @@schema("academic")
 }
 
 model User {
-  id    Int     @default(autoincrement()) @id
-  email String  @unique
-  name  String?
+  id           String     @id @default(uuid()) @db.Uuid
+  googleId     String?    @unique @map("google_id")
+  identityCode String?    @map("identity_code")
+  password     String
+  email        String     @unique @db.Citext
+  fullName     String     @map("full_name")
+  role         Role
+  avatarUrl    String?    @map("avatar_url") @db.Text
+  status       UserStatus @default(active)
+  createdAt    DateTime?  @map("created_at") @db.Timestamptz()
+
+  schoolId String @map("school_id") @db.Uuid
+  school   School @relation(fields: [schoolId], references: [id])
+
+  enrollments            Enrollment[]
+  classes                Class[]                @relation("ClassTeacher")
+  grades                 Grade[]
+  topics                 Topic[]
+  quizzes                Quiz[]
+  quizAttempts           QuizAttempt[]
+  assignments            Assignment[]
+  submissions            Submission[]
+  forums                 Forum[]
+  comments               Comment[]
+  chatRooms              ChatRoom[]             @relation("ChatRoomCreator")
+  chatMembers            ChatMember[]
+  reactions              Reaction[]
+  notifications          NotificationEvent[]
+  notificationDeliveries NotificationDelivery[]
+  conversations          Conversation[]
+  airequests             AIRequest[]
+
+  @@unique([schoolId, identityCode])
+  @@index([email])
+  @@map("users")
+  @@schema("auth")
+}
+
+model Topic {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  orderIndex  Int?      @map("order_index")
+  createdAt   DateTime? @map("created_at") @db.Timestamptz()
+
+  classId   String @map("class_id") @db.Uuid
+  createdBy String @map("created_by") @db.Uuid
+
+  class  Class @relation(fields: [classId], references: [id])
+  author User  @relation(fields: [createdBy], references: [id])
+
+  materials        Material[]
+  references       Reference[]
+  quizPublications QuizPublication[]
+  assignments      Assignment[]
+  conversations    Conversation[]
+  embeddings       Embedding[]
+  retrievalCaches  RetrievalCache[]
+
+  @@index([classId])
+  @@map("topics")
+  @@schema("learning")
+}
+
+model Material {
+  id           String    @id @default(uuid()) @db.Uuid
+  title        String
+  materialType FileType  @map("material_type")
+  fileUrl      String?   @map("file_url")
+  externalUrl  String?   @map("external_url")
+  createdAt    DateTime? @map("created_at") @db.Timestamptz()
+
+  topicId    String      @map("topic_id") @db.Uuid
+  topic      Topic       @relation(fields: [topicId], references: [id])
+  embeddings Embedding[]
+
+  @@index([topicId])
+  @@map("materials")
+  @@schema("learning")
+}
+
+model Reference {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String
+  url         String
+  description String?
+
+  topicId String @map("topic_id") @db.Uuid
+  topic   Topic  @relation(fields: [topicId], references: [id])
+
+  @@map("references")
+  @@schema("learning")
+}
+
+model Quiz {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  timeLimit   Int     @map("time_limit")
+
+  visibility Visibility @default(private)
+  status     QuizStatus @default(draft)
+
+  openAt    DateTime? @map("open_at")
+  closeAt   DateTime? @map("close_at")
+  createdAt DateTime? @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz()
+
+  createdBy String @map("created_by") @db.Uuid
+  creator   User   @relation(fields: [createdBy], references: [id])
+
+  questions    Question[]
+  publications QuizPublication[]
+  attempts     QuizAttempt[]
+
+  @@index([createdBy])
+  @@index([visibility, status])
+  @@map("quizzes")
+  @@schema("quiz")
+}
+
+model QuizPublication {
+  id          String    @id @default(uuid()) @db.Uuid
+  openAt      DateTime? @map("open_at")
+  closeAt     DateTime? @map("close_at")
+  isPublic    Boolean   @default(false) @map("is_public")
+  publishedAt DateTime? @map("published_at") @db.Timestamptz()
+  quizId      String    @map("quiz_id") @db.Uuid
+  classId     String?   @map("class_id") @db.Uuid
+  topicId     String?   @map("topic_id") @db.Uuid
+
+  quiz  Quiz   @relation(fields: [quizId], references: [id])
+  class Class? @relation(fields: [classId], references: [id])
+  topic Topic? @relation(fields: [topicId], references: [id])
+
+  @@unique([quizId, classId])
+  @@index([quizId])
+  @@index([topicId])
+  @@index([openAt, closeAt])
+  @@index([isPublic, openAt])
+  @@map("quiz_publications")
+  @@schema("quiz")
+}
+
+model Question {
+  id           String       @id @default(uuid()) @db.Uuid
+  content      String
+  questionType QuestionType @map("question_type")
+  points       Float?
+  orderIndex   Int?         @map("order_index")
+
+  quizId String? @map("quiz_id") @db.Uuid
+  quiz   Quiz?   @relation(fields: [quizId], references: [id])
+
+  options     Option[]
+  quizAnswers QuizAnswer[]
+
+  @@map("questions")
+  @@schema("quiz")
+}
+
+model Option {
+  id        String  @id @default(uuid()) @db.Uuid
+  content   String
+  isCorrect Boolean @default(false) @map("is_correct")
+
+  questionId String?   @map("question_id") @db.Uuid
+  question   Question? @relation(fields: [questionId], references: [id])
+
+  quizAnswers QuizAnswer[]
+
+  @@map("options")
+  @@schema("quiz")
+}
+
+model QuizAttempt {
+  id          String    @id @default(uuid()) @db.Uuid
+  score       Float?
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz()
+
+  quizId    String @map("quiz_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+
+  quiz    Quiz @relation(fields: [quizId], references: [id])
+  student User @relation(fields: [studentId], references: [id])
+
+  quizAnswers QuizAnswer[]
+
+  @@index([quizId, studentId])
+  @@map("quiz_attempts")
+  @@schema("quiz")
+}
+
+model QuizAnswer {
+  id             String @id @default(uuid()) @db.Uuid
+  selectedOption String @map("selected_option") @db.Uuid
+  attemptId      String @map("attempt_id") @db.Uuid
+  questionId     String @map("question_id") @db.Uuid
+
+  question Question    @relation(fields: [questionId], references: [id])
+  option   Option      @relation(fields: [selectedOption], references: [id])
+  attempt  QuizAttempt @relation(fields: [attemptId], references: [id])
+
+  @@index([attemptId])
+  @@index([attemptId, questionId])
+  @@map("quiz_answers")
+  @@schema("quiz")
+}
+
+model Assignment {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  dueAt       DateTime? @map("due_at") @db.Timestamptz()
+  maxScore    Float?    @map("max_score")
+
+  createdAt DateTime? @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz()
+
+  classId   String  @map("class_id") @db.Uuid
+  topicId   String? @map("topic_id") @db.Uuid
+  createdBy String  @map("created_by") @db.Uuid
+
+  class  Class  @relation(fields: [classId], references: [id])
+  topic  Topic? @relation(fields: [topicId], references: [id])
+  author User   @relation(fields: [createdBy], references: [id])
+
+  submissions Submission[]
+  materials   AssignmentMaterials[]
+
+  @@index([classId])
+  @@index([topicId])
+  @@index([classId, dueAt])
+  @@map("assignments")
+  @@schema("assign")
+}
+
+model AssignmentMaterials {
+  id           String    @id @default(uuid()) @db.Uuid
+  fileUrl      String    @map("file_url")
+  fileType     FileType? @map("file_type")
+  createdAt    DateTime? @map("created_at") @db.Timestamptz()
+  assignmentId String    @map("assignment_id") @db.Uuid
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+
+  @@index([assignmentId])
+  @@map("assignment_materials")
+  @@schema("assign")
+}
+
+model Submission {
+  id          String    @id @default(uuid()) @db.Uuid
+  textAnswer  String?   @map("text_answer")
+  score       Float?
+  feedback    String?
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz()
+
+  assignmentId String @map("assignment_id") @db.Uuid
+  studentId    String @map("student_id") @db.Uuid
+
+  assignment Assignment       @relation(fields: [assignmentId], references: [id])
+  student    User             @relation(fields: [studentId], references: [id])
+  files      SubmissionFile[]
+
+  @@index([assignmentId, studentId])
+  @@map("submissions")
+  @@schema("assign")
+}
+
+model SubmissionFile {
+  id           String    @id @default(uuid()) @db.Uuid
+  fileUrl      String    @map("file_url")
+  fileType     FileType? @map("file_type")
+  createdAt    DateTime? @map("created_at") @db.Timestamptz()
+  submissionId String    @map("submission_id") @db.Uuid
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+
+  @@index([submissionId])
+  @@map("submission_files")
+  @@schema("assign")
+}
+
+model Forum {
+  id        String    @id @default(uuid()) @db.Uuid
+  title     String
+  content   String
+  createdAt DateTime? @map("created_at") @db.Timestamptz()
+
+  classId   String @map("class_id") @db.Uuid
+  createdBy String @map("created_by") @db.Uuid
+
+  class  Class @relation(fields: [classId], references: [id])
+  author User  @relation(fields: [createdBy], references: [id])
+
+  comments Comment[]
+
+  @@index([classId])
+  @@index([createdBy])
+  @@index([classId, createdAt])
+  @@map("forums")
+  @@schema("forum")
+}
+
+model Comment {
+  id          String    @id @default(uuid()) @db.Uuid
+  content     String
+  isAnonymous Boolean   @default(false) @map("is_anonymous")
+  createdAt   DateTime? @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime? @map("updated_at") @db.Timestamptz()
+
+  forumId  String  @map("forum_id") @db.Uuid
+  authorId String  @map("author_id") @db.Uuid
+  parentId String? @map("parent_id") @db.Uuid
+
+  forum   Forum     @relation(fields: [forumId], references: [id])
+  author  User      @relation(fields: [authorId], references: [id])
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([forumId])
+  @@index([parentId])
+  @@index([forumId, createdAt])
+  @@map("comments")
+  @@schema("forum")
+}
+
+model ChatRoom {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime? @map("created_at") @db.Timestamptz()
+  createdBy String    @map("created_by") @db.Uuid
+
+  creator User @relation("ChatRoomCreator", fields: [createdBy], references: [id])
+
+  members  ChatMember[]
+  messages Message[]
+
+  @@index([createdBy])
+  @@map("chat_rooms")
+  @@schema("chat")
+}
+
+model ChatMember {
+  id       String    @id @default(uuid()) @db.Uuid
+  roleIn   String    @map("role_in")
+  joinedAt DateTime? @map("joined_at") @db.Timestamptz()
+  roomId   String    @map("room_id") @db.Uuid
+  memberId String    @map("member_id") @db.Uuid
+
+  chatRoom ChatRoom  @relation(fields: [roomId], references: [id])
+  user     User      @relation(fields: [memberId], references: [id])
+  messages Message[]
+
+  @@unique([roomId, memberId])
+  @@index([memberId])
+  @@map("chat_members")
+  @@schema("chat")
+}
+
+model Message {
+  id          String      @id @default(uuid()) @db.Uuid
+  content     String
+  messageType MessageType @map("message_type")
+  sendAt      DateTime?   @map("send_at") @db.Timestamptz()
+
+  roomId   String @map("room_id") @db.Uuid
+  senderId String @map("sender_id") @db.Uuid
+
+  chatRoom  ChatRoom   @relation(fields: [roomId], references: [id])
+  sender    ChatMember @relation(fields: [senderId], references: [id])
+  reactions Reaction[]
+
+  @@index([roomId])
+  @@index([roomId, sendAt])
+  @@map("messages")
+  @@schema("chat")
+}
+
+model Reaction {
+  reaction  String?
+  createdAt DateTime? @map("created_at") @db.Timestamptz()
+
+  messageId String @map("message_id") @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+
+  message Message @relation(fields: [messageId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@id([messageId, userId])
+  @@index([messageId, userId])
+  @@map("reactions")
+  @@schema("chat")
+}
+
+model NotificationEvent {
+  id          String           @id @default(uuid()) @db.Uuid
+  title       String?
+  content     String
+  type        NotificationType
+  relatedType RelatedType      @default(system) @map("related_type")
+  relatedId   String?          @map("related_id") @db.Uuid
+
+  createdAt DateTime? @map("created_at")
+
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  deliveries NotificationDelivery[]
+
+  @@map("notification_events")
+  @@schema("notification")
+}
+
+model NotificationDelivery {
+  id        String  @id @default(uuid()) @db.Uuid
+  isRead    Boolean @default(false) @map("is_read")
+  appSent   Boolean @default(false) @map("app_sent")
+  emailSent Boolean @default(false) @map("email_sent")
+
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime? @map("created_at")
+
+  eventId String? @map("event_id") @db.Uuid
+  userId  String? @map("user_id") @db.Uuid
+
+  event NotificationEvent? @relation(fields: [eventId], references: [id])
+  user  User?              @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notification_deliveries")
+  @@schema("notification")
+}
+
+model Conversation {
+  id            String    @id @default(uuid()) @db.Uuid
+  title         String
+  createdAt     DateTime? @map("created_at") @db.Timestamptz()
+  lastMessageAt DateTime? @map("last_message_at") @db.Timestamptz()
+
+  userId  String  @map("user_id") @db.Uuid
+  classId String? @map("class_id") @db.Uuid
+  topicId String? @map("topic_id") @db.Uuid
+
+  user  User   @relation(fields: [userId], references: [id])
+  class Class? @relation(fields: [classId], references: [id])
+  topic Topic? @relation(fields: [topicId], references: [id])
+
+  messages AIMessage[]
+  requests AIRequest[]
+
+  @@map("conversations")
+  @@schema("ai")
+}
+
+model AIMessage {
+  id         String    @id @default(uuid()) @db.Uuid
+  role       String?
+  content    String
+  tokenCount Int?      @map("token_count")
+  createdAt  DateTime? @map("created_at")
+
+  conversationId String? @map("conversation_id") @db.Uuid
+
+  conversation Conversation? @relation(fields: [conversationId], references: [id])
+
+  @@map("ai_messages")
+  @@schema("ai")
+}
+
+model Embedding {
+  id         String                      @id @default(uuid()) @db.Uuid
+  content    String
+  embedding  Unsupported("vector(1536)")
+  chunkIndex Int?                        @map("chunk_index")
+  tokenCount Int?                        @map("token_count")
+  createdAt  DateTime?                   @map("created_at") @db.Timestamptz()
+
+  topicId    String? @map("topic_id") @db.Uuid
+  materialId String? @map("material_id") @db.Uuid
+
+  topic    Topic?    @relation(fields: [topicId], references: [id])
+  material Material? @relation(fields: [materialId], references: [id])
+
+  @@index([topicId])
+  @@index([materialId])
+  @@map("embeddings")
+  @@schema("ai")
+}
+
+model AIRequest {
+  id               String        @id @default(uuid()) @db.Uuid
+  requestType      AIRequestType @map("request_type")
+  promptTokens     Int?          @map("prompt_tokens")
+  completionTokens Int?          @map("completion_tokens")
+  latencyMs        Int?          @map("latency_ms")
+  model            String?
+  createdAt        DateTime?     @map("created_at") @db.Timestamptz()
+
+  userId         String? @map("user_id") @db.Uuid
+  conversationId String? @map("conversation_id") @db.Uuid
+
+  user         User?         @relation(fields: [userId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id])
+
+  @@index([userId])
+  @@index([requestType])
+  @@index([createdAt])
+  @@map("requests")
+  @@schema("ai")
+}
+
+model RetrievalCache {
+  id           String    @id @default(uuid()) @db.Uuid
+  queryHash    String?   @map("query_hash")
+  embeddingIds String[]  @map("embedding_ids")
+  createdAt    DateTime? @map("created_at") @db.Timestamptz()
+
+  topicId String? @map("topic_id") @db.Uuid
+  topic   Topic?  @relation(fields: [topicId], references: [id])
+
+  @@index([topicId])
+  @@index([queryHash])
+  @@map("retrieval_cache")
+  @@schema("ai")
 }
