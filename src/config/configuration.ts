@@ -5,5 +5,8 @@ export default () => ({
   },
   database: {
     url: process.env.DATABASE_URL,
-  }
+  },
+  auth: {
+    saltRounds: Number(process.env.SALT_ROUNDS) || 10,
+  },
 });
