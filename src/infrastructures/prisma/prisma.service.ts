@@ -13,7 +13,7 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  private logger = new Logger();
+  private readonly logger = new Logger(PrismaService.name);
 
   constructor(private configService: ConfigService) {
     const adapter = new PrismaPg({
