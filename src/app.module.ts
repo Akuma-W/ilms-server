@@ -1,16 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { ValidationPipe } from './common/pipes/validation.pipe';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HealthModule } from './health/health.module';
-import { PrismaService } from './prisma/prisma.service';
-import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './infrastructures/prisma/prisma.service';
+import { PrismaModule } from './infrastructures/prisma/prisma.module';
 import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RedisModule } from './infrastructures/redis/redis.module';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 @Module({
   imports: [
@@ -29,6 +32,8 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     PrismaModule,
     UsersModule,
+    AuthModule,
+    RedisModule,
   ],
   controllers: [],
   providers: [
@@ -41,8 +46,8 @@ import { UsersModule } from './modules/users/users.module';
       useClass: HttpExceptionFilter,
     },
     {
-      provide: APP_PIPE,
-      useClass: ValidationPipe,
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_GUARD,
@@ -51,6 +56,10 @@ import { UsersModule } from './modules/users/users.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
     },
     PrismaService,
   ],

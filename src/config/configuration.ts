@@ -1,4 +1,7 @@
-export default () => ({
+import { registerAs } from '@nestjs/config';
+import { StringValue } from 'ms';
+
+export default registerAs('', () => ({
   port: Number(process.env.PORT) || 3000,
   cors: {
     origin: process.env.CORS_ORIGIN,
@@ -8,5 +11,17 @@ export default () => ({
   },
   auth: {
     saltRounds: Number(process.env.SALT_ROUNDS) || 10,
+    jwt: {
+      accessTokenSecret: process.env.JWT_ACCESS_SECRET,
+      refreshTokenSecret: process.env.JWT_REFRESH_SECRET,
+      accessExpriesIn: process.env.JWT_ACCESS_EXPIRES_IN as StringValue,
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN as StringValue,
+    },
   },
-});
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: Number(process.env.REDIS_PORT || 6379),
+    password: process.env.REDIS_PASSWORD || undefined,
+    ttl: Number(process.env.REDIS_TTL || 3600),
+  },
+}));
