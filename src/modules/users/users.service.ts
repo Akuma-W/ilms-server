@@ -1,7 +1,12 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { hashPassword } from 'src/common/utils/hash.util';
 import { User } from './entities/user.entity';
 
@@ -12,7 +17,7 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    this.logger.log(`Creating user with email: ${createUserDto.email}`);
+    this.logger.log(`POST: /user - Creating user`);
 
     // Check if user with the same email already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -33,27 +38,55 @@ export class UsersService {
       },
     });
 
-    return this.removePassword(user);
+    return new User(user);
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    const users = await this.prisma.user.findMany();
+
+    return users.map((user) => new User(user));
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id },
+    });
+
+    return new User(user);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findByEmail(email: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { email },
+    });
+
+    return new User(user);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: updateUserDto,
+    });
+
+    return new User(updatedUser);
   }
 
-  private removePassword(user: User) {
-    const { password, ...rest } = user;
-    return rest;
+  async remove(id: string) {
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return this.prisma.user.delete({
+      where: { id },
+    });
   }
 }
