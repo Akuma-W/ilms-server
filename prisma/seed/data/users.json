@@ -3,23 +3,20 @@
     "email": "tuanphongbrvt1@gmail.com",
     "password": "Admin@123",
     "fullName": "Quản Trị Viên",
-    "role": "admin",
-    "schoolId": "936f0c34-c7ae-4fc9-b1fb-14574e2d1798"
+    "role": "admin"
   },
   {
     "identityCode": "GV00001",
     "email": "phongtt@runsystem.net",
     "password": "Teacher@123",
     "fullName": "Tran Tuan Phong",
-    "role": "teacher",
-    "schoolId": "936f0c34-c7ae-4fc9-b1fb-14574e2d1798"
+    "role": "teacher"
   },
   {
     "identityCode": "22521094",
     "email": "22521094@gm.uit.edu.vn",
     "password": "22521094@Uit",
     "fullName": "Trần Tuấn Phong",
-    "role": "student",
-    "schoolId": "936f0c34-c7ae-4fc9-b1fb-14574e2d1798"
+    "role": "student"
   }
 ]
