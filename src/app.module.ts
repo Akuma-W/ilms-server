@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RedisModule } from './infrastructures/redis/redis.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
     UsersModule,
     AuthModule,
     RedisModule,
+    LoggerModule,
   ],
   controllers: [],
   providers: [
