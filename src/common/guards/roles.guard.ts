@@ -1,32 +1,39 @@
-
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { Roles, ROLES_KEY } from '../decorators/roles.decorator';
-import { Role } from '../enums/role.enum';
+import { ROLES_KEY } from '../decorators/roles.decorator';
+import { Role } from 'src/generated/prisma/enums';
+import { Request } from 'express';
+import { User } from 'src/generated/prisma/client';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const validRoles = this.reflector.get<Role[]>(
+      ROLES_KEY,
       context.getHandler(),
-      context.getClass(),
-    ]);
+    );
 
-    if (!requiredRoles) {
+    if (!validRoles) {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
-    return this.matchRoles(requiredRoles, user.roles);
-  }
+    const req = context.switchToHttp().getRequest<Request>();
+    const user = req.user as User;
 
-  private matchRoles(roles: string[], userRole: string[]) {
-    if (roles.some((role) => userRole?.includes(role))) {
-      return true;
-    }
-    return false;
+    if (validRoles.includes(user.role)) return true;
+
+    throw new ForbiddenException(
+      `${user.email} is not authorized for this resource.`,
+    );
   }
 }
