@@ -10,10 +10,10 @@ import { Request, Response } from 'express';
 import { LoggerService } from 'src/logger/logger.service';
 
 @Injectable()
-export class LoggingInterceptor implements NestInterceptor {
+export class LoggingInterceptor<T> implements NestInterceptor<T, T> {
   constructor(private readonly logger: LoggerService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler<T>): Observable<T> {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
@@ -24,7 +24,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const start = process.hrtime();
 
     return next.handle().pipe(
-      tap((res) => {
+      tap((res: T) => {
         const diff = process.hrtime(start);
         const duration = diff[0] * 1000 + diff[1] / 1e6;
 
@@ -34,8 +34,8 @@ export class LoggingInterceptor implements NestInterceptor {
           path: originalUrl,
           status_code: response.statusCode,
           duration_ms: duration,
-          request_body: JSON.stringify(body),
-          response_body: JSON.stringify(res),
+          request_body: body,
+          response_body: res,
           ip,
           user_agent: headers['user-agent'],
           headers: {

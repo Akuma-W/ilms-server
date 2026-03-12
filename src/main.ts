@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
 import {
   ClassSerializerInterceptor,
-  ConsoleLogger,
   ValidationPipe,
   VersioningType,
 } from '@nestjs/common';
@@ -13,13 +12,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   // Create app
-  const app = await NestFactory.create(AppModule, {
-    logger: new ConsoleLogger({
-      logLevels: ['log', 'debug', 'error', 'warn'],
-      prefix: 'MyApp',
-      timestamp: true,
-    }),
-  });
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
   // Sercurity middlewares
