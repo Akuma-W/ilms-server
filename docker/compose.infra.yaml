@@ -36,22 +36,19 @@ services:
 
   minio:
     image: minio/minio
-    entrypoint:
-      - sh
-      - -euc
-      - |
-        mkdir -p /data/loki-data && \
-        mkdir -p /data/loki-ruler && \
-        minio server /data
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
     environment:
-      - MINIO_ROOT_USER=loki
-      - MINIO_ROOT_PASSWORD=supersecret
+      - MINIO_ROOT_USER=runsystem
+      - MINIO_ROOT_PASSWORD=1234@Dcba
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
     ports:
-      - 9000
+      - "9000:9000"
+      - "9001:9001"
     volumes:
-      - ./volumes/.data/minio:/data
+      - ./volumes/data/minio:/data
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 15s

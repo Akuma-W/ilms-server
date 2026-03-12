@@ -30,4 +30,10 @@ export default registerAs('', () => ({
     lokiHost: process.env.LOKI_HOST,
     transport: process.env.LOG_TRANSPORT,
   },
+  minio: {
+    endPoint: process.env.MINIO_ENDPOINT,
+    port: Number(process.env.MINIO_PORT) || 9000,
+    accessKey: process.env.MINIO_USERNAME,
+    secretKey: process.env.MINIO_PASSWORD,
+  },
 }));
