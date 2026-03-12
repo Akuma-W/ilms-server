@@ -5,6 +5,14 @@ import bcrypt from 'bcrypt';
 export async function seedUsers(prisma: PrismaClient) {
   console.log('Seeding users...');
 
+  const seedSchool = await prisma.school.findUnique({
+    where: { shortname: 'UIT' },
+  });
+
+  if (!seedSchool) {
+    throw new Error('UIT not found. Please seed schools first.');
+  }
+
   const data = await Promise.all(
     users.map(async (user) => ({
       identityCode: user.identityCode ?? null,
@@ -12,7 +20,7 @@ export async function seedUsers(prisma: PrismaClient) {
       password: await bcrypt.hash(user.password, 10),
       fullName: user.fullName,
       role: Role[user.role as keyof typeof Role],
-      schoolId: user.schoolId,
+      schoolId: seedSchool.id,
     }))
   );
 

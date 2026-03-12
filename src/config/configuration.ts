@@ -2,6 +2,8 @@ import { registerAs } from '@nestjs/config';
 import { StringValue } from 'ms';
 
 export default registerAs('', () => ({
+  appName: process.env.APP_NAME,
+  nodeEnv: process.env.NODE_ENV,
   port: Number(process.env.PORT) || 3000,
   cors: {
     origin: process.env.CORS_ORIGIN,
@@ -23,5 +25,9 @@ export default registerAs('', () => ({
     port: Number(process.env.REDIS_PORT || 6379),
     password: process.env.REDIS_PASSWORD || undefined,
     ttl: Number(process.env.REDIS_TTL || 3600),
+  },
+  logger: {
+    lokiHost: process.env.LOKI_HOST,
+    transport: process.env.LOG_TRANSPORT,
   },
 }));
