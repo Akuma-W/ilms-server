@@ -3,14 +3,11 @@ import bcrypt from 'bcrypt';
 
 const config = new ConfigService();
 
-export async function hashPassword(password: string) {
+export async function hash(password: string) {
   const saltRounds = config.get<number>('auth.saltRounds', 10);
   return await bcrypt.hash(password, saltRounds);
 }
 
-export async function comparePassword(
-  password: string,
-  hashedPassword: string,
-) {
+export async function compare(password: string, hashedPassword: string) {
   return await bcrypt.compare(password, hashedPassword);
 }

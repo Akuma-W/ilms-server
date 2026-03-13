@@ -3,6 +3,7 @@ import { StringValue } from 'ms';
 
 export default registerAs('', () => ({
   appName: process.env.APP_NAME,
+  appVersion: process.env.APP_VERSION,
   nodeEnv: process.env.NODE_ENV,
   port: Number(process.env.PORT) || 3000,
   cors: {
@@ -40,5 +41,9 @@ export default registerAs('', () => ({
   },
   storage: {
     driver: process.env.STORAGE_DRIVER,
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   },
 }));

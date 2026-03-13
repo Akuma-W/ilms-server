@@ -2,16 +2,18 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
-import { hashPassword } from 'src/common/utils/hash.util';
+import { hash } from 'src/common/utils/hash.util';
 import { User } from './entities/user.entity';
 import { validateAvatar } from 'src/common/utils/file-validation.util';
 import { StorageService } from 'src/infrastructures/storage/storage.service';
 import { StorageFolder } from 'src/common/constants/storage-folders.constant';
 import { LoggerService } from 'src/logger/logger.service';
+import { CreateGoogleUserDto } from './dto/create-google-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -33,8 +35,13 @@ export class UsersService {
       throw new ConflictException('Email already exists');
     }
 
+    // Check password
+    if (!createUserDto.password) {
+      throw new UnauthorizedException('Password not found');
+    }
+
     // Hash password
-    const hashedPassword = await hashPassword(createUserDto.password);
+    const hashedPassword = await hash(createUserDto.password);
 
     const user = await this.prisma.user.create({
       data: {
@@ -44,6 +51,10 @@ export class UsersService {
     });
 
     return new User(user);
+  }
+
+  async createGoogleUser(dto: CreateGoogleUserDto) {
+    return this.prisma.user.create({ data: dto });
   }
 
   async findAll() {
