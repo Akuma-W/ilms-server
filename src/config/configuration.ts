@@ -35,5 +35,10 @@ export default registerAs('', () => ({
     port: Number(process.env.MINIO_PORT) || 9000,
     accessKey: process.env.MINIO_USERNAME,
     secretKey: process.env.MINIO_PASSWORD,
+    bucket: process.env.MINIO_BUCKET,
+    publicUrl: process.env.MINIO_PUBLIC_URL,
+  },
+  storage: {
+    driver: process.env.STORAGE_DRIVER,
   },
 }));

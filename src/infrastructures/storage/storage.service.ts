@@ -1,37 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Client } from 'minio';
+import { StorageProvider } from './interfaces/storage-provider.interface';
+import { LocalStorageProvider } from './providers/local.provider';
+import { MinioStorageProvider } from './providers/minio.provider';
+import { LoggerService } from 'src/logger/logger.service';
 
 @Injectable()
 export class StorageService {
-  private client: Client;
+  private provider: StorageProvider;
 
-  constructor(private config: ConfigService) {
-    this.client = new Client({
-      endPoint: this.config.get<string>('minio.endPoint') || 'localhost',
-      port: this.config.get<number>('minio.port'),
-      useSSL: false,
-      accessKey: this.config.get<string>('minio.accessKey'),
-      secretKey: this.config.get<string>('minio.secretKey'),
-    });
-  }
-
-  async upload(
-    bucket: string,
-    objectName: string,
-    buffer: Buffer,
-    mime: string,
+  constructor(
+    config: ConfigService,
+    local: LocalStorageProvider,
+    minio: MinioStorageProvider,
+    private logger: LoggerService,
   ) {
-    return this.client.putObject(bucket, objectName, buffer, buffer.length, {
-      'Content-Type': mime,
-    });
+    const driver = config.get<string>('storage.driver');
+    this.provider = driver === 'minio' ? minio : local;
   }
 
-  async get(objectName: string, bucket: string) {
-    return this.client.getObject(bucket, objectName);
+  async upload(file: Express.Multer.File, folder: string) {
+    this.logger.log(`Uploading file to ${folder}`);
+    return this.provider.upload(file, folder);
   }
 
-  async remove(bucket: string, objectName: string) {
-    return this.client.removeObject(bucket, objectName);
+  async uploadMany(files: Express.Multer.File[], folder: string) {
+    return this.provider.uploadMany(files, folder);
+  }
+
+  async delete(filePath: string) {
+    return this.provider.delete(filePath);
+  }
+
+  getUrl(filePath: string) {
+    return this.provider.getFileUrl(filePath);
   }
 }

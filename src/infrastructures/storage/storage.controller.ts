@@ -1,16 +1,13 @@
 import {
-  BadRequestException,
   Controller,
-  Get,
-  Param,
   Post,
-  Res,
+  Query,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
-import type { Express, Response } from 'express';
 
 @Controller('storage')
 export class StorageController {
@@ -18,48 +15,29 @@ export class StorageController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async upload(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
-
-    const { mimetype, buffer, originalname } = file;
-
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'application/pdf',
-      'video/mp4',
-    ];
-
-    if (!allowedTypes.includes(mimetype)) {
-      throw new BadRequestException('File type not allowed');
-    }
-
-    const filename = `${Date.now()}-${originalname}`;
-
-    await this.storageService.upload('app-storage', filename, buffer, mimetype);
+  async upload(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('folder') folder: string,
+  ) {
+    const path = await this.storageService.upload(file, folder);
 
     return {
-      message: 'Upload success',
-      url: `/files/${filename}`,
+      path,
+      url: this.storageService.getUrl(path),
     };
   }
 
-  @Get(':filename')
-  async getFile(@Param('filename') filename: string, @Res() res: Response) {
-    const stream = await this.storageService.get('app-storage', filename);
+  @Post('upload-many')
+  @UseInterceptors(FilesInterceptor('files'))
+  async uploadMany(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Query('folder') folder: string,
+  ) {
+    const paths = await this.storageService.uploadMany(files, folder);
 
-    stream.pipe(res);
-  }
-
-  @Post('delete/:filename')
-  async delete(@Param('filename') filename: string) {
-    await this.storageService.remove('app-storage', filename);
-
-    return {
-      message: 'File deleted',
-    };
+    return paths.map((path) => ({
+      path,
+      url: this.storageService.getUrl(path),
+    }));
   }
 }
