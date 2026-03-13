@@ -7,7 +7,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
-import { RedisModule } from 'src/infrastructures/redis/redis.module';
 
 @Module({
   providers: [AuthService, JwtStrategy, LocalStrategy],
@@ -27,7 +26,6 @@ import { RedisModule } from 'src/infrastructures/redis/redis.module';
       },
     }),
     UsersModule,
-    RedisModule,
   ],
   exports: [JwtStrategy, LocalStrategy, PassportModule, JwtModule],
 })

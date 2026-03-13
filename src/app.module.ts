@@ -7,7 +7,6 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HealthModule } from './health/health.module';
-import { PrismaService } from './infrastructures/prisma/prisma.service';
 import { PrismaModule } from './infrastructures/prisma/prisma.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -65,7 +64,6 @@ import { StorageModule } from './infrastructures/storage/storage.module';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
-    PrismaService,
   ],
 })
 export class AppModule {}
