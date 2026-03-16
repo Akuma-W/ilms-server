@@ -19,6 +19,7 @@ import {
   ApiConsumes,
   ApiOkResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -40,6 +41,22 @@ export class UsersController {
   @Get()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  // Get current user
+  @Get('me')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Current user profile fetched successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  getProfile(@CurrentUser() user: AuthUser) {
+    return this.usersService.findOne(user.id);
   }
 
   @Get(':id')

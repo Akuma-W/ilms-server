@@ -7,7 +7,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
-import { hash } from 'src/common/utils/hash.util';
+import { hashPassword } from 'src/common/utils/hash.util';
 import { User } from './entities/user.entity';
 import { validateAvatar } from 'src/common/utils/file-validation.util';
 import { StorageService } from 'src/infrastructures/storage/storage.service';
@@ -41,7 +41,7 @@ export class UsersService {
     }
 
     // Hash password
-    const hashedPassword = await hash(createUserDto.password);
+    const hashedPassword = await hashPassword(createUserDto.password);
 
     const user = await this.prisma.user.create({
       data: {

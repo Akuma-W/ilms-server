@@ -9,8 +9,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { AuthService } from './auth.service';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthService } from './services/auth.service';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { LoginDto } from './dto/login.dto';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -131,12 +137,17 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(
-    @CurrentUser() user: AuthUser,
-    @Body('jti') jti: string,
-    @Res() res: Response,
-  ) {
-    await this.authService.logout(user.id, jti);
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Logout account',
+    description: 'Logout account and revoke tokens',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Logout successful',
+  })
+  async logout(@CurrentUser() user: AuthUser, @Res() res: Response) {
+    await this.authService.logout(user);
 
     res.clearCookie('refresh_token');
 

@@ -13,7 +13,7 @@ export default registerAs('', () => ({
     url: process.env.DATABASE_URL,
   },
   auth: {
-    saltRounds: Number(process.env.SALT_ROUNDS) || 10,
+    saltRounds: Number(process.env.SALT_ROUNDS || 10),
     jwt: {
       accessTokenSecret: process.env.JWT_ACCESS_SECRET,
       refreshTokenSecret: process.env.JWT_REFRESH_SECRET,

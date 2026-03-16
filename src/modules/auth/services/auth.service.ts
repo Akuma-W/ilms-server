@@ -1,17 +1,17 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-import { compare, hash } from 'src/common/utils/hash.util';
-import { Role, UserStatus } from 'src/generated/prisma/enums';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { UsersService } from '../../users/users.service';
+import { comparePasword, compareToken } from 'src/common/utils/hash.util';
+import { UserStatus } from 'src/generated/prisma/enums';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from 'src/infrastructures/redis/redis.service';
-import { AuthUser } from './interfaces/auth-user.interface';
-import { GoogleProfile } from './interfaces/google-profile.interface';
-import { GoogleRegisterDto } from './dto/google-register.dto';
-import { GooglePayload } from './interfaces/google-payload.interface';
-import { randomUUID } from 'crypto';
-import { GoogleLoginResult } from './interfaces/google-login-result.interface';
+import { AuthUser } from '../interfaces/auth-user.interface';
+import { GoogleProfile } from '../interfaces/google-profile.interface';
+import { GoogleRegisterDto } from '../dto/google-register.dto';
+import { GooglePayload } from '../interfaces/google-payload.interface';
+import { GoogleLoginResult } from '../interfaces/google-login-result.interface';
+import { TokenService } from './token.service';
 
 @Injectable()
 export class AuthService {
@@ -22,12 +22,13 @@ export class AuthService {
     private readonly redis: RedisService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly tokenService: TokenService,
   ) {}
 
   // Login by email, password
   async login(user: AuthUser) {
     // Create token
-    const tokens = await this.generateTokens(user.id, user.role);
+    const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
     return {
       message: 'Đăng nhập thành công',
@@ -47,7 +48,7 @@ export class AuthService {
 
     // If user existed
     if (user) {
-      const tokens = await this.generateTokens(user.id, user.role);
+      const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
       return {
         message: 'Đăng nhập thành công',
@@ -107,7 +108,7 @@ export class AuthService {
       status: UserStatus.active,
     });
 
-    const tokens = await this.generateTokens(user.id, user.role);
+    const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
     return {
       message: 'Đăng nhập thành công',
@@ -134,7 +135,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const isMatch = await compare(refreshToken, storedToken);
+    const isMatch = await compareToken(refreshToken, storedToken);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -148,7 +149,7 @@ export class AuthService {
     // Token rotation
     await this.redis.del(key);
 
-    const tokens = await this.generateTokens(user.id, user.role);
+    const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
     return {
       message: 'Token refreshed',
@@ -156,36 +157,13 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string, jti: string) {
-    await this.redis.del(`refresh:${userId}:${jti}`);
-  }
+  async logout(user: AuthUser) {
+    const { id, accessToken, exp } = user;
+    // save access token to blacklist
+    await this.tokenService.addBlacklist(accessToken, exp);
 
-  async generateTokens(userId: string, role: Role) {
-    const jti = randomUUID();
-
-    const payload: JwtPayload = { sub: userId, jti, role };
-
-    // Unique indentifier for access token
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get('auth.jwt.accessTokenSecret'),
-      expiresIn: this.config.get('auth.jwt.accessExpriesIn'),
-    });
-
-    // Unique identifier for the refresh token
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get('auth.jwt.refreshTokenSecret'),
-      expiresIn: this.config.get('auth.jwt.refreshExpiresIn'),
-    });
-
-    // Store refresh token in Redis with expiration
-    const hashedToken = await hash(refreshToken);
-    await this.redis.set(
-      `refresh:${payload.sub}:${payload.jti}`,
-      hashedToken,
-      7 * 24 * 60 * 60, // 7 days
-    );
-
-    return { accessToken, refreshToken };
+    // revoke refresh token
+    await this.redis.del(`refresh:${id}:${accessToken}`);
   }
 
   async validateUser(email: string, password: string) {
@@ -210,7 +188,7 @@ export class AuthService {
       throw new UnauthorizedException('Password not found');
     }
 
-    const isMatch = await compare(password, user.password);
+    const isMatch = await comparePasword(password, user.password);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
