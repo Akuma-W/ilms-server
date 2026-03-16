@@ -3,6 +3,7 @@ import { StringValue } from 'ms';
 
 export default registerAs('', () => ({
   appName: process.env.APP_NAME,
+  appVersion: process.env.APP_VERSION,
   nodeEnv: process.env.NODE_ENV,
   port: Number(process.env.PORT) || 3000,
   cors: {
@@ -12,7 +13,7 @@ export default registerAs('', () => ({
     url: process.env.DATABASE_URL,
   },
   auth: {
-    saltRounds: Number(process.env.SALT_ROUNDS) || 10,
+    saltRounds: Number(process.env.SALT_ROUNDS || 10),
     jwt: {
       accessTokenSecret: process.env.JWT_ACCESS_SECRET,
       refreshTokenSecret: process.env.JWT_REFRESH_SECRET,
@@ -35,5 +36,14 @@ export default registerAs('', () => ({
     port: Number(process.env.MINIO_PORT) || 9000,
     accessKey: process.env.MINIO_USERNAME,
     secretKey: process.env.MINIO_PASSWORD,
+    bucket: process.env.MINIO_BUCKET,
+    publicUrl: process.env.MINIO_PUBLIC_URL,
+  },
+  storage: {
+    driver: process.env.STORAGE_DRIVER,
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   },
 }));

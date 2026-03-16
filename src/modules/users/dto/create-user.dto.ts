@@ -21,7 +21,7 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'User Password: Min 8 characters, 1 uppercase, 1 number, 1 special character, no whitespace',
     type: 'string',
@@ -37,7 +37,7 @@ export class CreateUserDto {
     },
   )
   @NotContains(' ', { message: 'Password must not contain whitespace' })
-  password: string;
+  password?: string;
 
   @ApiProperty({
     description: 'User full name',

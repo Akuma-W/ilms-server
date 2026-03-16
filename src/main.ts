@@ -18,13 +18,17 @@ async function bootstrap() {
   // Sercurity middlewares
   app.use(helmet());
   app.enableCors({
-    origin: configService.get<string>('cors.origin'),
+    origin: [configService.get<string>('cors.origin')],
+    credentials: true,
   });
   app.use(cookieParser());
 
   // Custom Global
   app.setGlobalPrefix('api');
-  app.enableVersioning({ type: VersioningType.URI });
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: configService.get<string>('appVersion'),
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -46,13 +50,14 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('docs', app, document);
 
   // Listen port
   try {
     const port = configService.get<number>('port') || 3000;
     await app.listen(port);
-    console.log(`Server is running on http://localhost:${port}/api`);
+    console.log(`Server is running on http://localhost:${port}/api/v1`);
+    console.log(`API Document is running on http://localhost:${port}/docs`);
   } catch (error) {
     console.error('Server failed to start: ', error);
   }
