@@ -131,7 +131,7 @@ model Class {
   title       String
   subject     String
   description String?
-  courseCode  String?   @map("course_code")
+  courseCode  String?   @map("course_code") @unique
   semester    String?
   isPrivate   Boolean   @default(false) @map("is_private")
   createdAt   DateTime? @map("created_at") @db.Timestamptz()

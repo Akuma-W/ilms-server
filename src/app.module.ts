@@ -15,6 +15,7 @@ import { RedisModule } from './infrastructures/redis/redis.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './logger/logger.module';
 import { StorageModule } from './infrastructures/storage/storage.module';
+import { ClassesModule } from './modules/classes/classes.module';
 
 @Module({
   imports: [
@@ -32,11 +33,12 @@ import { StorageModule } from './infrastructures/storage/storage.module';
     }),
     HealthModule,
     PrismaModule,
-    UsersModule,
-    AuthModule,
     RedisModule,
     LoggerModule,
     StorageModule,
+    UsersModule,
+    AuthModule,
+    ClassesModule,
   ],
   controllers: [],
   providers: [

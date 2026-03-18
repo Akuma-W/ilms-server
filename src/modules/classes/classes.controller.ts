@@ -1,34 +1,76 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { Role } from 'src/generated/prisma/enums';
+import { ApiCreateClass } from './swagger/create-class.swagger';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { ApiGetClasses } from './swagger/get-classes.swagger';
+import { QueryClassDto } from './dto/query-class.dto';
+import { ApiGetClass } from './swagger/get-class.swagger';
+import { ApiUpdateClass } from './swagger/update-class.swagger';
+import { ApiDeleteClass } from './swagger/delete-class.swagger';
 
+@ApiTags('Classes')
 @Controller('classes')
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 
   @Post()
-  create(@Body() createClassDto: CreateClassDto) {
-    return this.classesService.create(createClassDto);
+  @Roles(Role.teacher, Role.admin)
+  @ApiCreateClass()
+  async create(
+    @CurrentUser() user: AuthUser,
+    @Body() createClassDto: CreateClassDto,
+  ) {
+    return this.classesService.create(user, createClassDto);
   }
 
   @Get()
-  findAll() {
-    return this.classesService.findAll();
+  @ApiGetClasses()
+  findAll(@CurrentUser('id') id: string, @Query() query: QueryClassDto) {
+    return this.classesService.findAll(id, query);
   }
 
   @Get(':id')
+  @ApiGetClass()
   findOne(@Param('id') id: string) {
-    return this.classesService.findOne(+id);
+    return this.classesService.findOne(id);
+  }
+
+  @Get('code/:courseCode')
+  @ApiGetClass()
+  getClassByCourseCode(@Param('courseCode') courseCode: string) {
+    return this.classesService.findByCourseCode(courseCode);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClassDto: UpdateClassDto) {
-    return this.classesService.update(+id, updateClassDto);
+  @Roles(Role.teacher, Role.admin)
+  @ApiUpdateClass()
+  async update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateClassDto,
+  ) {
+    return this.classesService.update(user, id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.classesService.remove(+id);
+  @Roles(Role.teacher, Role.admin)
+  @ApiDeleteClass()
+  async remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.classesService.remove(user, id);
   }
 }

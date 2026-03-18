@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -10,70 +11,72 @@ import { QueryClassDto } from './dto/query-class.dto';
 import { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { Role } from 'src/generated/prisma/enums';
 import { randomBytes } from 'crypto';
+import { UsersService } from '../users/users.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class ClassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
+  ) {}
 
+  /**
+   * Create a new class.
+   *
+   * If the user is a teacher, the class is created for that teacher (belonging to the teacher's school).
+   * If the user is an admin, the class is created and assigned to the corresponding teacher and school.
+   *
+   * @param user - The authenticated user performing the action.
+   * @param createClassDto - The data required to create the class.
+   * @returns The information of the newly created class.
+   */
   async create(user: AuthUser, createClassDto: CreateClassDto) {
-    if (user.role !== Role.teacher) {
-      throw new ForbiddenException('Only teacher can create class');
-    }
+    // Check schoolId and teacherId base on Role
+    const { schoolId, teacherId } = await this.getSchoolAndTeacher(
+      user,
+      createClassDto.schoolId,
+      createClassDto.teacherId,
+    );
 
-    const findUser = await this.prisma.user.findUnique({
-      where: { id: user.id },
+    const courseCode = await this.generateUniqueCourseCode();
+
+    const classroom = await this.prisma.class.create({
+      data: {
+        ...createClassDto,
+        teacherId,
+        schoolId,
+        courseCode,
+        isPrivate: createClassDto.isPrivate ?? false,
+      },
     });
 
-    const courseCode = this.generateCourseCode();
-
-    return 'This action adds a new class';
+    return classroom;
   }
 
+  // Find all classes with query
   async findAll(userId: string, queryClassDto: QueryClassDto) {
-    const user = await this.getCurrentUser(userId);
+    const user = await this.usersService.findOne(userId);
+
     const { keyword, page, limit } = queryClassDto;
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const baseWhere: any = {
-      schoolId: user?.schoolId,
-      deleteAt: null, // for soft delete
-    };
+    const where: Prisma.ClassWhereInput = {};
 
-    const where: any = { ...baseWhere };
-
-    // ADMIN: Find all
-    if (user.role === Role.admin) {
-      if (keyword) {
-        where.OR = this.buildKeywordCondition(keyword);
-      }
+    if (user.role !== Role.admin) {
+      where.isPrivate = false;
     }
 
-    // TEACHER / STUDENT: Find public class
-
-    if (courseCode) {
-      where.courseCode = courseCode;
-    } else if (keyword) {
-      where.isPrivate = false;
+    // Find by keyword
+    if (keyword) {
       where.OR = [
-        {
-          title: {
-            contains: keyword,
-            mode: 'insensitive',
-          },
-        },
-        {
-          teacher: {
-            fullName: {
-              contains: keyword,
-              mode: 'insensitive',
-            },
-          },
-        },
+        { title: { contains: keyword, mode: 'insensitive' } },
+        { subject: { contains: keyword, mode: 'insensitive' } },
+        { semester: { contains: keyword, mode: 'insensitive' } },
+        { teacher: { fullName: { contains: keyword, mode: 'insensitive' } } },
       ];
-    } else {
-      where.isPrivate = false;
     }
 
     const [data, total] = await Promise.all([
@@ -84,24 +87,11 @@ export class ClassesService {
         orderBy: {
           createdAt: 'desc',
         },
-        select: {
-          id: true,
-          title: true,
-          subject: true,
-          description: true,
-          semester: true,
-          courseCode: true,
-          isPrivate: true,
-          createdAt: true,
-          teacher: {
-            select: {
-              id: true,
-              fullName: true,
-            },
-          },
+        include: {
+          teacher: true,
         },
       }),
-      this.prisma.class.count({ where }),
+      this.prisma.class.count({ where: where }),
     ]);
 
     return {
@@ -115,101 +105,139 @@ export class ClassesService {
     };
   }
 
-  async findOne(userPayload: { id: string; role: Role }, classId: string) {
-    const user = await this.getCurrentUser(userPayload.id);
-
-    const found = await this.prisma.class.findFirst({
-      where: {
-        id: classId,
-        schoolId: user.schoolId,
-        // deletedAt: null,
-      },
-      select: this.classSelect(),
+  // Find One Class by Id
+  async findOne(classId: string) {
+    const classroom = await this.prisma.class.findUnique({
+      where: { id: classId },
+      include: { teacher: true },
     });
 
-    if (!found) {
+    if (!classroom) {
       throw new NotFoundException('Class not found');
     }
 
-    // private class check
-    if (found.isPrivate && user.role !== Role.admin) {
-      throw new ForbiddenException('Cannot access private class');
+    return classroom;
+  }
+
+  // Find One Class By Course Code
+  async findByCourseCode(courseCode: string) {
+    const classroom = await this.prisma.class.findUnique({
+      where: { courseCode },
+      include: { teacher: true },
+    });
+
+    if (!classroom) {
+      throw new NotFoundException('Class not found');
     }
 
-    return found;
+    return classroom;
   }
 
-  update(id: number, updateClassDto: UpdateClassDto) {
-    return `This action updates a #${id} class`;
+  async update(
+    user: AuthUser,
+    classId: string,
+    updateClassDto: UpdateClassDto,
+  ) {
+    // Check class existed
+    const existing = await this.prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Class not found');
+    }
+
+    // Check if user is admin or user is teacher managing this class
+    if (user.role !== Role.admin && existing.teacherId !== user.id) {
+      throw new ForbiddenException('You are not allowed to update this class');
+    }
+
+    await this.prisma.class.update({
+      where: { id: classId },
+      data: updateClassDto,
+    });
+
+    return { message: 'Cập nhật thành công' };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} class`;
+  async remove(user: AuthUser, classId: string) {
+    // Check class existed
+    const existing = await this.prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Class not found');
+    }
+
+    // Check if user is admin or user is teacher managing this class
+    if (user.role !== Role.admin && existing.teacherId !== user.id) {
+      throw new ForbiddenException('You are not allowed to update this class');
+    }
+
+    // Hard delete: delete enrollments in this class
+    await this.prisma.$transaction([
+      this.prisma.enrollment.deleteMany({ where: { classId } }),
+      this.prisma.class.delete({ where: { id: classId } }),
+    ]);
+
+    return { message: 'Class deleted successfully' };
   }
 
-  // HELPERS: generate course code
-  private generateCourseCode(): string {
+  /** HELPERS
+   * - select
+   * - generate course code
+   * - get school and teacher from request
+   */
+  private generateCode(): string {
     const code = randomBytes(4)
       .toString('base64') // encode
       .replace(/[^A-Z0-9]/gi, '') // remove strange character
       .toUpperCase()
       .slice(0, 6); // 6 digit
+
     return code;
   }
 
-  // Get data from current user
-  private async getCurrentUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        role: true,
-        schoolId: true,
-      },
-    });
+  private async generateUniqueCourseCode(): Promise<string> {
+    for (let i = 0; i < 5; i++) {
+      const code = this.generateCode();
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      const found = await this.prisma.class.findUnique({
+        where: { courseCode: code },
+      });
+
+      if (!found) return code;
+    }
+    throw new Error('Failed to generate unique course code');
+  }
+
+  private async getSchoolAndTeacher(
+    user: AuthUser,
+    schoolId: string | undefined,
+    teacherId: string | undefined,
+  ): Promise<{ schoolId: string; teacherId: string }> {
+    // If user is Teacher
+    if (user.role === Role.teacher) {
+      const teacher = await this.usersService.findOne(user.id);
+
+      if (!teacher) {
+        throw new NotFoundException('Teacher not found');
+      }
+
+      return {
+        schoolId: teacher.schoolId,
+        teacherId: teacher.id,
+      };
+    }
+    if (user.role === Role.admin) {
+      if (!schoolId || !teacherId) {
+        throw new BadRequestException('School and Teacher are required');
+      }
+
+      return { schoolId, teacherId };
     }
 
-    return user;
-  }
-
-  private buildKeywordCondition(keyword: string) {
-    return [
-      {
-        title: {
-          contains: keyword,
-          mode: 'insensitive',
-        },
-      },
-      {
-        teacher: {
-          fullName: {
-            contains: keyword,
-            mode: 'insensitive',
-          },
-        },
-      },
-    ];
-  }
-
-  private classSelect() {
-    return {
-      id: true,
-      title: true,
-      subject: true,
-      description: true,
-      semester: true,
-      courseCode: true,
-      isPrivate: true,
-      createdAt: true,
-      teacher: {
-        select: {
-          id: true,
-          fullName: true,
-        },
-      },
-    };
+    throw new ForbiddenException('Invalid role');
   }
 }
