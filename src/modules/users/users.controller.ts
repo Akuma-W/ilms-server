@@ -13,20 +13,13 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiOkResponse,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
-import { UpdateAvatarDto } from './dto/update-avatar.dto';
+import { ApiUpdateAvatar } from './swagger/update-avatar.swagger';
+import { ApiGetProfile } from './swagger/get-profile.swagger';
 
 @ApiTags('Users')
 @Controller('users')
@@ -45,16 +38,7 @@ export class UsersController {
 
   // Get current user
   @Get('me')
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'Current user profile fetched successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
+  @ApiGetProfile()
   getProfile(@CurrentUser() user: AuthUser) {
     return this.usersService.findOne(user.id);
   }
@@ -76,17 +60,7 @@ export class UsersController {
 
   // Upload current user avatar
   @Patch('me/avatar')
-  @ApiOperation({ summary: 'Update user avatar' })
-  @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UpdateAvatarDto })
-  @ApiOkResponse({
-    schema: {
-      example: {
-        avatarUrl: 'http://localhost:9000/files/avatars/123abc.png',
-      },
-    },
-  })
+  @ApiUpdateAvatar()
   @UseInterceptors(FileInterceptor('avatar', multerConfig))
   async updateAvatar(
     @UploadedFile() file: Express.Multer.File,

@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Get,
   Logger,
@@ -10,15 +9,8 @@ import {
 } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthService } from './services/auth.service';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { LoginDto } from './dto/login.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthUser } from './interfaces/auth-user.interface';
@@ -26,6 +18,11 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import type { GoogleProfile } from './interfaces/google-profile.interface';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ApiLogin } from './swagger/login.swagger';
+import { ApiGoogleAuth } from './swagger/google-auth.swagger';
+import { ApiGoogleAuthRedirect } from './swagger/google-auth-redirect.swagger';
+import { ApiLogout } from './swagger/logout.swagger';
+import { ApiRefresh } from './swagger/refresh.swagger';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -39,12 +36,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  @ApiOperation({
-    summary: 'Login account by email and password',
-  })
-  @ApiBody({
-    type: LoginDto,
-  })
+  @ApiLogin()
   async login(
     @CurrentUser() user: AuthUser,
     @Res({ passthrough: true }) res: Response,
@@ -66,27 +58,13 @@ export class AuthController {
   @Public()
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  @ApiOperation({
-    summary: 'Login by Google',
-    description: 'Redirect user to Google OAuth to login',
-  })
-  @ApiResponse({
-    status: 302,
-    description: 'Redirect to Google Login',
-  })
+  @ApiGoogleAuth()
   async googleAuth() {}
 
   @Public()
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
-  @ApiOperation({
-    summary: 'Google OAuth callback',
-    description: 'Google redirect to this endpoint after authentication',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Login successful',
-  })
+  @ApiGoogleAuthRedirect()
   async googleAuthRedirect(
     @CurrentUser() user: GoogleProfile,
     @Res({ passthrough: true }) res: Response,
@@ -118,6 +96,7 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @UseGuards(JwtAuthGuard)
+  @ApiRefresh()
   async refresh(@Req() req: Request, @Res() res: Response) {
     const refreshToken = req.cookies['refresh_token'] as string;
 
@@ -137,15 +116,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Logout account',
-    description: 'Logout account and revoke tokens',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Logout successful',
-  })
+  @ApiLogout()
   async logout(@CurrentUser() user: AuthUser, @Res() res: Response) {
     await this.authService.logout(user);
 
