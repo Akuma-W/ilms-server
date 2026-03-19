@@ -22,6 +22,7 @@ import { QueryClassDto } from './dto/query-class.dto';
 import { ApiGetClass } from './swagger/get-class.swagger';
 import { ApiUpdateClass } from './swagger/update-class.swagger';
 import { ApiDeleteClass } from './swagger/delete-class.swagger';
+import { ApiGetMyTeachingClasses } from './swagger/get-my-classes.swagger';
 
 @ApiTags('Classes')
 @Controller('classes')
@@ -54,6 +55,15 @@ export class ClassesController {
   @ApiGetClass()
   getClassByCourseCode(@Param('courseCode') courseCode: string) {
     return this.classesService.findByCourseCode(courseCode);
+  }
+
+  @Get('me/created')
+  @ApiGetMyTeachingClasses()
+  getMyTeachingClasses(
+    @CurrentUser('id') userId: string,
+    @Query() query: QueryClassDto,
+  ) {
+    return this.classesService.findMyTeachingClasses(userId, query);
   }
 
   @Patch(':id')
