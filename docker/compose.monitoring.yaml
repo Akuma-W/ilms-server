@@ -1,4 +1,4 @@
-name: test-monitor
+name: ilms-monitor
 
 services:
   read:
@@ -18,7 +18,7 @@ services:
       timeout: 5s
       retries: 5
     networks: &loki-dns
-      test-network:
+      ilms-network:
         aliases:
           - loki
 
@@ -39,7 +39,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      # test-network:
+      # ilms-network:
       <<: *loki-dns
 
   alloy:
@@ -53,7 +53,7 @@ services:
     depends_on:
       - gateway
     networks:
-      - test-network
+      - ilms-network
 
   grafana:
     image: grafana/grafana:12.4
@@ -89,7 +89,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - test-network
+      - ilms-network
 
   backend:
     image: grafana/loki:main-dc21099
@@ -104,7 +104,7 @@ services:
     depends_on:
       - gateway
     networks:
-      - test-network
+      - ilms-network
 
   gateway:
     image: nginx:mainline-alpine
@@ -173,15 +173,15 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - test-network
+      - ilms-network
 
   flog:
     image: mingrammer/flog
     command: -f json -d 200ms -l
     networks:
-      - test-network
+      - ilms-network
 
 networks:
-  test-network:
+  ilms-network:
     driver: bridge
     external: true

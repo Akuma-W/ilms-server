@@ -1,9 +1,9 @@
-name: test-server
+name: ilms-server
 
 services:
-  testserver:
-    container_name: test-server
-    image: testserver
+  ilms-server:
+    container_name: ilms-server
+    image: ilmsserver
     build:
       context: ..
       dockerfile: Dockerfile
@@ -12,9 +12,9 @@ services:
     ports:
       - 5000:5000
     networks:
-      - test-network
+      - ilms-network
 
 networks:
-  test-network:
+  ilms-network:
     driver: bridge
     external: true
