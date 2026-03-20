@@ -8,9 +8,15 @@ export async function hashPassword(password: string) {
   return await bcrypt.hash(password, saltRounds);
 }
 
-export async function comparePassword(
-  password: string,
-  hashedPassword: string,
-) {
+export async function comparePasword(password: string, hashedPassword: string) {
   return await bcrypt.compare(password, hashedPassword);
+}
+
+export async function hashToken(token: string) {
+  const saltRounds = config.get<number>('auth.saltRounds', 10);
+  return await bcrypt.hash(token, saltRounds);
+}
+
+export async function compareToken(token: string, hashedToken: string) {
+  return await bcrypt.compare(token, hashedToken);
 }

@@ -11,19 +11,31 @@ export class LoggerService {
     this.logger = createLogger(this.config);
   }
 
-  log(message: string, meta?: any) {
-    this.logger.info(message, meta);
+  log(message: string, meta?: Record<string, unknown>) {
+    this.logger.info({
+      message,
+      ...meta,
+    });
   }
 
-  error(message: string, trace?: any) {
-    this.logger.error(message, trace);
+  error(message: string, meta?: Record<string, unknown>) {
+    this.logger.error({
+      message,
+      ...meta,
+    });
   }
 
-  warn(message: string, meta?: any) {
-    this.logger.warn(message, meta);
+  warn(message: string, meta?: Record<string, unknown>) {
+    this.logger.warn({
+      message,
+      ...meta,
+    });
   }
 
-  debug(message: string, meta?: any) {
-    this.logger.debug(message, meta);
+  debug(message: string, meta?: Record<string, unknown>) {
+    this.logger.debug({
+      message,
+      ...meta,
+    });
   }
 }

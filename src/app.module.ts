@@ -7,7 +7,6 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HealthModule } from './health/health.module';
-import { PrismaService } from './infrastructures/prisma/prisma.service';
 import { PrismaModule } from './infrastructures/prisma/prisma.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,6 +14,10 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RedisModule } from './infrastructures/redis/redis.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './logger/logger.module';
+import { StorageModule } from './infrastructures/storage/storage.module';
+import { ClassesModule } from './modules/classes/classes.module';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
+import { TopicsModule } from './modules/topics/topics.module';
 
 @Module({
   imports: [
@@ -32,10 +35,14 @@ import { LoggerModule } from './logger/logger.module';
     }),
     HealthModule,
     PrismaModule,
-    UsersModule,
-    AuthModule,
     RedisModule,
     LoggerModule,
+    StorageModule,
+    UsersModule,
+    AuthModule,
+    ClassesModule,
+    EnrollmentsModule,
+    TopicsModule,
   ],
   controllers: [],
   providers: [
@@ -63,7 +70,6 @@ import { LoggerModule } from './logger/logger.module';
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
-    PrismaService,
   ],
 })
 export class AppModule {}

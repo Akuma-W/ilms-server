@@ -11,7 +11,7 @@ export class User {
 
   @Exclude()
   @IsString()
-  password: string;
+  password: string | null;
 
   @IsString()
   fullName: string;
