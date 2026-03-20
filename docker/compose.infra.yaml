@@ -6,7 +6,7 @@ services:
     container_name: ilms-postgres
     restart: unless-stopped
     env_file:
-      - ../.env.production.local
+      - ../.env
     environment:
       POSTGRES_USER: runsystem
       POSTGRES_PASSWORD: 1234@Dcba
@@ -23,7 +23,7 @@ services:
     container_name: ilms-redis
     restart: unless-stopped
     env_file:
-      - ../.env.production.local
+      - ../.env
     command: >
       redis-server
       --requirepass 1234@Dcba
