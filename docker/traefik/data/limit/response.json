@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "code": 429,
+  "message": "Hệ thống đang bận. Hiện có {{current}}/{{limit}} kết nối.",
+  "status_code": 429
+}

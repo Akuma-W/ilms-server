@@ -1,0 +1,45 @@
+# http:
+#   routers:
+#     monitor:
+#       rule: "Host(`monitor.localtest.me`)"
+#       service: api@internal
+#       entryPoints:
+#       - web
+
+#   middlewares:
+#     traefik-dashboard:
+#       plugin:
+#         traefik-dashboard:
+#           dashboardPath: "plugins/dashboard"
+#           allowedHost: "monitor.localtest.me"
+#           enableDocker: true
+#           username: admin
+#           password: password
+
+# http:
+#   routers:
+#     monitor:
+#       rule: "Host(`monitor.localtest.me`)"
+#       service: api@internal
+#       entryPoints:
+#       - web
+      # middlewares:
+      # - traefik-dashboard
+      # monitor:
+      #   rule: "Host(`monitor.localtest.me`)"
+      #   service: noop@internal
+      #   middlewares:
+      #   - traefik-dashboard
+
+      # admin-ui-router:
+      #   rule: "Host(`admin-api.localhost`)"
+      #   service: noop@internal
+      #   middlewares:
+      # - traefik-admin-api
+      # tls: {} # Optional: enable TLS if needed
+
+      # middlewares:
+      #   traefik-admin-api:
+      #     plugin:
+      #       traefik-admin-api:
+      #         root: "/etc/traefik/conf.d"
