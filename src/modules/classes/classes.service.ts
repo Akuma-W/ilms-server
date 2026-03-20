@@ -51,6 +51,17 @@ export class ClassesService {
       },
     });
 
+    // Teacher auto enrolls to class (Enrollment)
+    await this.prisma.enrollment.create({
+      data: {
+        classId: classroom.id,
+        userId: teacherId,
+        roleIn: 'teacher',
+        status: 'approved',
+        joinedAt: new Date(),
+      },
+    });
+
     return classroom;
   }
 
@@ -131,6 +142,47 @@ export class ClassesService {
     }
 
     return classroom;
+  }
+
+  // Find Current user's Classes | Class I teaching
+  async findMyTeachingClasses(userId: string, query: QueryClassDto) {
+    const { keyword, page, limit } = query;
+
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where: Prisma.ClassWhereInput = {
+      teacherId: userId,
+    };
+
+    if (keyword) {
+      where.OR = [
+        { title: { contains: keyword, mode: 'insensitive' } },
+        { subject: { contains: keyword, mode: 'insensitive' } },
+        { semester: { contains: keyword, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.class.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: { teacher: true },
+      }),
+      this.prisma.class.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async update(

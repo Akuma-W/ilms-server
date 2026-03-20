@@ -16,6 +16,8 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggerModule } from './logger/logger.module';
 import { StorageModule } from './infrastructures/storage/storage.module';
 import { ClassesModule } from './modules/classes/classes.module';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
+import { TopicsModule } from './modules/topics/topics.module';
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import { ClassesModule } from './modules/classes/classes.module';
     UsersModule,
     AuthModule,
     ClassesModule,
+    EnrollmentsModule,
+    TopicsModule,
   ],
   controllers: [],
   providers: [
