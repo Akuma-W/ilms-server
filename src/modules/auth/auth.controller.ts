@@ -43,14 +43,9 @@ export class AuthController {
   ) {
     const result = await this.authService.login(user);
 
-    const { refreshToken } = result.data;
+    const { refreshToken, accessToken } = result.data;
 
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/auth/refresh',
-    });
+    this.setTokensToCookies(res, accessToken, refreshToken);
 
     return result;
   }
@@ -81,14 +76,9 @@ export class AuthController {
     }
 
     // CASE: login success
-    const { refreshToken } = result.data;
+    const { refreshToken, accessToken } = result.data;
 
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
-      path: '/auth/refresh',
-    });
+    this.setTokensToCookies(res, accessToken, refreshToken);
 
     return res.redirect(`${frontEndUrl}/auth/callback`);
   }
@@ -101,21 +91,14 @@ export class AuthController {
     const refreshToken = req.cookies['refresh_token'] as string;
 
     const result = await this.authService.refreshToken(refreshToken);
-    const { refreshToken: newToken } = result.data;
+    const { refreshToken: newToken, accessToken } = result.data;
 
-    res.cookie('refresh_token', newToken, {
-      httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
-      path: '/auth/refresh',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    this.setTokensToCookies(res, accessToken, newToken);
 
     return result;
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
   @ApiLogout()
   async logout(
     @CurrentUser() user: AuthUser,
@@ -124,9 +107,29 @@ export class AuthController {
     await this.authService.logout(user);
 
     res.clearCookie('refresh_token');
+    res.clearCookie('access_token');
 
     return {
       message: 'Logout successful',
     };
+  }
+
+  private setTokensToCookies(
+    @Res({ passthrough: true }) res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: this.config.get('NODE_ENV') === 'production',
+      sameSite: 'lax',
+      path: '/auth/refresh',
+    });
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: this.config.get('NODE_ENV') === 'production',
+      sameSite: 'lax',
+    });
   }
 }

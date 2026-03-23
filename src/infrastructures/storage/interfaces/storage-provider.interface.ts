@@ -5,5 +5,5 @@ export interface StorageProvider {
 
   delete(filePath: string): Promise<void>;
 
-  getFileUrl(filePath: string): string;
+  getFileUrl(filePath: string): Promise<string>;
 }

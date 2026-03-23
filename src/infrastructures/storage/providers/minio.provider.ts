@@ -54,7 +54,11 @@ export class MinioStorageProvider implements StorageProvider {
     await this.client.removeObject(this.bucket, filePath);
   }
 
-  getFileUrl(filePath: string): string {
-    return `${this.config.get('minio.publicUrl')}/${this.bucket}/${filePath}`;
+  async getFileUrl(filePath: string, expries?: number): Promise<string> {
+    return this.client.presignedGetObject(
+      this.bucket,
+      filePath,
+      expries ?? 60 * 60, // default: 1h
+    );
   }
 }

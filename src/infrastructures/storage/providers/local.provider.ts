@@ -41,7 +41,7 @@ export class LocalStorageProvider implements StorageProvider {
     await fs.unlink(fullPath);
   }
 
-  getFileUrl(filePath: string): string {
-    return `/uploads/${filePath}`;
+  getFileUrl(filePath: string): Promise<string> {
+    return Promise.resolve(`/uploads/${filePath}`);
   }
 }
