@@ -18,6 +18,7 @@ import { StorageModule } from './infrastructures/storage/storage.module';
 import { ClassesModule } from './modules/classes/classes.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { TopicsModule } from './modules/topics/topics.module';
+import { SchoolsModule } from './modules/schools/schools.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { TopicsModule } from './modules/topics/topics.module';
     ClassesModule,
     EnrollmentsModule,
     TopicsModule,
+    SchoolsModule,
   ],
   controllers: [],
   providers: [
