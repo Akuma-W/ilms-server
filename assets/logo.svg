@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg" role="img"
+  aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">KEIVerse Logo</title>
+  <defs id="logoDesc">
+    Một logo hiện đại với khối cầu 3D màu xanh ở trung tâm, được bao quanh bởi hai quỹ đạo màu vàng và xanh dương giao
+    nhau. Các chữ cái K, E, và I được đặt xung quanh quỹ đạo.
+  </defs>
+  <defs>
+    <linearGradient id="sphereGrad" cx="35%" cy="35%" r="65%" fx="30%" fy="30%">
+      <stop offset="0%" style="stop-color:#581c87;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4cc9f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="25" fill="url(#sphereGrad)" />
+  <g fill="none" stroke-width="2" stroke-linecap="round">
+    <ellipse cx="50" cy="50" rx="45" ry="15" stroke="#7e51e6" transform="rotate(-30 50 50)" />
+    <ellipse cx="50" cy="50" rx="45" ry="15" stroke="#54b1f0" transform="rotate(30 50 50)" />
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="12" text-anchor="middle">
+    <text x="20" y="32" fill="#ffbc40">K</text>
+    <text x="20" y="80" fill="#10c6fd">E</text>
+    <text x="85" y="57" fill="#c00d84">I</text>
+  </g>
+</svg>

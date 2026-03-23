@@ -1,0 +1,275 @@
+{
+  "uuid": "7bccade7-076e-4a45-a1c3-32b6dbb01261",
+  "lastMigration": 33,
+  "name": "Sms",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3030,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "bef96df3-c97a-47c6-9aab-186a9b8f4c55",
+      "type": "http",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "sms/sms_brandname/send",
+      "responses": [
+        {
+          "uuid": "dbfa5e56-3774-446c-b0cc-063f8837ca94",
+          "body": "{\n  \"status\": \"SUCCESS\",\n  \"code\": 1,\n  \"time\": \"2025-01-01 12:00:00\",\n  \"sms_id\": \"1234\",\n  \"result\": \"Message sent successfully\",\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Success",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "token",
+              "value": "[\\d\\w]+",
+              "invert": false,
+              "operator": "regex"
+            },
+            {
+              "target": "query",
+              "modifier": "phone",
+              "value": "^84\\d{9}",
+              "invert": false,
+              "operator": "regex"
+            },
+            {
+              "target": "query",
+              "modifier": "sms",
+              "value": "^.{1,480}$",
+              "invert": false,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "5ece3106-a08c-43fe-ae4a-08b1eca2f5e8",
+          "body": "{\n  \"status\": \"FAIL\",\n  \"code\": -1,\n  \"time\": \"2016-06-23 11:23:58\",\n  \"sms_id\": \"1234\",\n  \"result\": \"System error, a message wasn’t send\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "No sms",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "sms",
+              "value": "^$",
+              "invert": false,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "797c8498-93b1-459a-a8ba-d419aa31ef09",
+          "body": "{\n  \"status\": \"INVALID_LENGTH\",\n  \"code\": -4,\n  \"time\": \"2016-06-23 11:23:58\",\n  \"sms_id\": \"1234\",\n  \"result\": \"Incorrect message length, maximum 480 characters (ASCII) for Viettel, EVN, Sfone or maximum 459 characters (ASCII) for Mobiphone, Vinaphone, Vietnammobile, Beeline\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Sms long",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "sms",
+              "value": "^.{481,}$",
+              "invert": false,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "36eff576-6ca0-4433-a99b-efcd0a031e85",
+          "body": "{\n  \"status\": \"INVALID_PHONE\",\n  \"code\": -3,\n  \"time\": \"2016-06-23 11:23:58\",\n  \"sms_id\": \"1234\",\n  \"result\": \"Phone number is incorrect, please check again\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "No Phone",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "phone",
+              "value": "^84\\d{9}",
+              "invert": true,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f9ba9aa0-5979-4a2d-9435-f50ba6a8fb48",
+          "body": "{\n  \"status\": \"INVALID_ACCOUNT\",\n  \"code\": -2,\n  \"time\": \"2016-06-23 11:23:58\",\n  \"sms_id\": \"1234\",\n  \"result\": \"Did not recognize your account, please check again\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "No Token",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "token",
+              "value": "[\\d\\w]+",
+              "invert": true,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d8772ea1-452a-4394-9d92-3ddd4cbd9906",
+          "body": "{\n  \"status\": \"FAIL\",\n  \"code\": -1,\n  \"time\": \"2016-06-23 11:23:58\",\n  \"sms_id\": \"1234\",\n  \"result\": \"System error, a message wasn’t send\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Default",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "bef96df3-c97a-47c6-9aab-186a9b8f4c55"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "callbacks": [
+    {
+      "uuid": "99195c71-aafd-48c3-bdfa-08376478927f",
+      "id": "nphq",
+      "uri": "https://sms.rshcm.com/sms/Send_Secure",
+      "name": "CallbackSMS",
+      "documentation": "Send SMS",
+      "method": "post",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With"
+        }
+      ],
+      "bodyType": "INLINE",
+      "body": "{\r\n    \"username\": \"esd\",\r\n    \"password\": \"5f4dcc3b5aa765d61d8327deb882cf99\",\r\n    \"brandname\": \"ESD\",\r\n    \"phone\": \"{{queryParam 'phone'}}\",\r\n    \"message\": \"{{queryParam 'sms'}}\",\r\n    \"unicode\": \"1\"\r\n}",
+      "databucketID": "",
+      "filePath": "",
+      "sendFileAsBody": true
+    }
+  ]
+}

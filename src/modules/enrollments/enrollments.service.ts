@@ -58,6 +58,7 @@ export class EnrollmentsService {
       orderBy: {
         joinedAt: 'desc',
       },
+      select: this.enrollmentSelect,
     });
 
     return {
@@ -75,6 +76,7 @@ export class EnrollmentsService {
           userId,
         },
       },
+      select: this.enrollmentSelect,
     });
 
     return enrollment;
@@ -103,6 +105,7 @@ export class EnrollmentsService {
           userId: targetUserId,
         },
       },
+      select: this.enrollmentSelect,
       data: {
         ...updateEnrollmentDto,
       },
@@ -139,6 +142,7 @@ export class EnrollmentsService {
           userId: studentId,
         },
       },
+      select: this.enrollmentSelect,
       data: {
         status: EnrollmentStatus.approved,
       },
@@ -175,6 +179,7 @@ export class EnrollmentsService {
           userId: studentId,
         },
       },
+      select: this.enrollmentSelect,
       data: {
         status: EnrollmentStatus.rejected,
       },
@@ -270,4 +275,34 @@ export class EnrollmentsService {
 
     return enrollment;
   }
+
+  /** HELPER: select enrollments with class */
+  private enrollmentSelect = {
+    id: true,
+    userId: true,
+    classId: true,
+    roleIn: true,
+    isStarred: true,
+    status: true,
+    joinedAt: true,
+
+    class: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        school: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        teacher: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    },
+  };
 }

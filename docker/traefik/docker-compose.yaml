@@ -1,0 +1,145 @@
+services:
+  traefik:
+    image: traefik:v3.6.7
+    container_name: traefik
+    # environment:
+    #   - TZ=Asia/Ho_Chi_Minh
+    command:
+      - '--configFile=/etc/traefik/traefik.yml'
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 9000
+        published: 9000
+        protocol: tcp
+        mode: host
+    volumes:
+      - '/run/user/1001/docker.sock:/var/run/docker.sock:ro'
+      - './traefik.yml:/etc/traefik/traefik.yml'
+      - './conf.d:/etc/traefik/conf.d'
+      - './plugins:/plugins-local'
+      - './data:/data'
+    networks:
+      - ilms-network
+
+  # grafana:
+  #   image: grafana/grafana:11.1.0
+  #   container_name: grafana
+  #   restart: always
+  #   labels:
+  #     - 'traefik.enable=true'
+  #     - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
+  #     - 'traefik.http.routers.grafana.rule=Host(`grafana.localhost`)'
+  #     - 'traefik.http.routers.grafana.entryPoints=web'
+  #   environment:
+  #     - 'TZ=Asia/Ho_Chi_Minh'
+  #   env_file:
+  #     - .grafana.env
+  #   volumes:
+  #     - './grafana-storage:/var/lib/grafana'
+  #   networks:
+  #     - ilms-network
+  #       ipv4_address: 172.100.1.10
+  #   healthcheck:
+  #     test: curl --fail http://127.0.0.1:3000/api/health || exit 1
+  #     start_period: 10s
+  #     interval: 20s
+  #     timeout: 5s
+  #     retries: 3
+
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.whoami.rule=Host(`ilms.gzrcloud.com`)'
+      - 'traefik.http.routers.whoami.entryPoints=web'
+      - 'traefik.http.routers.whoami.middlewares=lady-app@file'
+      - 'traefik.http.routers.whoami.middlewares=limit@file'
+    ports:
+      - '4080:80'
+    networks:
+      - ilms-network
+  
+  # isalefie:
+  #   image: nginx:1.29.0-alpine
+  #   container_name: isalefie
+  #   restart: always
+  #   labels:
+  #     - 'traefik.enable=true'
+  #     - 'traefik.http.routers.isalefie.rule=Host(`isalefie.localhost`)'
+  #     - 'traefik.http.services.isalefie.loadbalancer.server.port=80'
+  #     - 'traefik.http.routers.isalefie.entryPoints=web'
+  #   volumes:
+  #     - ./isalefie:/usr/share/nginx/html
+  #     - ./isalefie/nginx_default.conf:/etc/nginx/conf.d/default.conf
+  #   networks:
+  #     - ilms-network
+  #       ipv4_address: 172.100.2.20
+  
+  # mockoon-flexcube:
+  #   image: mockoon/cli:latest
+  #   command: ["--data", "/data/flexcube.json", "--port", "3000"]
+  #   container_name: mockoon-flexcube
+  #   restart: always
+  #   labels:
+  #     - 'traefik.enable=true'
+  #     - 'traefik.http.services.mock-flexcube.loadbalancer.server.port=3000'
+  #     - 'traefik.http.routers.mock-flexcube.rule=Host(`flexcube-mock.localhost`)'
+  #     - 'traefik.http.routers.mock-flexcube.entryPoints=web'
+  #     - 'traefik.http.routers.mock-flexcube.middlewares=jwt@file'
+  #   volumes:
+  #     - ./data/flexcube.json:/data/flexcube.json
+  #   networks:
+  #     - ilms-network
+  #       ipv4_address: 172.100.3.10
+  
+  # mockoon-sms:
+  #   image: mockoon/cli:latest
+  #   command: ["--data", "/data/sms.json", "--port", "3000"]
+  #   container_name: mockoon-sms
+  #   restart: always
+  #   labels:
+  #     - 'traefik.enable=true'
+  #     - 'traefik.http.services.mock-sms.loadbalancer.server.port=3000'
+  #     - 'traefik.http.routers.mock-sms.rule=Host(`sms-mock.localhost`)'
+  #     - 'traefik.http.routers.mock-sms.entryPoints=web'
+  #     - 'traefik.http.routers.mock-sms.middlewares=jwt@file'
+  #   volumes:
+  #     - ./data/sms.json:/data/sms.json
+  #   networks:
+  #     - ilms-network
+  #       ipv4_address: 172.100.3.11
+  
+  # loki:
+  #   image: grafana/loki:3.0.0
+  #   container_name: loki
+  #   user: '0:0'
+  #   command: ['-config.file=/etc/loki/loki-config.yaml']
+  #   hostname: loki
+  #   restart: always
+  #   labels:
+  #     - 'traefik.enable=true'
+  #     - 'traefik.http.services.loki.loadbalancer.server.port=3100'
+  #     - 'traefik.http.routers.loki.rule=Host(`loki.localhost`)'
+  #     - 'traefik.http.routers.loki.entryPoints=web'
+  #   environment:
+  #     - 'TZ=Asia/Ho_Chi_Minh'
+  #   volumes:
+  #     - ./loki.d/conf.d:/etc/loki:ro
+  #     - ./loki.d/loki-storage:/data/loki
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   networks:
+  #     - ilms-network
+
+networks:
+  ilms-network:
+    driver: bridge
+    external: true

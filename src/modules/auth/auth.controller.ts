@@ -117,7 +117,10 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @ApiLogout()
-  async logout(@CurrentUser() user: AuthUser, @Res() res: Response) {
+  async logout(
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.authService.logout(user);
 
     res.clearCookie('refresh_token');
