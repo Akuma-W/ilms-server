@@ -1,8 +1,18 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../../users/users.service';
-import { comparePasword, compareToken } from 'src/common/utils/hash.util';
-import { UserStatus } from 'src/generated/prisma/enums';
+import {
+  comparePasword,
+  compareToken,
+  hashPassword,
+} from 'src/common/utils/hash.util';
+import { Role, UserStatus } from 'src/generated/prisma/enums';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from 'src/infrastructures/redis/redis.service';
@@ -12,6 +22,8 @@ import { GoogleRegisterDto } from '../dto/google-register.dto';
 import { GooglePayload } from '../interfaces/google-payload.interface';
 import { GoogleLoginResult } from '../interfaces/google-login-result.interface';
 import { TokenService } from './token.service';
+import { RegisterDto } from '../dto/register.dto';
+import { UserResponseDto } from 'src/modules/users/dto/user-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +36,31 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly tokenService: TokenService,
   ) {}
+
+  // Register
+  async register(dto: RegisterDto) {
+    const { email, password, role, identityCode } = dto;
+
+    // Check if existed
+    const existed = await this.usersService.findByEmail(email);
+    if (existed) {
+      throw new ConflictException('Email already exists');
+    }
+
+    // Check if user is student, identityCode will be required
+    this.validateIdentity(role, identityCode);
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+
+    const user = await this.usersService.create({
+      ...dto,
+      password: hashedPassword,
+      status: UserStatus.active,
+    });
+
+    return { userId: user.id };
+  }
 
   // Login by email, password
   async login(user: AuthUser) {
@@ -48,16 +85,31 @@ export class AuthService {
 
     // If user existed
     if (user) {
-      const tokens = await this.tokenService.generateTokens(user.id, user.role);
+      // Save googleId\
+      if (!user.googleId) {
+        await this.usersService.update(user.id, { googleId });
+      }
 
-      return {
-        message: 'Đăng nhập thành công',
-        type: 'LOGIN_SUCCESS',
-        data: {
-          userId: user.id,
-          ...tokens,
-        },
-      };
+      const isProfileComplete =
+        user.schoolId &&
+        user.role &&
+        (user.role === 'teacher' || user.identityCode);
+
+      if (isProfileComplete) {
+        const tokens = await this.tokenService.generateTokens(
+          user.id,
+          user.role,
+        );
+
+        return {
+          message: 'Đăng nhập thành công',
+          type: 'LOGIN_SUCCESS',
+          data: {
+            userId: user.id,
+            ...tokens,
+          },
+        };
+      }
     }
 
     // if user don't exist
@@ -93,20 +145,39 @@ export class AuthService {
       secret: this.config.get<string>('auth.jwt.accessTokenSecret'),
     });
 
+    this.validateIdentity(dto.role, dto.identityCode);
+
     if (payload.type !== 'GOOGLE_REGISTER') {
       throw new UnauthorizedException();
     }
 
-    const user = await this.usersService.create({
-      email: payload.email,
-      googleId: payload.googleId,
-      fullName: dto.fullName ?? payload.email,
-      avatarUrl: payload.avatar,
-      role: dto.role,
-      schoolId: dto.schoolId,
-      identityCode: dto.identityCode,
-      status: UserStatus.active,
-    });
+    let user: UserResponseDto = await this.usersService.findByEmail(
+      payload.email,
+    );
+
+    if (user) {
+      user = await this.usersService.update(user.id, {
+        email: payload.email,
+        googleId: payload.googleId,
+        fullName: dto.fullName ?? payload.email,
+        avatarUrl: payload.avatar,
+        role: dto.role,
+        schoolId: dto.schoolId,
+        identityCode: dto.identityCode,
+        status: UserStatus.active,
+      });
+    } else {
+      user = await this.usersService.create({
+        email: payload.email,
+        googleId: payload.googleId,
+        fullName: dto.fullName ?? payload.email,
+        avatarUrl: payload.avatar,
+        role: dto.role,
+        schoolId: dto.schoolId,
+        identityCode: dto.identityCode,
+        status: UserStatus.active,
+      });
+    }
 
     const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
@@ -194,5 +265,11 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  private validateIdentity(role: Role, identityCode?: string) {
+    if (role === 'student' && !identityCode) {
+      throw new BadRequestException('identityCode is required for student');
+    }
   }
 }

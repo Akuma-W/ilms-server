@@ -27,6 +27,7 @@ export class CreateUserDto {
     type: 'string',
     example: 'Password@123',
   })
+  @IsOptional()
   @IsString()
   @MinLength(8)
   @Matches(
