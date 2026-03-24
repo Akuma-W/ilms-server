@@ -68,11 +68,8 @@ export class AuthService {
     const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
     return {
-      message: 'Đăng nhập thành công',
-      data: {
-        userId: user.id,
-        ...tokens,
-      },
+      userId: user.id,
+      ...tokens,
     };
   }
 
@@ -85,7 +82,7 @@ export class AuthService {
 
     // If user existed
     if (user) {
-      // Save googleId\
+      // Save googleId
       if (!user.googleId) {
         await this.usersService.update(user.id, { googleId });
       }
@@ -102,8 +99,7 @@ export class AuthService {
         );
 
         return {
-          message: 'Đăng nhập thành công',
-          type: 'LOGIN_SUCCESS',
+          action: 'LOGIN',
           data: {
             userId: user.id,
             ...tokens,
@@ -128,8 +124,7 @@ export class AuthService {
     );
 
     return {
-      message: 'Bổ sung thông tin đăng ký',
-      type: 'REGISTER_REQUIRED',
+      action: 'REGISTER_REQUIRED',
       data: {
         email,
         fullName,
@@ -182,11 +177,8 @@ export class AuthService {
     const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
     return {
-      message: 'Đăng nhập thành công',
-      data: {
-        userId: user.id,
-        ...tokens,
-      },
+      userId: user.id,
+      ...tokens,
     };
   }
 
@@ -222,19 +214,15 @@ export class AuthService {
 
     const tokens = await this.tokenService.generateTokens(user.id, user.role);
 
-    return {
-      message: 'Token refreshed',
-      data: tokens,
-    };
+    return tokens;
   }
 
-  async logout(user: AuthUser) {
-    const { id, accessToken, exp } = user;
+  async logout(user: AuthUser, token: string) {
     // save access token to blacklist
-    await this.tokenService.addBlacklist(accessToken, exp);
+    await this.tokenService.addBlacklist(token, user.exp);
 
     // revoke refresh token
-    await this.redis.del(`refresh:${id}:${accessToken}`);
+    await this.redis.del(`refresh:${user.id}:${user.jti}`);
   }
 
   async validateUser(email: string, password: string) {

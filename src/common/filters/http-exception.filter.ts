@@ -33,6 +33,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     this.logger.error(JSON.stringify(log));
 
     res.status(status).json({
+      success: false,
       statusCode: status,
       timestamp: log.timestamp,
       path: req.originalUrl,
