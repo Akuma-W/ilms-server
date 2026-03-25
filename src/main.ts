@@ -43,8 +43,8 @@ async function bootstrap() {
 
   // Swagger
   const options = new DocumentBuilder()
-    .setTitle('Test')
-    .setDescription('Test API description')
+    .setTitle('KEIVerse - ILMS Server')
+    .setDescription('Backend API description')
     .setVersion('1.0')
     .addBearerAuth(
       {
