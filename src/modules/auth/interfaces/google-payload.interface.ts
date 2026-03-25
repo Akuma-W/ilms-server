@@ -1,5 +1,5 @@
 export interface GooglePayload {
-  type: 'GOOGLE_REGISTER';
+  type?: 'GOOGLE_REGISTER';
   email: string;
   googleId: string;
   avatar?: string;

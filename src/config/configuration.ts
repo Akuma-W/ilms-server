@@ -17,8 +17,10 @@ export default registerAs('', () => ({
     jwt: {
       accessTokenSecret: process.env.JWT_ACCESS_SECRET,
       refreshTokenSecret: process.env.JWT_REFRESH_SECRET,
+      tempTokenSecret: process.env.JWT_TEMP_SECRET,
       accessExpriesIn: process.env.JWT_ACCESS_EXPIRES_IN as StringValue,
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN as StringValue,
+      tempExpriesIn: process.env.JWT_TEMP_EXPIRES_IN as StringValue,
     },
   },
   redis: {

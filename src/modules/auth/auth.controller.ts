@@ -1,10 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
   Logger,
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -17,12 +19,23 @@ import type { AuthUser } from './interfaces/auth-user.interface';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import type { GoogleProfile } from './interfaces/google-profile.interface';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiLogin } from './swagger/login.swagger';
 import { ApiGoogleAuth } from './swagger/google-auth.swagger';
 import { ApiGoogleAuthRedirect } from './swagger/google-auth-redirect.swagger';
 import { ApiLogout } from './swagger/logout.swagger';
 import { ApiRefresh } from './swagger/refresh.swagger';
+import { OauthService } from './services/oauth.service';
+import { SessionService } from './services/session.service';
+import { RegisterDto } from './dto/register.dto';
+import { GoogleRegisterDto } from './dto/google-register.dto';
+import { ApiGoogleAuthRegister } from './swagger/google-auth-register.swagger';
+import { ApiRegister } from './swagger/register.swagger';
+
+const COOKIE_KEYS = {
+  ACCESS: 'access_token',
+  REFRESH: 'refresh_token',
+  TEMP: 'temp_token',
+};
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -30,6 +43,8 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
   constructor(
     private readonly authService: AuthService,
+    private readonly oauthService: OauthService,
+    private readonly sessionService: SessionService,
     private readonly config: ConfigService,
   ) {}
 
@@ -53,6 +68,18 @@ export class AuthController {
   }
 
   @Public()
+  @Post('register')
+  @ApiRegister()
+  async register(@Body() dto: RegisterDto) {
+    const result = await this.authService.register(dto);
+
+    return {
+      message: 'Register successful',
+      data: result,
+    };
+  }
+
+  @Public()
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiGoogleAuth()
@@ -66,15 +93,19 @@ export class AuthController {
     @CurrentUser() user: GoogleProfile,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.googleLogin(user);
-
+    const result = await this.oauthService.googleLogin(user);
     const frontEndUrl = `${this.config.get<string>('cors.origin')}`;
 
     // CASE: need register
     if (result.action === 'REGISTER_REQUIRED') {
-      return res.redirect(
-        `${frontEndUrl}/auth/google-register?token=${result.data.tempToken}`,
-      );
+      res.cookie(COOKIE_KEYS.TEMP, result.data.tempToken, {
+        httpOnly: true,
+        secure: this.config.get('NODE_ENV') === 'production',
+        sameSite: 'lax',
+        maxAge: 10 * 60 * 1000, // 10m
+      });
+
+      return res.redirect(`${frontEndUrl}/google/register`);
     }
 
     // CASE: login success
@@ -82,17 +113,34 @@ export class AuthController {
 
     this.setTokensToCookies(res, accessToken, refreshToken);
 
-    return res.redirect(`${frontEndUrl}/auth/callback`);
+    return res.redirect(`${frontEndUrl}/google/callback`);
+  }
+
+  @Public()
+  @Post('google/register')
+  @ApiGoogleAuthRegister()
+  async registerGoogle(@Req() req: Request, @Body() dto: GoogleRegisterDto) {
+    const tempToken = req.cookies[COOKIE_KEYS.TEMP] as string;
+
+    if (!tempToken) {
+      throw new UnauthorizedException('Missing temp token');
+    }
+
+    const result = await this.oauthService.registerGoogleUser(tempToken, dto);
+
+    return {
+      message: 'Register successful',
+      data: result,
+    };
   }
 
   @Public()
   @Post('refresh')
-  @UseGuards(JwtAuthGuard)
   @ApiRefresh()
   async refresh(@Req() req: Request, @Res() res: Response) {
-    const refreshToken = req.cookies['refresh_token'] as string;
+    const refreshToken = req.cookies[COOKIE_KEYS.REFRESH] as string;
 
-    const result = await this.authService.refreshToken(refreshToken);
+    const result = await this.sessionService.refreshToken(refreshToken);
     const { refreshToken: newToken, accessToken } = result;
 
     this.setTokensToCookies(res, accessToken, newToken);
@@ -104,12 +152,19 @@ export class AuthController {
   @ApiLogout()
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as AuthUser;
-    const token = req.cookies['accessToken'] as string;
+    const authHeader = req.headers.authorization;
+    const cookieOptions = this.cookieOptions();
 
-    await this.authService.logout(user, token);
+    if (!authHeader) {
+      throw new UnauthorizedException('Missing authorization header');
+    }
 
-    res.clearCookie('refresh_token');
-    res.clearCookie('access_token');
+    const token = authHeader.replace('Bearer ', '');
+
+    await this.sessionService.logout(user, token);
+
+    res.clearCookie(COOKIE_KEYS.REFRESH, cookieOptions);
+    res.clearCookie(COOKIE_KEYS.ACCESS, cookieOptions);
 
     return { message: 'Logout successful' };
   }
@@ -119,18 +174,25 @@ export class AuthController {
     accessToken: string,
     refreshToken: string,
   ) {
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+    const cookieOptions = this.cookieOptions();
+
+    res.cookie(COOKIE_KEYS.REFRESH, refreshToken, {
+      ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
     });
 
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+    res.cookie(COOKIE_KEYS.ACCESS, accessToken, {
+      ...cookieOptions,
       maxAge: 15 * 60 * 1000, // 15m
     });
+  }
+
+  private cookieOptions() {
+    return {
+      httpOnly: true,
+      secure: this.config.get('NODE_ENV') === 'production',
+      sameSite: 'lax' as const,
+      path: '/',
+    };
   }
 }
