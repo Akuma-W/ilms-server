@@ -1,0 +1,100 @@
+http:
+  middlewares:
+    traefik-dashboard:
+      plugin:
+        traefik-dashboard:
+          dashboardPath: "plugins/dashboard"
+          allowedHost: "monitor.localtest.me"
+          enableDocker: true
+          username: admin
+          password:
+
+
+    limit:
+      plugin:
+        traefik-limit:
+          enabled: true
+          filename: '/data/limit/response.json'
+          httpResponseCode: 429
+          httpContentType: 'application/json; charset=utf-8'
+          limitUrl: "/sleep"
+          limitCount: 50
+
+    lady-app:
+      plugin:
+        traefik-maintenance:
+          enabled: true
+          filename: '/data/maintenance/response-lady.json'
+          triggerFilename: '/data/maintenance/lady-app.trigger'
+          httpResponseCode: 504
+          httpContentType: 'application/json; charset=utf-8'
+          dailySchedules:
+          - start: "00:00"
+            end: "15:00"
+          - start: "15:41"
+            end: "15:00"
+          denyUri:
+          - "/mobile/"
+          - "/leader/"
+    # maintenance-ycare-admin:
+    #   plugin:
+    #     traefik-maintenance:
+    #       enabled: true
+    #       filename: '/var/maintenance/response.html'
+    #       triggerFilename: '/var/maintenance/ycare.trigger'
+    #       httpResponseCode: 503
+    #       httpContentType: 'text/html; charset=utf-8'
+    #       ipAllowList:
+    #       - 0.0.0.0/0
+
+    # maintenance-ycare-api:
+    #   plugin:
+    #     traefik-maintenance:
+    #       enabled: true
+    #       filename: '/var/maintenance/response.json'
+    #       triggerFilename: '/var/maintenance/ycare.trigger'
+    #       httpResponseCode: 503
+    #       httpContentType: 'application/json; charset=utf-8'
+    #       ipAllowList:
+    #       # - 127.0.0.1/32
+    #       - 0.0.0.0/0
+    #       denyUri:
+    #       - "/v1/mobile/"
+
+    # maintenance-lady-api:
+    #   plugin:
+    #     traefik-maintenance:
+    #       enabled: true
+    #       filename: '/var/maintenance/response.json'
+    #       triggerFilename: '/var/maintenance/lady.trigger'
+    #       httpResponseCode: 503
+    #       httpContentType: 'application/json; charset=utf-8'
+
+    # waf:
+    #   plugin:
+    #     traefik-waf:
+    #       blacklist:
+    #         ipRange:
+    #         - 172.31.1.2/24
+    #         responseCode: 403
+
+    # jwt:
+    #   plugin:
+    #     traefik-jwt:
+    #       jwt:
+    #         secret: "my-secret-key-2"
+    #         algorithm: "RS256"
+    #         publicKey: "/data/key/public.pem"
+    #         responseCode: "402"
+    #         errorCode: "E401"
+    #         errorMessage: "Token không hợp lệ. Vui lòng cung cấp token xác thực hợp lệ."
+    #         debug: true
+    #       logging:
+    #         level: "DEBUG"
+    #         regexUrl: "https://dev-api-gateway.salefie.net/admin/master/api-path"
+    #         filterDomain: "https://dev-api-gateway.salefie.net"
+    #         loki:
+    #           url: "http://loki:3100/loki/api/v1/push"
+    #           tenant: "req-prod"
+    #           jobName: "log-request"
+    #           logPrefix: "log_request"

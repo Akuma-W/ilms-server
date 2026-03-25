@@ -1,6 +1,6 @@
 services:
-  testserver:
-    image: testserver
+  ilms-server:
+    image: ilmsserver
     build:
       context: .
       dockerfile: ./Dockerfile

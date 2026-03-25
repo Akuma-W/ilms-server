@@ -8,12 +8,12 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { hashPassword } from 'src/common/utils/hash.util';
-import { User } from './entities/user.entity';
 import { validateAvatar } from 'src/common/utils/file-validation.util';
 import { StorageService } from 'src/infrastructures/storage/storage.service';
 import { StorageFolder } from 'src/common/constants/storage-folders.constant';
 import { LoggerService } from 'src/logger/logger.service';
 import { CreateGoogleUserDto } from './dto/create-google-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -23,9 +23,7 @@ export class UsersService {
     private logger: LoggerService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    this.logger.log(`POST: /user - Creating user`);
-
+  async createUserWithPassword(createUserDto: CreateUserDto) {
     // Check if user with the same email already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
@@ -48,35 +46,57 @@ export class UsersService {
         ...createUserDto,
         password: hashedPassword,
       },
+      select: this.userSelect,
     });
 
-    return new User(user);
+    return this.getUser(user);
+  }
+
+  // Create user (no hash password)
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.prisma.user.create({
+      data: createUserDto,
+      select: this.userSelect,
+    });
+
+    return this.getUser(user);
   }
 
   async createGoogleUser(dto: CreateGoogleUserDto) {
-    return this.prisma.user.create({ data: dto });
+    return this.prisma.user.create({
+      data: dto,
+      select: this.userSelect,
+    });
   }
 
   async findAll() {
-    const users = await this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany({
+      select: this.userSelect,
+    });
 
-    return users.map((user) => new User(user));
+    return Promise.all(users.map(async (user) => this.getUser(user)));
   }
 
   async findOne(id: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id },
+      select: this.userSelect,
     });
 
-    return new User(user);
+    return this.getUser(user);
   }
 
   async findByEmail(email: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { email },
+      select: {
+        ...this.userSelect,
+        password: true,
+        googleId: true,
+      },
     });
 
-    return new User(user);
+    return user;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -89,9 +109,10 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: updateUserDto,
+      select: this.userSelect,
     });
 
-    return new User(updatedUser);
+    return this.getUser(updatedUser);
   }
 
   async remove(id: string) {
@@ -103,6 +124,7 @@ export class UsersService {
 
     return this.prisma.user.delete({
       where: { id },
+      select: this.userSelect,
     });
   }
 
@@ -117,6 +139,7 @@ export class UsersService {
 
     // Check if avatar existed
     const avatarPath = await this.storage.upload(file, StorageFolder.AVATARS);
+
     if (user.avatarUrl) {
       try {
         await this.storage.delete(user.avatarUrl);
@@ -133,11 +156,39 @@ export class UsersService {
       data: { avatarUrl: avatarPath },
     });
 
+    const avatarUrl = await this.storage.getUrl(avatarPath);
+
     return {
       message: 'Cập nhật avatar thành công',
       data: {
-        avatarUrl: this.storage.getUrl(avatarPath),
+        avatarUrl,
       },
+    };
+  }
+
+  /** HELPER: user select */
+  private userSelect = {
+    id: true,
+    email: true,
+    identityCode: true,
+    fullName: true,
+    role: true,
+    avatarUrl: true,
+    schoolId: true,
+    status: true,
+    createdAt: true,
+    school: true,
+  };
+
+  /** HELPER: get user */
+  private async getUser(user: UserResponseDto) {
+    const avatar = user.avatarUrl
+      ? await this.storage.getUrl(user.avatarUrl)
+      : null;
+
+    return {
+      ...user,
+      avatar,
     };
   }
 }

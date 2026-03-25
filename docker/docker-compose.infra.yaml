@@ -1,29 +1,29 @@
-name: test-infra
+name: ilms-infra
 
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: test-postgres
+    container_name: ilms-postgres
     restart: unless-stopped
     env_file:
-      - ../.env.production.local
+      - ../.env
     environment:
       POSTGRES_USER: runsystem
       POSTGRES_PASSWORD: 1234@Dcba
-      POSTGRES_DB: test_db
+      POSTGRES_DB: ilms_db
     volumes:
       - pgdata:/var/lib/postgresql
     ports:
       - "5432:5432"
     networks:
-      - test-network
+      - ilms-network
   
   redis:
     image: redis:8.6
-    container_name: test-redis
+    container_name: ilms-redis
     restart: unless-stopped
     env_file:
-      - ../.env.production.local
+      - ../.env
     command: >
       redis-server
       --requirepass 1234@Dcba
@@ -32,7 +32,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - test-network
+      - ilms-network
 
   minio:
     image: minio/minio
@@ -55,13 +55,13 @@ services:
       timeout: 20s
       retries: 5
     networks:
-      - test-network
+      - ilms-network
     
 volumes:
   pgdata:
   redis_data:
 
 networks:
-  test-network:
+  ilms-network:
     driver: bridge
     external: true

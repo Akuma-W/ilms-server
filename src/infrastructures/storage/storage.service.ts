@@ -32,7 +32,7 @@ export class StorageService {
     return this.provider.delete(filePath);
   }
 
-  getUrl(filePath: string) {
+  async getUrl(filePath: string) {
     return this.provider.getFileUrl(filePath);
   }
 }

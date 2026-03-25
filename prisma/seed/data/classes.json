@@ -1,17 +1,20 @@
 [
   {
     "title": "Nhập môn Lập trình",
+    "subject": "IT001 - Nhập môn lập trình",
     "description": "Giới thiệu các khái niệm cơ bản của lập trình",
     "semester": "HK 1 2025",
     "courseCode": "IIT001"
   },
   {
     "title": "Cấu trúc dữ liệu và giải thuật",
+    "subject": "IT003 - Cấu trúc dữ liệu và giải thuật",
     "description": "Học về các cấu trúc dữ liệu cơ bản và thuật toán",
     "semester": "HK 1 2025"
   },
   {
     "title": "Lập trình Web nâng cao",
+    "subject": "SE347 - Công nghệ Web và ứng dụng",
     "description": "Xây dựng ứng dụng web fullstack",
     "semester": "HK hè 2026",
     "isPrivate": true

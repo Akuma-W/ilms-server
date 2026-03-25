@@ -1,0 +1,970 @@
+{
+  "uuid": "01a712fb-1d1f-4aeb-a143-2fc48bf94386",
+  "lastMigration": 33,
+  "name": "Flexcube",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3001,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "074daa63-f674-450d-8ff0-92dcc8c906f3",
+      "type": "http",
+      "documentation": "Customer",
+      "method": "get",
+      "endpoint": "ords/FCUBS_REST/Customer/QueryCustomer/IDVal/:id/PhoneNo/GATEWAY",
+      "responses": [
+        {
+          "uuid": "a2e7b6d3-1309-4b32-a271-3a51c6407367",
+          "body": "{\n  \"result\": \"true\",\n  \"code\": \"0\",\n  \"message\": \"success\",\n  \"data\": [\n    {\n      \"customer_no\": \"210099645\",\n      \"branch_code\": \"100\",\n      \"full_name\": \"LE DUC THI THU HANG\",\n      \"DOB\": \"12101968\",\n      \"d_add1\": null,\n      \"d_add2\": null,\n      \"d_add3\": null,\n      \"d_city\": null,\n      \"d_city_name\": null,\n      \"p_add1\": null,\n      \"p_add2\": null,\n      \"p_add3\": null,\n      \"p_city\": null,\n      \"p_city_name\": null,\n      \"c_add1\": \"03 TO 7 HA RA VINH PHUOC TP NHA TRANG\",\n      \"c_add2\": null,\n      \"c_add3\": null,\n      \"c_city\": \"56\",\n      \"c_city_name\": \"KHANH HOA\",\n      \"id_name\": \"IN-ID CARD\",\n      \"id_value\": \"CIDNO: 210099645\",\n      \"MobileNo\": \"7842660098\",\n      \"Customer_category\": \"INDIVIDUAL\",\n      \"no_of_loan\": 1,\n      \"app_status\": [\n        {\n          \"status\": \"A\",\n          \"count\": 1\n        },\n        {\n          \"status\": \"C\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"I\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"P\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"R\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"Y\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"X\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"D\",\n          \"count\": 0\n        },\n        {\n          \"status\": \"T\",\n          \"count\": 0\n        }\n      ],\n      \"user_defined_status\": [\n        {\n          \"status\": \"DOUB\",\n          \"count\": 1\n        }\n      ],\n      \"loans\": [\n        {\n          \"account_number\": \"60100000012368000\",\n          \"branch_code\": \"100\",\n          \"application_no\": \"2100996450001U92\",\n          \"tenor\": 36,\n          \"interest_rate\": 50.1266,\n          \"installment\": 2953464,\n          \"last_installment\": 2142294,\n          \"total_last_installment_lmf\": 2142294,\n          \"total_installment_lmf\": 2953464,\n          \"maturity_date\": \"2023-01-03T00:00:00\",\n          \"value_date\": \"2020-01-07T00:00:00\",\n          \"currency\": \"VND\",\n          \"user_defined_status\": \"DOUB\",\n          \"loan_status\": \"A\",\n          \"internal_status\": \"E03\",\n          \"prin_outstanding\": 7316411,\n          \"interest_outstanding\": 732811,\n          \"late_charge_outstanding\": 1382696,\n          \"lmf_outstanding\": 0,\n          \"other_outstanding\": 0,\n          \"interest_accr_outstanding\": 2411486,\n          \"total_outstanding\": 11843404,\n          \"advance_amount_outstanding\": 0,\n          \"total_late_payments_days\": 212,\n          \"total_late_payments_tenor\": 3,\n          \"no_of_term\": 36,\n          \"no_of_paid_period\": 33,\n          \"payment_date\": 31,\n          \"amount_settle\": null\n        }\n      ]\n    }\n  ],\n  \"pagination\": {\n    \"hasMore\": \"false\",\n    \"limit\": \"0\",\n    \"offset\": \"0\",\n    \"count\": 1\n  }\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 1",
+          "headers": [
+            {
+              "key": "x-proxy-metadata",
+              "value": "{\"actual_status\":202,\"payment_amount\":100000}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "210099645",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e16d6d41-8461-412e-8c0a-089360de085a",
+          "body": "{\r\n    \"result\": \"true\",\r\n    \"code\": \"0\",\r\n    \"message\": \"success\",\r\n    \"data\": null,\r\n    \"pagination\": {\r\n        \"hasMore\": \"false\",\r\n        \"limit\": \"0\",\r\n        \"offset\": \"0\",\r\n        \"count\": 1\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 2",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "210099112",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "0f6eb45e-821c-4e7c-af13-82ea5d811263",
+          "body": "{\r\n    \"result\": \"true\",\r\n    \"code\": \"0\",\r\n    \"message\": \"success\",\r\n    \"data\": [\r\n        {\r\n            \"customer_no\": \"130064400\",\r\n            \"branch_code\": \"100\",\r\n            \"full_name\": \"DAO THI HIEN\",\r\n            \"DOB\": \"01011986\",\r\n            \"d_add1\": null,\r\n            \"d_add2\": null,\r\n            \"d_add3\": null,\r\n            \"d_city\": null,\r\n            \"d_city_name\": null,\r\n            \"p_add1\": null,\r\n            \"p_add2\": null,\r\n            \"p_add3\": null,\r\n            \"p_city\": null,\r\n            \"p_city_name\": null,\r\n            \"c_add1\": \"1056 TINH LO 43, P BINH CHIEU, Q THU DUC\",\r\n            \"c_add2\": null,\r\n            \"c_add3\": null,\r\n            \"c_city\": \"79\",\r\n            \"c_city_name\": \"HO CHI MINH\",\r\n            \"id_name\": \"IN-ID CARD\",\r\n            \"id_value\": \"CIDNO: 130064400\",\r\n            \"MobileNo\": \"3448783777\",\r\n            \"Customer_category\": \"INDIVIDUAL\",\r\n            \"no_of_loan\": 2,\r\n            \"app_status\": [\r\n                {\r\n                    \"status\": \"A\",\r\n                    \"count\": 2\r\n                },\r\n                {\r\n                    \"status\": \"P\",\r\n                    \"count\": 2\r\n                },\r\n                {\r\n                    \"status\": \"C\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"I\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"R\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"Y\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"X\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"D\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"T\",\r\n                    \"count\": 0\r\n                }\r\n            ],\r\n            \"user_defined_status\": [\r\n                {\r\n                    \"status\": \"WATC\",\r\n                    \"count\": 1\r\n                }\r\n            ],\r\n            \"loans\": [\r\n                {\r\n                    \"account_number\": \"10010003343289000\",\r\n                    \"branch_code\": \"100\",\r\n                    \"application_no\": \"130064400002\",\r\n                    \"tenor\": 9,\r\n                    \"interest_rate\": 0,\r\n                    \"installment\": 2222222,\r\n                    \"last_installment\": 2222224,\r\n                    \"total_last_installment_lmf\": 2234224,\r\n                    \"total_installment_lmf\": 2234222,\r\n                    \"maturity_date\": \"2024-02-22T00:00:00\",\r\n                    \"value_date\": \"2023-05-21T00:00:00\",\r\n                    \"currency\": \"VND\",\r\n                    \"user_defined_status\": \"WATC\",\r\n                    \"loan_status\": \"A\",\r\n                    \"internal_status\": \"C02\",\r\n                    \"prin_outstanding\": 20000000,\r\n                    \"interest_outstanding\": null,\r\n                    \"late_charge_outstanding\": 0,\r\n                    \"lmf_outstanding\": 36000,\r\n                    \"other_outstanding\": 0,\r\n                    \"interest_accr_outstanding\": 0,\r\n                    \"total_outstanding\": null,\r\n                    \"advance_amount_outstanding\": 0,\r\n                    \"total_late_payments_days\": 0,\r\n                    \"total_late_payments_tenor\": 0,\r\n                    \"no_of_term\": 9,\r\n                    \"no_of_paid_period\": 0,\r\n                    \"payment_date\": 22,\r\n                    \"amount_settle\": 20048000\r\n                },\r\n                {\r\n                    \"account_number\": \"20330000006899000\",\r\n                    \"branch_code\": \"100\",\r\n                    \"application_no\": \"1300644000001U84\",\r\n                    \"tenor\": 6,\r\n                    \"interest_rate\": 50.1266,\r\n                    \"installment\": 2398298,\r\n                    \"last_installment\": 2398301,\r\n                    \"total_last_installment_lmf\": null,\r\n                    \"total_installment_lmf\": null,\r\n                    \"maturity_date\": \"2020-04-13T00:00:00\",\r\n                    \"value_date\": \"2019-10-17T00:00:00\",\r\n                    \"currency\": \"VND\",\r\n                    \"user_defined_status\": \"NORM\",\r\n                    \"loan_status\": null,\r\n                    \"internal_status\": null,\r\n                    \"prin_outstanding\": 0,\r\n                    \"interest_outstanding\": 0,\r\n                    \"late_charge_outstanding\": 0,\r\n                    \"lmf_outstanding\": null,\r\n                    \"other_outstanding\": null,\r\n                    \"interest_accr_outstanding\": 0,\r\n                    \"total_outstanding\": null,\r\n                    \"advance_amount_outstanding\": 0,\r\n                    \"total_late_payments_days\": null,\r\n                    \"total_late_payments_tenor\": 0,\r\n                    \"no_of_term\": 6,\r\n                    \"no_of_paid_period\": 6,\r\n                    \"payment_date\": null,\r\n                    \"amount_settle\": 0\r\n                }\r\n            ]\r\n        }\r\n    ],\r\n    \"pagination\": {\r\n        \"hasMore\": \"false\",\r\n        \"limit\": \"0\",\r\n        \"offset\": \"0\",\r\n        \"count\": 1\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 3",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "130064400",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "71779426-6085-4f5c-838d-4548e9ecad20",
+          "body": "{\r\n    \"result\": \"true\",\r\n    \"code\": \"0\",\r\n    \"message\": \"success\",\r\n    \"data\": [\r\n        {\r\n            \"customer_no\": \"110009297\",\r\n            \"branch_code\": \"100\",\r\n            \"full_name\": \"BUI QUANG TINH\",\r\n            \"DOB\": \"14021978\",\r\n            \"d_add1\": null,\r\n            \"d_add2\": null,\r\n            \"d_add3\": null,\r\n            \"d_city\": null,\r\n            \"d_city_name\": null,\r\n            \"p_add1\": null,\r\n            \"p_add2\": null,\r\n            \"p_add3\": null,\r\n            \"p_city\": null,\r\n            \"p_city_name\": null,\r\n            \"c_add1\": \"KP4 MY BINH TP PHAN RANG THAP CHAM\",\r\n            \"c_add2\": null,\r\n            \"c_add3\": null,\r\n            \"c_city\": \"58\",\r\n            \"c_city_name\": \"NINH THUAN\",\r\n            \"id_name\": \"IN-ID CARD\",\r\n            \"id_value\": \"CIDNO: 110009297\",\r\n            \"MobileNo\": \"5363267768\",\r\n            \"Customer_category\": \"INDIVIDUAL\",\r\n            \"no_of_loan\": 0,\r\n            \"app_status\": [\r\n                {\r\n                    \"status\": \"R\",\r\n                    \"count\": 1\r\n                },\r\n                {\r\n                    \"status\": \"C\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"I\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"A\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"P\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"Y\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"X\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"D\",\r\n                    \"count\": 0\r\n                },\r\n                {\r\n                    \"status\": \"T\",\r\n                    \"count\": 0\r\n                }\r\n            ],\r\n            \"user_defined_status\": null,\r\n            \"loans\": null\r\n        }\r\n    ],\r\n    \"pagination\": {\r\n        \"hasMore\": \"false\",\r\n        \"limit\": \"0\",\r\n        \"offset\": \"0\",\r\n        \"count\": 1\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 4",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "110009297",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "49fce847-b8dd-493f-b1b9-4b5d8d2e9aa6",
+          "body": "{\r\n    \"result\": \"true\",\r\n    \"code\": \"0\",\r\n    \"message\": \"success\",\r\n    \"data\": null,\r\n    \"pagination\": {\r\n        \"hasMore\": \"false\",\r\n        \"limit\": \"0\",\r\n        \"offset\": \"0\",\r\n        \"count\": 1\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "7068c3bc-6e97-4ce4-a27b-618f899aff8a",
+      "type": "http",
+      "documentation": "QueryAccount",
+      "method": "post",
+      "endpoint": "ords/api/momo/1306cus-ref",
+      "responses": [
+        {
+          "uuid": "6282be26-788e-4450-8412-406e7957541e",
+          "body": "{\r\n    \"01\": {\r\n        \"Maker\": \"Maker does not exist.\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 1",
+          "headers": [
+            {
+              "key": "x-proxy-metadata",
+              "value": "{\"actual_status\":202,\"payment_amount\":100000}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "JIVF0057111",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "account_number",
+              "value": "901250000598806000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a6c8a0f5-110a-47cb-ad68-5c4ecd078922",
+          "body": "{\r\n    \"01\": {\r\n        \"Account_Number\": \"No related data found.\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 2",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "account_number",
+              "value": "9012500005988060001",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "771dabea-dde5-47ab-bf02-47600818d83a",
+          "body": "{\r\n    \"01\": {\r\n        \"Account_Number\": \"No related data found.\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 3",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "account_number",
+              "value": "",
+              "invert": false,
+              "operator": "null"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "4975e2f1-1f06-42cc-b135-344f27d8e3d4",
+          "body": "{\r\n    \"00\": {\r\n        \"result\": [\r\n            {\r\n                \"dt_tx\": \"2023-08-31\",\r\n                \"customer_name\": \"BUI TUAN HOANG\",\r\n                \"id_card\": \"110000271\",\r\n                \"mobile_number\": \"3128257399\",\r\n                \"account_number\": \"810640004814326000\",\r\n                \"due_date\": \"2023-10-02\",\r\n                \"pymt_amount\": 3101307,\r\n                \"loan_status\": \"N\"\r\n            }\r\n        ]\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 4",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "account_number",
+              "value": "810640004814326000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "6a289dc8-9586-499f-bf0e-b2690f48f9e7",
+          "body": "{\r\n    \"00\": {\r\n        \"result\": [\r\n            {\r\n                \"dt_tx\": \"2023-08-31\",\r\n                \"customer_name\": \"LE DUC THI THU HANG\",\r\n                \"id_card\": \"210099645\",\r\n                \"mobile_number\": \"7842660098\",\r\n                \"account_number\": \"60100000012368000\",\r\n                \"due_date\": \"2022-10-31\",\r\n                \"pymt_amount\": 11843404,\r\n                \"loan_status\": \"A\"\r\n            }\r\n        ]\r\n    }\r\n}\r\n",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 5",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "account_number",
+              "value": "60100000012368000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "445244ca-6e77-4c6f-bd96-926e9ae29015",
+          "body": "{\r\n    \"01\": {\r\n        \"Account_Number\": \"No related data found.\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "5e26ff97-b8b4-47d7-a811-722e0ceb8438",
+          "body": "{}",
+          "latency": 0,
+          "statusCode": 409,
+          "label": "",
+          "headers": [
+            {
+              "key": "x-proxy-metadata",
+              "value": "{\"request_id\":\"kajhfkjasbfkjashbfkasdhjf\"}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "AAAA",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "c811b565-7528-48ed-8449-9bf5d406ad41",
+      "type": "http",
+      "documentation": "Payment",
+      "method": "post",
+      "endpoint": "ords/api/payment/bulk-upload",
+      "responses": [
+        {
+          "uuid": "346a63cb-3192-472b-9710-e3b2a347861d",
+          "body": "{\r\n    \"01\": {\r\n        \"Maker\": \"Maker does not exist.\"\r\n    }\r\n}\r\n",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 1",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "131002",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "10050003341107000",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "0",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "100000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "9636be2f-9b36-4b3a-a6ba-46a81f10163e",
+          "body": "{\r\n    \"01\": {\r\n        \"GL_Code\": \"GL Code does not exist.\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 2",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "1310022",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "10050003341107000",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "0",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "100000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "ccf35b0c-b65b-4351-8d40-f2df5727310e",
+          "body": "{\r\n    \"01\": {\r\n        \"100500033411070004\": {\r\n            \"Account_Number\": \"Account number does not exist or has not been authorized\"\r\n        }\r\n    }\r\n}\r\n",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 3",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "131002",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "100500033411070004",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "0",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "100000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f31acbce-0e58-4cc1-b7f2-10450bfc27ef",
+          "body": "{\r\n    \"01\": {\r\n        \"AUTH\": {\r\n            \"CL-PMTV37\": \"Sum of Amount Settled should be Equal to Sum of Amount Paid Across Components\",\r\n            \"CL-JIVF-01\": \"Failed in Payment processing failed for :10050003341107000\",\r\n            \"ST-SAVE-022\": \"Failed to Authorize the Record\"\r\n        }\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 4",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "131002",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "10050003341107000",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "CIDNO: 130064734",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "-2",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "d0ff187b-aa55-487d-9a9f-50af375a6a03",
+          "body": "{\r\n    \"01\": {\r\n        \"10050003341107000\": {\r\n            \"Amount\": \"Payment amount must be an integer\"\r\n        }\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 5",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "131002",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "10050003341107000",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "CIDNO: 130064734",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "2.5",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b1968b17-ddc3-4520-8743-96d042b3a4ab",
+          "body": "{\r\n    \"01\": {\r\n        \"10050003341107000\": {\r\n            \"ID_Card\": \"Invalid Id_Card.\"\r\n        }\r\n    }\r\n}\r\n",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 6",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "131002",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "10050003341107000",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "CIDNO: 1300647345",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "10000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "7c8275ca-220f-4a74-9dc3-281001c9080a",
+          "body": "{\r\n    \"00\": {\r\n        \"Bulk_Ref_No\": \"100BULK232430003\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Case 7",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "maker",
+              "value": "MOMO",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "gl_code",
+              "value": "131002",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details",
+              "value": "",
+              "invert": true,
+              "operator": "empty_array"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.account_number",
+              "value": "10050003341172000",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.id_card",
+              "value": "CIDNO: 130064858",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "details.0.amount",
+              "value": "10000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": false,
+          "fallbackTo404": true,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "f7298c65-85ef-453d-ba05-50d060feffef",
+          "body": "{\r\n    \"01\": {\r\n        \"Maker\": \"Maker does not exist.\"\r\n    }\r\n}\r\n",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Default",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a2b6b9c8-fd45-4283-a125-77260bdead7c",
+      "type": "http",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "contract/:id/payment",
+      "responses": [
+        {
+          "uuid": "c6005899-0b07-40b6-855c-4420b2a2af91",
+          "body": "{\r\n    \"01\": {\r\n        \"Maker\": \"Maker does not exist.\"\r\n    }\r\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [
+            {
+              "key": "X-Proxy-Metadata",
+              "value": "{\"data\":\"value\"}"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "id",
+              "value": "",
+              "invert": true,
+              "operator": "null"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "074daa63-f674-450d-8ff0-92dcc8c906f3"
+    },
+    {
+      "type": "route",
+      "uuid": "7068c3bc-6e97-4ce4-a27b-618f899aff8a"
+    },
+    {
+      "type": "route",
+      "uuid": "c811b565-7528-48ed-8449-9bf5d406ad41"
+    },
+    {
+      "type": "route",
+      "uuid": "a2b6b9c8-fd45-4283-a125-77260bdead7c"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "callbacks": []
+}
