@@ -1,0 +1,45 @@
+services:
+  traefik:
+    image: traefik:v3.6.7
+    container_name: traefik
+    command:
+      - '--configFile=/etc/traefik/traefik.yml'
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 9000
+        published: 9000
+        protocol: tcp
+        mode: host
+    volumes:
+      - '/run/user/1001/docker.sock:/var/run/docker.sock:ro'
+      - './traefik/traefik.yml:/etc/traefik/traefik.yml'
+      - './traefik/conf.d:/etc/traefik/conf.d'
+      - './traefik/data:/data'
+    networks:
+      - ilms-network
+
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.whoami.rule=Host(`ilms.gzrcloud.com`)'
+      - 'traefik.http.routers.whoami.entryPoints=web'
+      - 'traefik.http.routers.whoami.middlewares=lady-app@file'
+      - 'traefik.http.routers.whoami.middlewares=limit@file'
+    ports:
+      - '4080:80'
+    networks:
+      - ilms-network
+
+networks:
+  ilms-network:
+    driver: bridge
+    external: true

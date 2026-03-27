@@ -14,8 +14,8 @@ services:
       - 'traefik.http.services.ilms.loadbalancer.server.port=5000'
       - 'traefik.http.routers.ilms.rule=Host(`ilms.gzrcloud.com`)'
       - 'traefik.http.routers.ilms.entryPoints=web,websecure'
-    ports:
-      - 5000:5000
+    # ports:
+    #   - 5000:5000
     networks:
       - ilms-network
 
