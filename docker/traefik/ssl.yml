@@ -1,4 +1,0 @@
-tls:
-  certificates:
-  - certFile: /data/salefie.net.crt
-    keyFile: /data/salefie.net.key
