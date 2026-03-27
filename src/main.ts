@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
 import {
+  BadRequestException,
   ClassSerializerInterceptor,
   ValidationPipe,
   VersioningType,
@@ -36,6 +37,10 @@ async function bootstrap() {
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
+      },
+      exceptionFactory(errors) {
+        console.error(errors);
+        return new BadRequestException(errors);
       },
     }),
   );
