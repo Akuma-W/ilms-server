@@ -14,6 +14,8 @@ services:
       - 'traefik.http.services.ilms.loadbalancer.server.port=3000'
       - 'traefik.http.routers.ilms.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/api/v1`)'
       - 'traefik.http.routers.ilms.entryPoints=web,websecure'
+      - 'traefik.http.routers.ilms.tls=true'
+      - 'traefik.http.routers.ilms.tls.certresolver=letsencrypt'
     ports:
       - 5000:5000
     networks:

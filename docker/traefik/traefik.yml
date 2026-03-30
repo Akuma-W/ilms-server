@@ -53,7 +53,7 @@ certificatesResolvers:
       storage: /data/acme.json
       httpChallenge:
         entryPoint: web
-      tlsChallenge: {}
+      # tlsChallenge: {}
 
 accessLog:
   filePath: /data/access.log
