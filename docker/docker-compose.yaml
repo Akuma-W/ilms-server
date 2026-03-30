@@ -11,8 +11,8 @@ services:
       - ../.env
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.services.ilms.loadbalancer.server.port=5000'
-      - 'traefik.http.routers.ilms.rule=Host(`ilms.gzrcloud.com`)'
+      - 'traefik.http.services.ilms.loadbalancer.server.port=3000'
+      - 'traefik.http.routers.ilms.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/api/v1`)'
       - 'traefik.http.routers.ilms.entryPoints=web,websecure'
     ports:
       - 5000:5000
