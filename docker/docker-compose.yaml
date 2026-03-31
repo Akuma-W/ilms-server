@@ -13,15 +13,10 @@ services:
       - 'traefik.enable=true'
       - 'traefik.http.services.ilms.loadbalancer.server.port=3000'
       - 'traefik.http.routers.ilms.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/api/v1`)'
-      - 'traefik.http.routers.ilms.entryPoints=websecure'
+      - 'traefik.http.routers.ilms.entryPoints=web,websecure'
       - 'traefik.http.routers.ilms.priority=100'
       - 'traefik.http.routers.ilms.tls=true'
       - 'traefik.http.routers.ilms.tls.certresolver=letsencrypt'
-
-      - 'traefik.http.routers.ilms-http.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/api/v1`)'
-      - 'traefik.http.routers.ilms-http.entrypoints=web'
-      - 'traefik.http.routers.ilms-http.middlewares=https-redirect'
-      - 'traefik.http.middlewares.https-redirect.redirectscheme.scheme=https'
     ports:
       - 5000:5000
     networks:
