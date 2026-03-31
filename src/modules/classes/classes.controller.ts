@@ -41,8 +41,13 @@ export class ClassesController {
 
   @Get()
   @ApiGetClasses()
-  findAll(@CurrentUser('id') id: string, @Query() query: QueryClassDto) {
-    return this.classesService.findAll(id, query);
+  async findAll(@CurrentUser('id') id: string, @Query() query: QueryClassDto) {
+    const result = await this.classesService.findAll(id, query);
+
+    return {
+      message: 'Get classes successful',
+      data: result,
+    };
   }
 
   @Get(':id')

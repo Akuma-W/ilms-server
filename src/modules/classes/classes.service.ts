@@ -69,7 +69,7 @@ export class ClassesService {
   async findAll(userId: string, queryClassDto: QueryClassDto) {
     const user = await this.usersService.findOne(userId);
 
-    const { keyword, page, limit } = queryClassDto;
+    const { search, page, limit } = queryClassDto;
 
     const skip = (page - 1) * limit;
     const take = limit;
@@ -78,15 +78,16 @@ export class ClassesService {
 
     if (user.role !== Role.admin) {
       where.isPrivate = false;
+      where.schoolId = user.schoolId;
     }
 
     // Find by keyword
-    if (keyword) {
+    if (search) {
       where.OR = [
-        { title: { contains: keyword, mode: 'insensitive' } },
-        { subject: { contains: keyword, mode: 'insensitive' } },
-        { semester: { contains: keyword, mode: 'insensitive' } },
-        { teacher: { fullName: { contains: keyword, mode: 'insensitive' } } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+        { semester: { contains: search, mode: 'insensitive' } },
+        { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -146,7 +147,7 @@ export class ClassesService {
 
   // Find Current user's Classes | Class I teaching
   async findMyTeachingClasses(userId: string, query: QueryClassDto) {
-    const { keyword, page, limit } = query;
+    const { search: keyword, page, limit } = query;
 
     const skip = (page - 1) * limit;
     const take = limit;
