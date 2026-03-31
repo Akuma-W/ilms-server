@@ -117,6 +117,16 @@ export class AuthController {
   }
 
   @Public()
+  @Get('google/me')
+  async getGoogleTempUser(@Req() req: Request) {
+    const tempToken = req.cookies[COOKIE_KEYS.TEMP] as string;
+
+    const data = await this.oauthService.getGoogleUser(tempToken);
+
+    return { message: 'Get google temp user', data };
+  }
+
+  @Public()
   @Post('google/register')
   @ApiGoogleAuthRegister()
   async registerGoogle(@Req() req: Request, @Body() dto: GoogleRegisterDto) {

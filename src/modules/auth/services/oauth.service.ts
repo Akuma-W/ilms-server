@@ -65,13 +65,27 @@ export class OauthService {
     };
   }
 
+  async getGoogleUser(token: string) {
+    const payload = await this.tokenService.verifyTempToken(token);
+
+    if (!payload) {
+      throw new BadRequestException('Token is invalid or expired');
+    }
+
+    return {
+      email: payload.email,
+      fullName: payload.fullName,
+      avatar: payload.avatar,
+    };
+  }
+
   // Register from Google
   async registerGoogleUser(token: string, dto: GoogleRegisterDto) {
     const payload = await this.tokenService.verifyTempToken(token);
 
     this.authService.validateIdentity(dto.role, dto.identityCode);
 
-    let user: UserResponseDto = await this.usersService.findByEmail(
+    let user: UserResponseDto | null = await this.usersService.findByEmail(
       payload.email,
     );
 

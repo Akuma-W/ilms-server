@@ -11,7 +11,7 @@ export class QueryClassDto {
   })
   @IsOptional()
   @IsString()
-  keyword?: string;
+  search?: string;
 
   @ApiPropertyOptional({ example: 1, default: 1 })
   @IsOptional()

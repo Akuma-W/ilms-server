@@ -55,10 +55,13 @@ export class MinioStorageProvider implements StorageProvider {
   }
 
   async getFileUrl(filePath: string, expries?: number): Promise<string> {
-    return this.client.presignedGetObject(
+    const url = await this.client.presignedUrl(
+      'GET',
       this.bucket,
       filePath,
       expries ?? 60 * 60, // default: 1h
     );
+
+    return url;
   }
 }
