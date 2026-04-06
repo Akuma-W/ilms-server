@@ -13,7 +13,7 @@ export class MinioStorageProvider implements StorageProvider {
     this.client = new Client({
       endPoint: this.config.get<string>('minio.endPoint') || 'localhost',
       port: this.config.get<number>('minio.port'),
-      useSSL: false,
+      useSSL: this.config.get<boolean>('minio.useSSL'),
       accessKey: this.config.get<string>('minio.accessKey'),
       secretKey: this.config.get<string>('minio.secretKey'),
     });
@@ -55,13 +55,19 @@ export class MinioStorageProvider implements StorageProvider {
   }
 
   async getFileUrl(filePath: string, expries?: number): Promise<string> {
-    const url = await this.client.presignedUrl(
+    const presignedUrl = await this.client.presignedUrl(
       'GET',
       this.bucket,
       filePath,
       expries ?? 60 * 60, // default: 1h
     );
 
-    return url;
+    const useSSL = this.config.get<boolean>('minio.useSSL');
+    const protocol = useSSL ? 'https' : 'http';
+
+    const url = new URL(presignedUrl);
+    url.protocol = protocol + ':';
+
+    return url.toString();
   }
 }

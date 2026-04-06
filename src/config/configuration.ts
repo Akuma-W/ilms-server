@@ -34,12 +34,13 @@ export default registerAs('', () => ({
     transport: process.env.LOG_TRANSPORT,
   },
   minio: {
-    endPoint: process.env.MINIO_ENDPOINT,
+    endPoint: process.env.MINIO_INTERNAL_ENDPOINT,
     port: Number(process.env.MINIO_PORT) || 9000,
     accessKey: process.env.MINIO_USERNAME,
     secretKey: process.env.MINIO_PASSWORD,
     bucket: process.env.MINIO_BUCKET,
-    publicUrl: process.env.MINIO_PUBLIC_URL,
+    publicEndPoint: process.env.MINIO_PUBLIC_ENDPOINT,
+    useSSL: process.env.MINIO_USE_SSL === 'true',
   },
   storage: {
     driver: process.env.STORAGE_DRIVER,

@@ -45,19 +45,17 @@ services:
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
     ports:
-      - "9000:9000"
+      - "9090:9000"
       - "9001:9001"
     expose:
       - "9000"
       - "9001"
-    labels:
-      - "traefik.enable=true"
-      # API
-      - "traefik.http.routers.minio.rule=Host(`minio.localhost`)"
-      - "traefik.http.services.minio.loadbalancer.server.port=9000"
-      # Console
-      - "traefik.http.routers.minio-console.rule=Host(`minio-console.localhost`)"
-      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+    # labels:
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.minio.rule=Host(`minio.localhost`)"
+      # - "traefik.http.services.minio.loadbalancer.server.port=9000"
+      # - "traefik.http.routers.minio-console.rule=Host(`minio-console.localhost`)"
+      # - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
     volumes:
       - ./volumes/data/minio:/data
     healthcheck:

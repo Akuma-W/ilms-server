@@ -33,10 +33,18 @@ export class ClassesController {
   @Roles(Role.teacher, Role.admin)
   @ApiCreateClass()
   async create(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser('id') userId: string,
     @Body() createClassDto: CreateClassDto,
   ) {
-    return this.classesService.create(user, createClassDto);
+    const result = await this.classesService.createByTeacher(
+      userId,
+      createClassDto,
+    );
+
+    return {
+      message: 'Create class successful',
+      data: result,
+    };
   }
 
   @Get()
