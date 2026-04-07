@@ -4,6 +4,8 @@ services:
     container_name: traefik
     command:
       - '--configFile=/etc/traefik/traefik.yml'
+    environment:
+      - 'DESEC_TOKEN='
     ports:
       - target: 80
         published: 80
