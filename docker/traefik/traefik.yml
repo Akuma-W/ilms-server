@@ -51,9 +51,6 @@ certificatesResolvers:
     acme:
       email: phongtt@runsystem.net
       storage: /data/acme.json
-      # httpChallenge:
-      #   entryPoint: web
-      # tlsChallenge: {}
       dnsChallenge:
         provider: desec
         delayBeforeCheck: 60s
