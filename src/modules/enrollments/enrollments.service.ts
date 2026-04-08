@@ -40,20 +40,18 @@ export class EnrollmentsService {
       data: createEnrollmentDto,
     });
 
-    return {
-      message: 'Join class successful',
-      data: enrollment,
-    };
+    return enrollment;
   }
 
   // Get user enrollments
   async findAll(userId: string, query: QueryEnrollmentDto) {
-    const { status } = query;
+    const { status, isStarred } = query;
 
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
         userId,
         ...(status && { status }),
+        ...(isStarred !== undefined && { isStarred }),
       },
       orderBy: {
         joinedAt: 'desc',
@@ -61,10 +59,12 @@ export class EnrollmentsService {
       select: this.enrollmentSelect,
     });
 
-    return {
-      message: 'Get enrollments successful',
-      data: enrollments,
-    };
+    return enrollments.map((e) => ({
+      ...e.class,
+      status: e.status,
+      isStarred: e.isStarred,
+      roleIn: e.roleIn,
+    }));
   }
 
   // Get enrollment by user and class

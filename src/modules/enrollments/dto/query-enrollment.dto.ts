@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
 import { EnrollmentStatus } from 'src/generated/prisma/enums';
 
 export class QueryEnrollmentDto {
@@ -11,4 +11,13 @@ export class QueryEnrollmentDto {
   @IsOptional()
   @IsEnum(EnrollmentStatus)
   status?: EnrollmentStatus;
+
+  @ApiPropertyOptional({
+    description: 'Mark the class with a star',
+    type: 'boolean',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isStarred?: boolean;
 }

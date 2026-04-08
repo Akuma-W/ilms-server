@@ -13,6 +13,7 @@ import { Role } from 'src/generated/prisma/enums';
 import { randomBytes } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { Prisma } from 'src/generated/prisma/client';
+import { AdminCreateClassDto } from './dto/admin-create-class.dto';
 
 @Injectable()
 export class ClassesService {
@@ -22,32 +23,21 @@ export class ClassesService {
   ) {}
 
   /**
-   * Create a new class.
-   *
-   * If the user is a teacher, the class is created for that teacher (belonging to the teacher's school).
-   * If the user is an admin, the class is created and assigned to the corresponding teacher and school.
-   *
-   * @param user - The authenticated user performing the action.
-   * @param createClassDto - The data required to create the class.
-   * @returns The information of the newly created class.
+   * Creates a new class and automatically enrolls the teacher.
    */
-  async create(user: AuthUser, createClassDto: CreateClassDto) {
-    // Check schoolId and teacherId base on Role
-    const { schoolId, teacherId } = await this.getSchoolAndTeacher(
-      user,
-      createClassDto.schoolId,
-      createClassDto.teacherId,
-    );
-
+  async create(
+    schoolId: string,
+    teacherId: string,
+    createClassDto: CreateClassDto,
+  ) {
     const courseCode = await this.generateUniqueCourseCode();
 
     const classroom = await this.prisma.class.create({
       data: {
         ...createClassDto,
-        teacherId,
-        schoolId,
         courseCode,
-        isPrivate: createClassDto.isPrivate ?? false,
+        schoolId,
+        teacherId,
       },
     });
 
@@ -65,7 +55,19 @@ export class ClassesService {
     return classroom;
   }
 
-  // Find all classes with query
+  async createByTeacher(userId: string, createClassDto: CreateClassDto) {
+    const { schoolId } = await this.usersService.findOne(userId);
+
+    return this.create(schoolId, userId, createClassDto);
+  }
+
+  async createByAdmin(adminCreateClassDto: AdminCreateClassDto) {
+    const { schoolId, teacherId } = adminCreateClassDto;
+
+    return this.create(schoolId, teacherId, adminCreateClassDto);
+  }
+
+  // User find all classes with query (public classes in user's school)
   async findAll(userId: string, queryClassDto: QueryClassDto) {
     const user = await this.usersService.findOne(userId);
 
@@ -74,12 +76,10 @@ export class ClassesService {
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where: Prisma.ClassWhereInput = {};
-
-    if (user.role !== Role.admin) {
-      where.isPrivate = false;
-      where.schoolId = user.schoolId;
-    }
+    const where: Prisma.ClassWhereInput = {
+      isPrivate: false,
+      schoolId: user.schoolId,
+    };
 
     // Find by keyword
     if (search) {
