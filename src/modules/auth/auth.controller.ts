@@ -30,6 +30,7 @@ import { RegisterDto } from './dto/register.dto';
 import { GoogleRegisterDto } from './dto/google-register.dto';
 import { ApiGoogleAuthRegister } from './swagger/google-auth-register.swagger';
 import { ApiRegister } from './swagger/register.swagger';
+import { Throttle } from '@nestjs/throttler';
 
 const COOKIE_KEYS = {
   ACCESS: 'access_token',
@@ -38,6 +39,12 @@ const COOKIE_KEYS = {
 };
 
 @ApiTags('Auth')
+@Throttle({
+  default: {
+    limit: 10,
+    ttl: 60,
+  },
+})
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);

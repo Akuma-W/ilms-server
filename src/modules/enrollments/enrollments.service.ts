@@ -9,6 +9,7 @@ import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { QueryEnrollmentDto } from './dto/query-enrollment.dto';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class EnrollmentsService {
@@ -45,26 +46,54 @@ export class EnrollmentsService {
 
   // Get user enrollments
   async findAll(userId: string, query: QueryEnrollmentDto) {
-    const { status, isStarred } = query;
+    const { status, isStarred, page, limit, search } = query;
+
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where: Prisma.EnrollmentWhereInput = {
+      userId,
+      ...(status && { status }),
+      ...(isStarred !== undefined && { isStarred }),
+    };
+
+    if (search) {
+      where.class = {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { subject: { contains: search, mode: 'insensitive' } },
+          { semester: { contains: search, mode: 'insensitive' } },
+          { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
+    }
 
     const enrollments = await this.prisma.enrollment.findMany({
-      where: {
-        userId,
-        ...(status && { status }),
-        ...(isStarred !== undefined && { isStarred }),
-      },
+      where,
+      skip,
+      take,
       orderBy: {
         joinedAt: 'desc',
       },
       select: this.enrollmentSelect,
     });
 
-    return enrollments.map((e) => ({
+    const data = enrollments.map((e) => ({
       ...e.class,
       status: e.status,
       isStarred: e.isStarred,
       roleIn: e.roleIn,
     }));
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total: data.length,
+        totalPages: Math.ceil(data.length / limit),
+      },
+    };
   }
 
   // Get enrollment by user and class
