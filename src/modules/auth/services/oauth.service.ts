@@ -129,8 +129,11 @@ export class OauthService {
 
   /** HELPER: Check if profile is completed */
   private isProfileComplete(user: UserResponseDto) {
-    const isStudentComplete = user.role === 'student' && !!user.identityCode;
+    if (user.role === 'admin') {
+      return true;
+    }
 
+    const isStudentComplete = user.role === 'student' && !!user.identityCode;
     const isTeacherComplete = user.role === 'teacher';
 
     return (
