@@ -72,11 +72,18 @@ export class ClassesController {
 
   @Get('me/created')
   @ApiGetMyTeachingClasses()
-  getMyTeachingClasses(
+  async getMyTeachingClasses(
     @CurrentUser('id') userId: string,
     @Query() query: QueryClassDto,
   ) {
-    return this.classesService.findMyTeachingClasses(userId, query);
+    const result = await this.classesService.findMyTeachingClasses(
+      userId,
+      query,
+    );
+    return {
+      message: 'Get classes successful',
+      data: result,
+    };
   }
 
   @Patch(':id')
