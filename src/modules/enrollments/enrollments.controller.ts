@@ -70,6 +70,31 @@ export class EnrollmentsController {
     };
   }
 
+  // Get my starred classes
+  @Get('me/star')
+  async getStarredClasses(@CurrentUser('id') userId: string) {
+    const data = await this.enrollmentsService.getStarredClasses(userId);
+
+    return {
+      message: 'Get starred classes success',
+      data,
+    };
+  }
+
+  // Get my relation in class
+  @Get('me/:classId')
+  async getMyClassRelation(
+    @Param('classId') classId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    const enrollment = await this.enrollmentsService.findOne(userId, classId);
+
+    return {
+      message: 'Get class relation success',
+      data: enrollment,
+    };
+  }
+
   // Teacher can update enrollments
   @Patch(':classId/users/:userId')
   @Roles(Role.teacher, Role.admin)
@@ -81,6 +106,17 @@ export class EnrollmentsController {
     @Body() dto: UpdateEnrollmentDto,
   ) {
     return this.enrollmentsService.update(userId, classId, targetUserId, dto);
+  }
+
+  // Mark/remove star in class
+  @Patch('/:id/star')
+  async toggleStar(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    const data = await this.enrollmentsService.toggleStar(userId, id);
+
+    return {
+      message: 'Toggle star success',
+      data,
+    };
   }
 
   // Approve student

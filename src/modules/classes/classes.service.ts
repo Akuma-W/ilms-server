@@ -91,7 +91,7 @@ export class ClassesService {
       ];
     }
 
-    const [data, total] = await Promise.all([
+    const [result, total] = await Promise.all([
       this.prisma.class.findMany({
         where,
         skip,
@@ -101,10 +101,27 @@ export class ClassesService {
         },
         include: {
           teacher: true,
+          enrollments: {
+            where: { userId: userId },
+            select: {
+              status: true,
+              isStarred: true,
+              roleIn: true,
+            },
+          },
         },
       }),
       this.prisma.class.count({ where: where }),
     ]);
+
+    const data = result.map((cls) => {
+      const enrollment = cls.enrollments[0] || null;
+
+      return {
+        ...cls,
+        ...enrollment,
+      };
+    });
 
     return {
       data,
@@ -164,16 +181,37 @@ export class ClassesService {
       ];
     }
 
-    const [data, total] = await Promise.all([
+    const [result, total] = await Promise.all([
       this.prisma.class.findMany({
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
-        include: { teacher: true },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          teacher: true,
+          enrollments: {
+            where: { userId: userId },
+            select: {
+              status: true,
+              isStarred: true,
+              roleIn: true,
+            },
+          },
+        },
       }),
-      this.prisma.class.count({ where }),
+      this.prisma.class.count({ where: where }),
     ]);
+
+    const data = result.map((cls) => {
+      const enrollment = cls.enrollments[0] || null;
+
+      return {
+        ...cls,
+        ...enrollment,
+      };
+    });
 
     return {
       data,

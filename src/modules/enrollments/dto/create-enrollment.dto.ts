@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsOptional, IsUUID } from 'class-validator';
-import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
+import { Role } from 'src/generated/prisma/enums';
 
 export class CreateEnrollmentDto {
   @ApiProperty({
@@ -36,12 +36,4 @@ export class CreateEnrollmentDto {
   @IsOptional()
   @IsBoolean()
   isStarred?: boolean;
-
-  @ApiProperty({
-    description: 'Status of enrollment',
-    enum: EnrollmentStatus,
-    default: EnrollmentStatus.pending,
-  })
-  @IsEnum(EnrollmentStatus)
-  status: EnrollmentStatus = 'pending';
 }

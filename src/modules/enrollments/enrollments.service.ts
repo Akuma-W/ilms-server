@@ -111,6 +111,29 @@ export class EnrollmentsService {
     return enrollment;
   }
 
+  async getStarredClasses(userId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: {
+        userId,
+        isStarred: true,
+        status: 'approved',
+      },
+      select: this.enrollmentSelect,
+    });
+
+    const data = enrollments.map((e) => ({
+      ...e.class,
+      status: e.status,
+      isStarred: e.isStarred,
+      roleIn: e.roleIn,
+    }));
+
+    return {
+      data,
+      total: data.length,
+    };
+  }
+
   // Update enrollment (teacher)
   async update(
     userId: string,
@@ -144,6 +167,30 @@ export class EnrollmentsService {
       message: 'Update enrollment successful',
       data: updated,
     };
+  }
+
+  // UPDATE: Mark/remove star in a class had joined
+  async toggleStar(userId: string, enrollmentId: string) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+    });
+
+    if (!enrollment || enrollment.userId !== userId) {
+      throw new ForbiddenException();
+    }
+
+    if (enrollment.status !== EnrollmentStatus.approved) {
+      throw new BadRequestException('Cannot star inactive class');
+    }
+
+    const updated = await this.prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: {
+        isStarred: !enrollment.isStarred,
+      },
+    });
+
+    return updated;
   }
 
   // UPDATE: Approve enrollment
