@@ -103,11 +103,6 @@ export class ClassesService {
           teacher: true,
           enrollments: {
             where: { userId: userId },
-            select: {
-              status: true,
-              isStarred: true,
-              roleIn: true,
-            },
           },
         },
       }),
@@ -119,7 +114,7 @@ export class ClassesService {
 
       return {
         ...cls,
-        ...enrollment,
+        enrollment,
       };
     });
 
@@ -193,11 +188,6 @@ export class ClassesService {
           teacher: true,
           enrollments: {
             where: { userId: userId },
-            select: {
-              status: true,
-              isStarred: true,
-              roleIn: true,
-            },
           },
         },
       }),
@@ -209,7 +199,7 @@ export class ClassesService {
 
       return {
         ...cls,
-        ...enrollment,
+        enrollment,
       };
     });
 

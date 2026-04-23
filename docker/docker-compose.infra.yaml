@@ -58,7 +58,7 @@ services:
       - 'traefik.http.services.minio.tls=true'
       - 'traefik.http.routers.minio.tls.certresolver=letsencrypt'
 
-      - 'traefik.http.routers.minio-console.rule=Host(`minio-console.localhost`)'
+      - 'traefik.http.routers.minio-console.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/minio/`)'
       - 'traefik.http.services.minio-console.loadbalancer.server.port=9001'
       - 'traefik.http.services.minio-console.entrypoints=websecure'
       - 'traefik.http.services.minio-console.tls=true'

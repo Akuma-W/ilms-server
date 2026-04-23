@@ -80,9 +80,13 @@ export class EnrollmentsService {
 
     const data = enrollments.map((e) => ({
       ...e.class,
-      status: e.status,
-      isStarred: e.isStarred,
-      roleIn: e.roleIn,
+      enrollment: {
+        id: e.id,
+        status: e.status,
+        isStarred: e.isStarred,
+        roleIn: e.roleIn,
+        joinAt: e.joinedAt,
+      },
     }));
 
     return {
@@ -123,13 +127,17 @@ export class EnrollmentsService {
 
     const data = enrollments.map((e) => ({
       ...e.class,
-      status: e.status,
-      isStarred: e.isStarred,
-      roleIn: e.roleIn,
+      enrollment: {
+        id: e.id,
+        status: e.status,
+        isStarred: e.isStarred,
+        roleIn: e.roleIn,
+        joinAt: e.joinedAt,
+      },
     }));
 
     return {
-      data,
+      classes: data,
       total: data.length,
     };
   }
@@ -367,6 +375,9 @@ export class EnrollmentsService {
         id: true,
         title: true,
         description: true,
+        courseCode: true,
+        subject: true,
+        semester: true,
         school: {
           select: {
             id: true,
