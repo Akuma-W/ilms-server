@@ -1,4 +1,3 @@
-import { randomInt } from "crypto";
 import { EnrollmentStatus, PrismaClient, Role } from "../../src/generated/prisma/client";
 
 export async function seedEnrollments(prisma: PrismaClient) {
@@ -19,35 +18,31 @@ export async function seedEnrollments(prisma: PrismaClient) {
 
   const enrollments = []
 
-  for (const c of classes) {
+  for (const cls of classes) {
     // teacher enrollment
     enrollments.push({
       roleIn: Role.teacher,
-      classId: c.id,
-      userId: c.teacherId,
+      classId: cls.id,
+      userId: cls.teacherId,
       status: EnrollmentStatus.approved,
       joinedAt: new Date(),
-    })
+    });
 
-    // random students
-    const randomStudents = students
-      .sort(() => 0.5 - Math.random())
-      .slice(0, randomInt(10, 30))
-
-    for (const student of randomStudents) {
+    for (const student of students) {
       enrollments.push({
         roleIn: Role.student,
-        classId: c.id,
+        classId: cls.id,
         userId: student.id,
+        status: student.identityCode === 'SV0001' ? EnrollmentStatus.approved : EnrollmentStatus.pending,
         joinedAt: new Date(),
-      })
-    }
-  }
+      });
+    };
+  };
 
   const result = await prisma.enrollment.createMany({
     data: enrollments,
     skipDuplicates: true,
-  })
+  });
 
-  console.log(`Inserted ${result.count} enrollments`)
+  console.log(`Inserted ${result.count} enrollments`);
 }

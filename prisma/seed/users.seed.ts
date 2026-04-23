@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 export async function seedUsers(prisma: PrismaClient) {
   console.log('Seeding users...');
 
+  // Create user in school UIT
   const seedSchool = await prisma.school.findUnique({
     where: { shortname: 'UIT' },
   });
