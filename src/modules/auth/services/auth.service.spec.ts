@@ -1,12 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
+import { UsersService } from 'src/modules/users/users.service';
+import { TokenService } from './token.service';
 
 describe('AuthService', () => {
   let service: AuthService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService],
+      providers: [
+        AuthService,
+        {
+          provide: UsersService,
+          useValue: {},
+        },
+        {
+          provide: TokenService,
+          useValue: {},
+        },
+      ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);

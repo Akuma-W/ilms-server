@@ -20,6 +20,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { TopicsModule } from './modules/topics/topics.module';
 import { SchoolsModule } from './modules/schools/schools.module';
 import { CustomThrottlerGuard } from './common/guards/throttler.guard';
+import { MaterialsModule } from './modules/materials/materials.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CustomThrottlerGuard } from './common/guards/throttler.guard';
     EnrollmentsModule,
     TopicsModule,
     SchoolsModule,
+    MaterialsModule,
   ],
   controllers: [],
   providers: [
