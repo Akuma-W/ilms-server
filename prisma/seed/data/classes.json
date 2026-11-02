@@ -1,22 +1,35 @@
 [
   {
-    "title": "Nhập môn Lập trình",
+    "title": "IT001.N111 - Nhập môn Lập trình",
     "subject": "IT001 - Nhập môn lập trình",
     "description": "Giới thiệu các khái niệm cơ bản của lập trình",
     "semester": "HK 1 2025",
-    "courseCode": "IIT001"
+    "courseCode": "IT001N",
+    "teacherId": "GV0001"
   },
   {
-    "title": "Cấu trúc dữ liệu và giải thuật",
+    "title": "IT003.N26 - Cấu trúc dữ liệu và giải thuật",
     "subject": "IT003 - Cấu trúc dữ liệu và giải thuật",
     "description": "Học về các cấu trúc dữ liệu cơ bản và thuật toán",
-    "semester": "HK 1 2025"
+    "semester": "HK 1 2025",
+    "courseCode": "IT003N",
+    "teacherId": "GV0001"
   },
   {
     "title": "Lập trình Web nâng cao",
     "subject": "SE347 - Công nghệ Web và ứng dụng",
-    "description": "Xây dựng ứng dụng web fullstack",
+    "description": "Xây dựng ứng dụng web fullstack với Node.js và React",
     "semester": "HK hè 2026",
-    "isPrivate": true
+    "courseCode": "SE347P",
+    "isPrivate": true,
+    "teacherId": "GV0001"
+  },
+  {
+    "title": "SS007.O24 - Triết học Mác - Lênin",
+    "subject": "SS007 - Triết học Mác - Lênin",
+    "description": "Học về triết học Mác - Lênin",
+    "semester": "HK hè 2026",
+    "courseCode": "SS007O",
+    "teacherId": "GV0002"
   }
 ]

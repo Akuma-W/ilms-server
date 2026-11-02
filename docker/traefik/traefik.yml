@@ -35,17 +35,25 @@ entryPoints:
       respondingTimeouts:
         readTimeout: 5m
         writeTimeout: 0s
-        idleTimeout: '180'
+        idleTimeout: 180s
   websecure:
     address: :443
+    forwardedHeaders:
+      insecure: true
     transport:
       respondingTimeouts:
         readTimeout: 5m
         writeTimeout: 0s
-        idleTimeout: '180'
-    # http:
-    #   middlewares:
-    #   - traefik-dashboard@file
+        idleTimeout: 180s
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: phongtt@runsystem.net
+      storage: /data/acme.json
+      dnsChallenge:
+        provider: desec
+        delayBeforeCheck: 60s
 
 accessLog:
   filePath: /data/access.log
@@ -55,8 +63,8 @@ accessLog:
     headers:
       defaultMode: keep
       names:
-        "Accept": keep
-        "Authorization": drop
-        "Content-Type": keep
-        "User-Agent": keep
-        "Referer": keep
+        'Accept': keep
+        'Authorization': drop
+        'Content-Type': keep
+        'User-Agent': keep
+        'Referer': keep

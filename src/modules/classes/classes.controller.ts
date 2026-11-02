@@ -33,16 +33,29 @@ export class ClassesController {
   @Roles(Role.teacher, Role.admin)
   @ApiCreateClass()
   async create(
-    @CurrentUser() user: AuthUser,
+    @CurrentUser('id') userId: string,
     @Body() createClassDto: CreateClassDto,
   ) {
-    return this.classesService.create(user, createClassDto);
+    const result = await this.classesService.createByTeacher(
+      userId,
+      createClassDto,
+    );
+
+    return {
+      message: 'Create class successful',
+      data: result,
+    };
   }
 
   @Get()
   @ApiGetClasses()
-  findAll(@CurrentUser('id') id: string, @Query() query: QueryClassDto) {
-    return this.classesService.findAll(id, query);
+  async findAll(@CurrentUser('id') id: string, @Query() query: QueryClassDto) {
+    const result = await this.classesService.findAll(id, query);
+
+    return {
+      message: 'Get classes successful',
+      data: result,
+    };
   }
 
   @Get(':id')
@@ -59,11 +72,18 @@ export class ClassesController {
 
   @Get('me/created')
   @ApiGetMyTeachingClasses()
-  getMyTeachingClasses(
+  async getMyTeachingClasses(
     @CurrentUser('id') userId: string,
     @Query() query: QueryClassDto,
   ) {
-    return this.classesService.findMyTeachingClasses(userId, query);
+    const result = await this.classesService.findMyTeachingClasses(
+      userId,
+      query,
+    );
+    return {
+      message: 'Get classes successful',
+      data: result,
+    };
   }
 
   @Patch(':id')

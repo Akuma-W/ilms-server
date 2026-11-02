@@ -12,14 +12,24 @@ export async function seedClasses(prisma: PrismaClient) {
     throw new Error('Teacher not found. Please seed user first.');
   }
 
-  const data = classes.map((cls) => {
+  const data = await Promise.all(
+classes.map(async (cls) => {
+    const { teacherId, ...classData } = cls;
+    
+    const teacher = await prisma.user.findFirstOrThrow({
+      where: {
+        identityCode: teacherId,
+      },
+    });
+
     return {
-      ...cls,
-      schoolId: seedTeacher.schoolId,
-      teacherId: seedTeacher.id,
+      ...classData,
+      schoolId: teacher?.schoolId,
+      teacherId: teacher?.id,
       createdAt: new Date(),
     }
   })
+  );
 
   const result = await prisma.class.createMany({
     data,

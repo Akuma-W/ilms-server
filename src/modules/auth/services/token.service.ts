@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Role } from 'src/generated/prisma/enums';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from 'src/infrastructures/redis/redis.service';
 import { hashToken } from 'src/common/utils/hash.util';
+import { GooglePayload } from '../interfaces/google-payload.interface';
 
 @Injectable()
 export class TokenService {
@@ -41,6 +42,12 @@ export class TokenService {
     return { accessToken, refreshToken };
   }
 
+  async verifyRefreshToken(refreshToken: string): Promise<JwtPayload> {
+    return await this.jwtService.verifyAsync(refreshToken, {
+      secret: this.config.get<string>('auth.jwt.refreshTokenSecret'),
+    });
+  }
+
   async addBlacklist(jti: string, exp: number) {
     const ttl = exp - Math.floor(Date.now() / 1000);
 
@@ -51,5 +58,34 @@ export class TokenService {
     const result = await this.redis.get<boolean>(`blacklist:${jti}`);
 
     return !!result;
+  }
+
+  generateTempToken(data: GooglePayload) {
+    return this.jwtService.sign(
+      {
+        ...data,
+        type: 'GOOGLE_REGISTER',
+      },
+      {
+        secret: this.config.get('auth.jwt.tempTokenSecret'),
+        expiresIn: this.config.get('auth.jwt.tempExpriesIn'),
+      },
+    );
+  }
+
+  async verifyTempToken(token: string): Promise<GooglePayload> {
+    try {
+      const payload = await this.jwtService.verifyAsync<GooglePayload>(token, {
+        secret: this.config.get<string>('auth.jwt.tempTokenSecret'),
+      });
+
+      if (payload.type !== 'GOOGLE_REGISTER') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+
+      return payload;
+    } catch {
+      throw new UnauthorizedException('Token expired or invalid');
+    }
   }
 }

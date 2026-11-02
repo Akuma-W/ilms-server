@@ -13,7 +13,6 @@ import { StorageService } from 'src/infrastructures/storage/storage.service';
 import { StorageFolder } from 'src/common/constants/storage-folders.constant';
 import { LoggerService } from 'src/logger/logger.service';
 import { CreateGoogleUserDto } from './dto/create-google-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -49,7 +48,9 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return this.getUser(user);
+    const avatar = await this.getAvatar(user.avatarUrl);
+
+    return { ...user, avatar };
   }
 
   // Create user (no hash password)
@@ -59,7 +60,9 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return this.getUser(user);
+    const avatar = await this.getAvatar(user.avatarUrl);
+
+    return { ...user, avatar };
   }
 
   async createGoogleUser(dto: CreateGoogleUserDto) {
@@ -74,7 +77,13 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return Promise.all(users.map(async (user) => this.getUser(user)));
+    return Promise.all(
+      users.map(async (user) => {
+        const avatar = await this.getAvatar(user.avatarUrl);
+
+        return { ...user, avatar };
+      }),
+    );
   }
 
   async findOne(id: string) {
@@ -83,11 +92,13 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return this.getUser(user);
+    const avatar = await this.getAvatar(user.avatarUrl);
+
+    return { ...user, avatar };
   }
 
   async findByEmail(email: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({
+    const user = await this.prisma.user.findUnique({
       where: { email },
       select: {
         ...this.userSelect,
@@ -112,7 +123,9 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return this.getUser(updatedUser);
+    const avatar = await this.getAvatar(updatedUser.avatarUrl);
+
+    return { ...updatedUser, avatar };
   }
 
   async remove(id: string) {
@@ -180,15 +193,15 @@ export class UsersService {
     school: true,
   };
 
-  /** HELPER: get user */
-  private async getUser(user: UserResponseDto) {
-    const avatar = user.avatarUrl
-      ? await this.storage.getUrl(user.avatarUrl)
-      : null;
+  /** HELPER: get avatar (from Storage or Link) */
+  private async getAvatar(avatarUrl: string | null) {
+    if (!avatarUrl) return null;
 
-    return {
-      ...user,
-      avatar,
-    };
+    // If avatar path is Minio (start with 'avatars/')
+    if (avatarUrl.startsWith('avatars/')) {
+      return await this.storage.getUrl(avatarUrl);
+    }
+
+    return avatarUrl;
   }
 }

@@ -9,11 +9,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { TokenService } from './services/token.service';
+import { OauthService } from './services/oauth.service';
+import { SessionService } from './services/session.service';
 
 @Module({
   providers: [
     AuthService,
     TokenService,
+    OauthService,
+    SessionService,
     JwtStrategy,
     LocalStrategy,
     GoogleStrategy,

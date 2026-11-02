@@ -9,6 +9,7 @@ import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { QueryEnrollmentDto } from './dto/query-enrollment.dto';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class EnrollmentsService {
@@ -40,30 +41,62 @@ export class EnrollmentsService {
       data: createEnrollmentDto,
     });
 
-    return {
-      message: 'Join class successful',
-      data: enrollment,
-    };
+    return enrollment;
   }
 
   // Get user enrollments
   async findAll(userId: string, query: QueryEnrollmentDto) {
-    const { status } = query;
+    const { status, isStarred, page, limit, search } = query;
+
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where: Prisma.EnrollmentWhereInput = {
+      userId,
+      ...(status && { status }),
+      ...(isStarred !== undefined && { isStarred }),
+    };
+
+    if (search) {
+      where.class = {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { subject: { contains: search, mode: 'insensitive' } },
+          { semester: { contains: search, mode: 'insensitive' } },
+          { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
+    }
 
     const enrollments = await this.prisma.enrollment.findMany({
-      where: {
-        userId,
-        ...(status && { status }),
-      },
+      where,
+      skip,
+      take,
       orderBy: {
         joinedAt: 'desc',
       },
       select: this.enrollmentSelect,
     });
 
+    const data = enrollments.map((e) => ({
+      ...e.class,
+      enrollment: {
+        id: e.id,
+        status: e.status,
+        isStarred: e.isStarred,
+        roleIn: e.roleIn,
+        joinAt: e.joinedAt,
+      },
+    }));
+
     return {
-      message: 'Get enrollments successful',
-      data: enrollments,
+      data,
+      meta: {
+        page,
+        limit,
+        total: data.length,
+        totalPages: Math.ceil(data.length / limit),
+      },
     };
   }
 
@@ -80,6 +113,33 @@ export class EnrollmentsService {
     });
 
     return enrollment;
+  }
+
+  async getStarredClasses(userId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: {
+        userId,
+        isStarred: true,
+        status: 'approved',
+      },
+      select: this.enrollmentSelect,
+    });
+
+    const data = enrollments.map((e) => ({
+      ...e.class,
+      enrollment: {
+        id: e.id,
+        status: e.status,
+        isStarred: e.isStarred,
+        roleIn: e.roleIn,
+        joinAt: e.joinedAt,
+      },
+    }));
+
+    return {
+      classes: data,
+      total: data.length,
+    };
   }
 
   // Update enrollment (teacher)
@@ -115,6 +175,30 @@ export class EnrollmentsService {
       message: 'Update enrollment successful',
       data: updated,
     };
+  }
+
+  // UPDATE: Mark/remove star in a class had joined
+  async toggleStar(userId: string, enrollmentId: string) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+    });
+
+    if (!enrollment || enrollment.userId !== userId) {
+      throw new ForbiddenException();
+    }
+
+    if (enrollment.status !== EnrollmentStatus.approved) {
+      throw new BadRequestException('Cannot star inactive class');
+    }
+
+    const updated = await this.prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: {
+        isStarred: !enrollment.isStarred,
+      },
+    });
+
+    return updated;
   }
 
   // UPDATE: Approve enrollment
@@ -291,6 +375,9 @@ export class EnrollmentsService {
         id: true,
         title: true,
         description: true,
+        courseCode: true,
+        subject: true,
+        semester: true,
         school: {
           select: {
             id: true,

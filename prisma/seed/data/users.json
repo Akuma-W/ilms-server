@@ -1,22 +1,43 @@
 [
   {
-    "email": "tuanphongbrvt1@gmail.com",
+    "email": "admin123@gmail.com",
     "password": "Admin@123",
     "fullName": "Quản Trị Viên",
     "role": "admin"
   },
   {
-    "identityCode": "GV00001",
-    "email": "phongtt@runsystem.net",
-    "password": "Teacher@123",
-    "fullName": "Tran Tuan Phong",
+    "identityCode": "GV0001",
+    "email": "teacher01@gmail.com",
+    "password": "Teacher@01",
+    "fullName": "Nguyễn Văn A",
     "role": "teacher"
   },
   {
-    "identityCode": "22521094",
-    "email": "22521094@gm.uit.edu.vn",
-    "password": "22521094@Uit",
-    "fullName": "Trần Tuấn Phong",
+    "identityCode": "GV0002",
+    "email": "teacher02@gmail.com",
+    "password": "Teacher@02",
+    "fullName": "Trần Thị B",
+    "role": "teacher"
+  },
+  {
+    "identityCode": "SV0001",
+    "email": "student01@gmail.com",
+    "password": "Student@01",
+    "fullName": "Nguyễn Văn B",
+    "role": "student"
+  },
+  {
+    "identityCode": "SV0002",
+    "email": "student02@gmail.com",
+    "password": "Student@02",
+    "fullName": "Trần Thị C",
+    "role": "student"
+  },
+  {
+    "identityCode": "SV0003",
+    "email": "student03@gmail.com",
+    "password": "Student@03",
+    "fullName": "Lê Văn D",
     "role": "student"
   }
 ]

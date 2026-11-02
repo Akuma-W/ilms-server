@@ -1,7 +1,6 @@
 export type GoogleLoginResult =
   | {
-      type: 'LOGIN_SUCCESS';
-      message: string;
+      action: 'LOGIN';
       data: {
         userId: string;
         accessToken: string;
@@ -9,8 +8,7 @@ export type GoogleLoginResult =
       };
     }
   | {
-      type: 'REGISTER_REQUIRED';
-      message: string;
+      action: 'REGISTER_REQUIRED';
       data: {
         email: string;
         fullName: string;

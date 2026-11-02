@@ -23,8 +23,9 @@ export class SchoolsController {
 
   @Public()
   @Get()
-  findAll() {
-    return this.schoolsService.findAll();
+  async findAll() {
+    const data = await this.schoolsService.findAll();
+    return { message: 'Get all schools successful', data };
   }
 
   @Get(':id')

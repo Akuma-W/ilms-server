@@ -23,7 +23,7 @@ export class StorageController {
 
     return {
       path,
-      url: this.storageService.getUrl(path),
+      url: await this.storageService.getUrl(path),
     };
   }
 
@@ -35,9 +35,13 @@ export class StorageController {
   ) {
     const paths = await this.storageService.uploadMany(files, folder);
 
-    return paths.map((path) => ({
-      path,
-      url: this.storageService.getUrl(path),
-    }));
+    const results = await Promise.all(
+      paths.map(async (path) => ({
+        path,
+        url: await this.storageService.getUrl(path),
+      })),
+    );
+
+    return results;
   }
 }

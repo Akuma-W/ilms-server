@@ -1,0 +1,195 @@
+# AGENTS.md — INTERACTIVE LMS SERVER (BACKEND)
+
+> Engineering rules, architecture constraints, code style, and development workflows for AI Agents working within `interactive-lms-server/`.
+>
+> **Core Principle:** Strict module encapsulation, clean Controller-Service separation, standardized Swagger documentation via dedicated decorators, comprehensive unit test coverage, and English-only code conventions with concise functional comments.
+
+---
+
+## 1. TECHNOLOGY STACK OVERVIEW
+
+| Technology | Version / Configuration | Purpose |
+| --- | --- | --- |
+| **Framework** | NestJS `^11.1.15` (Express platform) | Enterprise Node.js backend framework |
+| **ORM** | Prisma `^7.5.0` with `@prisma/adapter-pg` | Database ORM and query builder |
+| **Database** | PostgreSQL 16 (Multi-Schema, 10 schemas) | Primary relational database |
+| **Vector DB** | pgvector `vector(1536)` | Extension for storing & querying AI Embeddings |
+| **Cache & Session** | Redis 8.6 (`ioredis: ^5.10.0`) | Distributed caching and transient data |
+| **Object Storage** | MinIO `^8.0.7` | S3-compatible file, media, and document storage |
+| **Documentation** | Swagger / OpenAPI (`@nestjs/swagger: ^11.2.6`) | Interactive API docs at `/api/v1/docs` |
+| **Testing** | Jest `^30.0.0`, Supertest `^7.0.0`, ts-jest | Unit, integration, and e2e testing |
+| **Logging** | Winston `^3.19.0`, winston-loki `^6.1.4` | Structured logging and observability |
+
+---
+
+## 2. CODE STYLE & CODING STANDARDS
+
+### 2.1. English Language Standard for Code, Comments & Swagger
+
+- **Identifiers:** All class names, method names, variables, constants, DTO properties, and database entities MUST be in English.
+- **Comments & JSDoc:** All inline comments, code notes, and method descriptions MUST be in English.
+- **Swagger Documentation:** All `@ApiOperation({ summary })`, `@ApiOkResponse({ description })`, parameter descriptions, and schema examples MUST be in clear, professional English.
+- **Concise Function Documentation:** Add a 1–2 line concise comment for each service method or controller action explaining its primary intent. Avoid redundant essays.
+
+```typescript
+/**
+ * Creates a new class, generates a unique course code, and auto-enrolls the teacher.
+ */
+async create(schoolId: string, teacherId: string, dto: CreateClassDto): Promise<Class> { ... }
+```
+
+### 2.2. Naming Conventions
+
+- **Files:** `kebab-case.type.ts` (e.g., `classes.controller.ts`, `create-class.dto.ts`, `create-class.swagger.ts`, `classes.service.spec.ts`).
+- **Classes & Decorators:** `PascalCase` (e.g., `ClassesService`, `ApiCreateClass`, `CurrentUser`).
+- **Methods & Variables:** `camelCase` (e.g., `findByCourseCode`, `teacherId`).
+- **Enums & Constants:** `UPPER_SNAKE_CASE` or `PascalCase` matching Prisma generated output (e.g., `Role.teacher`, `JWT_SECRET`).
+
+---
+
+## 3. THE COMPLETE MODULE RULE (MANDATORY REQUIREMENT)
+
+When implementing or extending any backend module in `src/modules/{module_name}/`, AI Agents **MUST NOT** deliver partial code (e.g., delivering only Controller and Service). Every module or feature addition is considered complete **ONLY** when all 5 elements are implemented:
+
+```text
+src/modules/{module_name}/
+├── {module}.controller.ts       # HTTP request handling & routing
+├── {module}.controller.spec.ts  # Controller unit tests (Passing)
+├── {module}.service.ts          # Core business logic & database transactions
+├── {module}.service.spec.ts     # Service unit tests (Passing)
+├── {module}.module.ts           # NestJS module registration
+├── dto/                         # Input validation classes
+│   ├── create-{entity}.dto.ts
+│   ├── update-{entity}.dto.ts
+│   └── query-{entity}.dto.ts
+├── entities/                    # Output response entity models
+│   └── {entity}.entity.ts
+└── swagger/                     # Dedicated OpenAPI decorator definitions
+    ├── create-{entity}.swagger.ts
+    ├── get-{entity}.swagger.ts
+    └── update-{entity}.swagger.ts
+```
+
+---
+
+## 4. SWAGGER DECORATOR PATTERN (CLEAN CONTROLLER RULE)
+
+Do NOT clutter Controller files with inline Swagger decorators. Follow the established project pattern:
+
+1. Create a dedicated decorator file under `src/modules/{module}/swagger/{action}.swagger.ts`.
+2. Use `applyDecorators(...)` from `@nestjs/common` combining:
+   - `ApiOperation({ summary: '...' })`
+   - `ApiAuth()` (or `@Public()` if unauthenticated)
+   - `ApiBody({ type: DtoClass })` (when applicable)
+   - `ApiOkResponse({ description: '...', schema: { example: { ... } } })`
+   - `ApiQuery(...)` or `ApiParam(...)` (when applicable)
+3. In the Controller, apply only the single composite decorator (e.g., `@ApiCreateClass()`).
+
+```typescript
+// src/modules/classes/swagger/create-class.swagger.ts
+import { applyDecorators } from '@nestjs/common';
+import { ApiOperation, ApiBody, ApiOkResponse } from '@nestjs/swagger';
+import { CreateClassDto } from '../dto/create-class.dto';
+import { ApiAuth } from 'src/common/swagger/api-auth.decorator';
+
+export function ApiCreateClass() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Create a new class (teacher/admin only)' }),
+    ApiAuth(),
+    ApiBody({ type: CreateClassDto }),
+    ApiOkResponse({
+      description: 'Class created successfully',
+      schema: {
+        example: {
+          id: 'uuid',
+          title: 'Web Application Development',
+          courseCode: 'SE347-2026',
+        },
+      },
+    }),
+  );
+}
+```
+
+---
+
+## 5. PRISMA 7 & POSTGRESQL MULTI-SCHEMA RULES
+
+- **Import Rule:** Prisma Client is generated to `src/generated/prisma`.
+  - **CORRECT:** `import { PrismaService } from 'src/infrastructures/prisma/prisma.service';`
+  - **CORRECT:** `import { Role } from 'src/generated/prisma/enums';`
+  - **CORRECT:** `import { Prisma } from 'src/generated/prisma/client';`
+  - **STRICTLY FORBIDDEN:** `import { ... } from '@prisma/client';` (This will fail compilation).
+- **PostgreSQL Multi-Schema:** Database models are partitioned into 10 schemas (`academic`, `auth`, `learning`, `quiz`, `assign`, `forum`, `chat`, `notification`, `ai`, `public`). Always inspect `@@schema("...")` when querying or modifying models.
+- **pgvector Extension:** The `ai` schema uses `Unsupported("vector(1536)")` for embeddings. Never alter vector dimension without explicit user instruction.
+- **No Direct Push:** Never run `prisma db push` or destructive migration commands.
+
+---
+
+## 6. RESPONSE & EXCEPTION PIPELINE
+
+### 6.1. Standard Response Format (`ResponseInterceptor`)
+
+The global `ResponseInterceptor` wraps all controller return values into a standard envelope:
+
+```json
+{
+  "success": true,
+  "message": "Create class successful",
+  "data": { ... }
+}
+```
+
+In Controllers, return an object containing `message` and `data`:
+
+```typescript
+return {
+  message: 'Create class successful',
+  data: result,
+};
+```
+
+### 6.2. Exception Handling (`HttpExceptionFilter`)
+
+- Throw built-in NestJS exceptions: `BadRequestException`, `NotFoundException`, `ForbiddenException`, `ConflictException`, `UnauthorizedException`.
+- The global `HttpExceptionFilter` automatically catches the exception, logs structured details via Winston/Loki, and outputs:
+
+  ```json
+  {
+    "success": false,
+    "statusCode": 404,
+    "timestamp": "2026-11-01T12:00:00.000Z",
+    "path": "/api/v1/classes/123",
+    "message": "Class not found"
+  }
+  ```
+
+---
+
+## 7. DTO VALIDATION & AUTHORIZATION
+
+- **Validation:** Every input DTO must use `class-validator` decorators (`@IsString()`, `@IsOptional()`, `@IsUUID()`, `@MaxLength()`, `@IsBoolean()`).
+- **Swagger Documentation for DTOs:** Every property MUST have `@ApiProperty()` or `@ApiPropertyOptional()` with explicit `description`, `type`, and `example`.
+- **Role-Based Access Control:** Use `@Roles(Role.teacher, Role.admin)` combined with the global/route `RolesGuard`.
+- **Authenticated User Extraction:** Use `@CurrentUser()` to get the entire `AuthUser` object, or `@CurrentUser('id')` to extract the user UUID directly.
+- **API Prefix:** All endpoints reside under `/api/v1/`.
+
+---
+
+## 8. INFRASTRUCTURE SERVICES
+
+- **PrismaService (`src/infrastructures/prisma/`):** Primary database access. Use `$transaction` for atomic multi-model writes.
+- **RedisService (`src/infrastructures/redis/`):** Cache lookups, session checks, and transient tokens with explicit TTL.
+- **StorageService (`src/infrastructures/storage/`):** MinIO S3 integration. Store file uploads under standardized folders (`StorageFolders.MATERIALS`, `StorageFolders.AVATARS`). Store only the returned object key or URL in PostgreSQL.
+
+---
+
+## 9. UNIT TESTING STANDARDS (JEST)
+
+AI Agents MUST write and execute unit tests for all new services and controllers:
+
+- Place tests next to the source: `{name}.service.spec.ts` and `{name}.controller.spec.ts`.
+- Use `Test.createTestingModule(...)` from `@nestjs/testing`.
+- Mock `PrismaService`, `RedisService`, and other dependencies using Jest mock functions (`jest.fn()`).
+- Verify both happy path and exception scenarios.
+- Run tests via `npm test` or `npm run test -- {path}` to verify they pass before declaring completion.

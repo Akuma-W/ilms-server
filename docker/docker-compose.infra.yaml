@@ -14,10 +14,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
     ports:
-      - "5432:5432"
+      - '5432:5432'
     networks:
       - ilms-network
-  
+
   redis:
     image: redis:8.6
     container_name: ilms-redis
@@ -28,7 +28,7 @@ services:
       redis-server
       --requirepass 1234@Dcba
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -45,18 +45,34 @@ services:
       - MINIO_PROMETHEUS_AUTH_TYPE=public
       - MINIO_UPDATE=off
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9090:9000'
+      - '9001:9001'
+    expose:
+      - '9000'
+      - '9001'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.minio.rule=Host(`files.ilms.gzrcloud.com`)'
+      - 'traefik.http.services.minio.loadbalancer.server.port=9000'
+      - 'traefik.http.services.minio.entrypoints=websecure'
+      - 'traefik.http.services.minio.tls=true'
+      - 'traefik.http.routers.minio.tls.certresolver=letsencrypt'
+
+      - 'traefik.http.routers.minio-console.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/minio/`)'
+      - 'traefik.http.services.minio-console.loadbalancer.server.port=9001'
+      - 'traefik.http.services.minio-console.entrypoints=websecure'
+      - 'traefik.http.services.minio-console.tls=true'
+      - 'traefik.http.routers.minio-console.tls.certresolver=letsencrypt'
     volumes:
       - ./volumes/data/minio:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 15s
       timeout: 20s
       retries: 5
     networks:
       - ilms-network
-    
+
 volumes:
   pgdata:
   redis_data:

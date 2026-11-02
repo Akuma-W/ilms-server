@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { ConfigService } from '@nestjs/config';
 import {
+  BadRequestException,
   ClassSerializerInterceptor,
   ValidationPipe,
   VersioningType,
@@ -37,14 +38,18 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
+      exceptionFactory(errors) {
+        console.error(errors);
+        return new BadRequestException(errors);
+      },
     }),
   );
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // Swagger
   const options = new DocumentBuilder()
-    .setTitle('Test')
-    .setDescription('Test API description')
+    .setTitle('KEIVerse - ILMS Server')
+    .setDescription('Backend API description')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -59,7 +64,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/v1/docs', app, document);
 
   // Listen port
   try {

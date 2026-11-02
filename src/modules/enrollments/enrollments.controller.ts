@@ -33,7 +33,12 @@ export class EnrollmentsController {
   @Post('join')
   @ApiJoinClass()
   async create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
-    return this.enrollmentsService.create(createEnrollmentDto);
+    const result = await this.enrollmentsService.create(createEnrollmentDto);
+
+    return {
+      message: 'Join class successful',
+      data: result,
+    };
   }
 
   // Get all user enrollments
@@ -43,7 +48,11 @@ export class EnrollmentsController {
     @Param('userId') userId: string,
     @Query() query: QueryEnrollmentDto,
   ) {
-    return this.enrollmentsService.findAll(userId, query);
+    const data = await this.enrollmentsService.findAll(userId, query);
+    return {
+      message: `Get enrollments with status: ${query.status || 'all'}${query.isStarred !== undefined ? ` and starred: ${query.isStarred}` : ''}`,
+      data,
+    };
   }
 
   // Get all my enrollments
@@ -53,7 +62,37 @@ export class EnrollmentsController {
     @CurrentUser('id') userId: string,
     @Query() query: QueryEnrollmentDto,
   ) {
-    return this.enrollmentsService.findAll(userId, query);
+    const data = await this.enrollmentsService.findAll(userId, query);
+
+    return {
+      message: `Get my enrollments with status: ${query.status || 'all'}${query.isStarred !== undefined ? ` and starred: ${query.isStarred}` : ''}`,
+      data,
+    };
+  }
+
+  // Get my starred classes
+  @Get('me/star')
+  async getStarredClasses(@CurrentUser('id') userId: string) {
+    const data = await this.enrollmentsService.getStarredClasses(userId);
+
+    return {
+      message: 'Get starred classes success',
+      data,
+    };
+  }
+
+  // Get my relation in class
+  @Get('me/:classId')
+  async getMyClassRelation(
+    @Param('classId') classId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    const enrollment = await this.enrollmentsService.findOne(userId, classId);
+
+    return {
+      message: 'Get class relation success',
+      data: enrollment,
+    };
   }
 
   // Teacher can update enrollments
@@ -67,6 +106,17 @@ export class EnrollmentsController {
     @Body() dto: UpdateEnrollmentDto,
   ) {
     return this.enrollmentsService.update(userId, classId, targetUserId, dto);
+  }
+
+  // Mark/remove star in class
+  @Patch('/:id/star')
+  async toggleStar(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    const data = await this.enrollmentsService.toggleStar(userId, id);
+
+    return {
+      message: 'Toggle star success',
+      data,
+    };
   }
 
   // Approve student

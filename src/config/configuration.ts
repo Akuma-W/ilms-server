@@ -17,8 +17,10 @@ export default registerAs('', () => ({
     jwt: {
       accessTokenSecret: process.env.JWT_ACCESS_SECRET,
       refreshTokenSecret: process.env.JWT_REFRESH_SECRET,
+      tempTokenSecret: process.env.JWT_TEMP_SECRET,
       accessExpriesIn: process.env.JWT_ACCESS_EXPIRES_IN as StringValue,
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN as StringValue,
+      tempExpriesIn: process.env.JWT_TEMP_EXPIRES_IN as StringValue,
     },
   },
   redis: {
@@ -32,12 +34,13 @@ export default registerAs('', () => ({
     transport: process.env.LOG_TRANSPORT,
   },
   minio: {
-    endPoint: process.env.MINIO_ENDPOINT,
+    endPoint: process.env.MINIO_INTERNAL_ENDPOINT,
     port: Number(process.env.MINIO_PORT) || 9000,
     accessKey: process.env.MINIO_USERNAME,
     secretKey: process.env.MINIO_PASSWORD,
     bucket: process.env.MINIO_BUCKET,
-    publicUrl: process.env.MINIO_PUBLIC_URL,
+    publicEndPoint: process.env.MINIO_PUBLIC_ENDPOINT,
+    useSSL: process.env.MINIO_USE_SSL === 'true',
   },
   storage: {
     driver: process.env.STORAGE_DRIVER,
@@ -45,5 +48,6 @@ export default registerAs('', () => ({
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL,
   },
 }));

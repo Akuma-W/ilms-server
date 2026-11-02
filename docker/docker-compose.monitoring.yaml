@@ -7,11 +7,9 @@ services:
     command: "-config.file=/etc/loki/config.yaml -target=read"
     ports:
       - 3101:3100
-      - 7946
-      - 9095
     volumes:
       - ./configs/loki-config.yaml:/etc/loki/config.yaml
-      - ./volumes/loki:/loki
+      - ./volumes/loki-read:/loki
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
@@ -28,11 +26,9 @@ services:
     command: "-config.file=/etc/loki/config.yaml -target=write"
     ports:
       - 3102:3100
-      - 7946
-      - 9095
     volumes:
       - ./configs/loki-config.yaml:/etc/loki/config.yaml
-      - ./volumes/loki:/loki
+      - ./volumes/loki-write:/loki
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
       interval: 10s
@@ -51,7 +47,8 @@ services:
     ports:
       - 12345:12345
     depends_on:
-      - gateway
+      - write
+      - read
     networks:
       - ilms-network
 
@@ -96,10 +93,9 @@ services:
     container_name: loki-backend
     volumes:
       - ./configs/loki-config.yaml:/etc/loki/config.yaml
-      - ./volumes/loki:/loki
+      - ./volumes/loki-backend:/loki
     ports:
       - "3100"
-      - "7946"
     command: "-config.file=/etc/loki/config.yaml -target=backend -legacy-read-mode=false"
     depends_on:
       - gateway
@@ -127,6 +123,11 @@ services:
           resolver 127.0.0.11;
 
           server {
+            proxy_read_timeout 300;
+            proxy_connect_timeout 300;
+            proxy_send_timeout 300;
+
+            client_max_body_size 50M;
             listen             3100;
 
             location = / {
@@ -168,16 +169,10 @@ services:
     ports:
       - "3100:3100"
     healthcheck:
-      test: ["CMD", "service", "nginx", "status"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - ilms-network
-
-  flog:
-    image: mingrammer/flog
-    command: -f json -d 200ms -l
     networks:
       - ilms-network
 
