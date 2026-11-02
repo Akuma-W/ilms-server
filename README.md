@@ -48,8 +48,8 @@ It provides a unified platform for managing educational resources while fosterin
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/phongtt-gmo/interactive-lms-server.git
-cd interactive-lms-server
+git clone https://github.com/Akuma-W/ilms-server.git
+cd ilms-server
 ```
 
 ### 2. Setup environment variables

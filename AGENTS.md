@@ -1,6 +1,6 @@
 # AGENTS.md — INTERACTIVE LMS SERVER (BACKEND)
 
-> Engineering rules, architecture constraints, code style, and development workflows for AI Agents working within `interactive-lms-server/`.
+> Engineering rules, architecture constraints, code style, and development workflows for AI Agents working within `ilms-server/`.
 >
 > **Core Principle:** Strict module encapsulation, clean Controller-Service separation, standardized Swagger documentation via dedicated decorators, comprehensive unit test coverage, and English-only code conventions with concise functional comments.
 
