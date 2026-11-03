@@ -30,6 +30,15 @@ enum EnrollmentStatus {
   pending
   approved
   rejected
+  suspended
+
+  @@schema("academic")
+}
+
+enum SchoolStatus {
+  active
+  deactivated
+  archived
 
   @@schema("academic")
 }
@@ -112,29 +121,36 @@ enum AIRequestType {
 }
 
 model School {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String       @id @default(uuid()) @db.Uuid
   name      String
-  shortname String?   @unique
+  shortname String?      @unique
   address   String?
   city      String
-  createdAt DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  status    SchoolStatus @default(active)
+  createdAt DateTime?    @map("created_at") @db.Timestamptz() @default(now())
+  updatedAt DateTime?    @map("updated_at") @db.Timestamptz() @updatedAt
 
   users   User[]
   classes Class[]
 
+  @@index([name])
+  @@index([city])
   @@map("schools")
   @@schema("academic")
 }
 
 model Class {
-  id          String    @id @default(uuid()) @db.Uuid
-  title       String
-  subject     String
-  description String?
-  courseCode  String?   @map("course_code") @unique
-  semester    String?
-  isPrivate   Boolean   @default(false) @map("is_private")
-  createdAt   DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  id             String    @id @default(uuid()) @db.Uuid
+  title          String
+  subject        String
+  description    String?
+  courseCode     String?   @unique @map("course_code")
+  semester       String?
+  isPrivate      Boolean   @default(false) @map("is_private")
+  meetingUri     String?   @map("meeting_uri")
+  meetingSpaceId String?   @map("meeting_space_id")
+  isArchived     Boolean   @default(false) @map("is_archived")
+  createdAt      DateTime? @map("created_at") @db.Timestamptz() @default(now())
 
   schoolId  String @map("school_id") @db.Uuid
   teacherId String @map("teacher_id") @db.Uuid
@@ -142,16 +158,18 @@ model Class {
   school  School @relation(fields: [schoolId], references: [id])
   teacher User   @relation(name: "ClassTeacher", fields: [teacherId], references: [id])
 
-  gradeCategories  GradeCategory[]
-  topics           Topic[]
-  enrollments      Enrollment[]
-  quizPublications QuizPublication[]
-  assignments      Assignment[]
-  forums           Forum[]
-  conversations    Conversation[]
+  gradeCategories    GradeCategory[]
+  topics             Topic[]
+  enrollments        Enrollment[]
+  quizPublications   QuizPublication[]
+  assignments        Assignment[]
+  forums             Forum[]
+  conversations      Conversation[]
+  meetingAttendances MeetingAttendance[]
 
   @@index([teacherId])
   @@index([courseCode])
+  @@index([title])
   @@map("classes")
   @@schema("academic")
 }
@@ -170,7 +188,24 @@ model Enrollment {
   user  User  @relation(fields: [userId], references: [id])
 
   @@unique([classId, userId])
+  @@index([userId, status])
   @@map("enrollments")
+  @@schema("academic")
+}
+
+model MeetingAttendance {
+  id              String   @id @default(uuid()) @db.Uuid
+  joinedAt        DateTime @default(now()) @map("joined_at") @db.Timestamptz()
+  durationMinutes Int?     @map("duration_minutes")
+
+  classId   String @map("class_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([classId, studentId])
+  @@map("meeting_attendances")
   @@schema("academic")
 }
 
@@ -212,6 +247,7 @@ model User {
   avatarUrl    String?    @map("avatar_url") @db.Text
   status       UserStatus @default(active)
   createdAt    DateTime?  @map("created_at") @db.Timestamptz() @default(now())
+  updatedAt    DateTime?  @map("updated_at") @db.Timestamptz() @updatedAt
 
   schoolId String @map("school_id") @db.Uuid
   school   School @relation(fields: [schoolId], references: [id])
@@ -233,9 +269,13 @@ model User {
   notificationDeliveries NotificationDelivery[]
   conversations          Conversation[]
   airequests             AIRequest[]
+  materialProgresses     MaterialProgress[]
+  meetingAttendances     MeetingAttendance[]
 
   @@unique([schoolId, identityCode])
   @@index([email])
+  @@index([schoolId, role])
+  @@index([fullName])
   @@map("users")
   @@schema("auth")
 }
@@ -274,9 +314,10 @@ model Material {
   externalUrl  String?   @map("external_url")
   createdAt    DateTime? @map("created_at") @db.Timestamptz() @default(now())
 
-  topicId    String      @map("topic_id") @db.Uuid
-  topic      Topic       @relation(fields: [topicId], references: [id])
-  embeddings Embedding[]
+  topicId            String             @map("topic_id") @db.Uuid
+  topic              Topic              @relation(fields: [topicId], references: [id])
+  embeddings         Embedding[]
+  materialProgresses MaterialProgress[]
 
   @@index([topicId])
   @@map("materials")
@@ -293,6 +334,23 @@ model Reference {
   topic   Topic  @relation(fields: [topicId], references: [id])
 
   @@map("references")
+  @@schema("learning")
+}
+
+model MaterialProgress {
+  id           String   @id @default(uuid()) @db.Uuid
+  isCompleted  Boolean  @default(false) @map("is_completed")
+  lastViewedAt DateTime @default(now()) @map("last_viewed_at") @db.Timestamptz()
+
+  materialId String @map("material_id") @db.Uuid
+  studentId  String @map("student_id") @db.Uuid
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  student  User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([materialId, studentId])
+  @@index([studentId])
+  @@map("material_progress")
   @@schema("learning")
 }
 
@@ -380,6 +438,7 @@ model Option {
 model QuizAttempt {
   id          String    @id @default(uuid()) @db.Uuid
   score       Float?
+  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz()
   submittedAt DateTime? @map("submitted_at") @db.Timestamptz()
 
   quizId    String @map("quiz_id") @db.Uuid
@@ -457,6 +516,7 @@ model Submission {
   textAnswer  String?   @map("text_answer")
   score       Float?
   feedback    String?
+  isLate      Boolean   @default(false) @map("is_late")
   submittedAt DateTime? @map("submitted_at") @db.Timestamptz() @default(now())
 
   assignmentId String @map("assignment_id") @db.Uuid
@@ -466,7 +526,8 @@ model Submission {
   student    User             @relation(fields: [studentId], references: [id])
   files      SubmissionFile[]
 
-  @@index([assignmentId, studentId])
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
   @@map("submissions")
   @@schema("assign")
 }
@@ -486,10 +547,12 @@ model SubmissionFile {
 }
 
 model Forum {
-  id        String    @id @default(uuid()) @db.Uuid
-  title     String
-  content   String
-  createdAt DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  content     String
+  isAnonymous Boolean   @default(false) @map("is_anonymous")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  createdAt   DateTime? @map("created_at") @db.Timestamptz() @default(now())
 
   classId   String @map("class_id") @db.Uuid
   createdBy String @map("created_by") @db.Uuid
@@ -510,6 +573,7 @@ model Comment {
   id          String    @id @default(uuid()) @db.Uuid
   content     String
   isAnonymous Boolean   @default(false) @map("is_anonymous")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
   createdAt   DateTime? @map("created_at") @db.Timestamptz() @default(now())
   updatedAt   DateTime? @map("updated_at") @db.Timestamptz() @updatedAt
   forumId  String  @map("forum_id") @db.Uuid
