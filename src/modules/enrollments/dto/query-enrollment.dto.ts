@@ -6,6 +6,8 @@ import { EnrollmentStatus } from 'src/generated/prisma/enums';
 export class QueryEnrollmentDto extends QueryDto {
   @ApiPropertyOptional({
     description: 'Status of enrollment',
+    type: 'string',
+    example: EnrollmentStatus.pending,
     enum: EnrollmentStatus,
     default: EnrollmentStatus.pending,
   })
@@ -16,6 +18,7 @@ export class QueryEnrollmentDto extends QueryDto {
   @ApiPropertyOptional({
     description: 'Mark the class with a star',
     type: 'boolean',
+    example: false,
     default: false,
   })
   @IsOptional()

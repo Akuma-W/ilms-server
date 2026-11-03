@@ -12,12 +12,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: LoggerService) {}
 
   catch(exception: HttpException, host: ArgumentsHost) {
+    // Step 1: Switch to HTTP context and get request/response objects
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
     const req = ctx.getRequest<Request>();
 
+    // Step 2: Extract HTTP status code
     const status = exception.getStatus();
 
+    // Step 3: Build structured error log and write to logger
     const log = {
       timestamp: new Date().toISOString(),
       method: req.method,
@@ -32,6 +35,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error(JSON.stringify(log));
 
+    // Step 4: Return unified error response
     res.status(status).json({
       success: false,
       statusCode: status,

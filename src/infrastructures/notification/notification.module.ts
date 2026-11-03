@@ -10,4 +10,3 @@ import { NotificationFacade } from './notification.facade';
   exports: [NotificationFacade, EmailModule, SmsModule],
 })
 export class NotificationModule {}
-

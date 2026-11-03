@@ -50,6 +50,8 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'User role: student | teacher | admin',
+    type: 'string',
+    example: Role.student,
     enum: Role,
     default: Role.student,
   })
@@ -93,6 +95,8 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Account status: active | locked | banned',
+    type: 'string',
+    example: UserStatus.active,
     enum: UserStatus,
     default: UserStatus.active,
   })

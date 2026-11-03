@@ -25,21 +25,24 @@ export class Enrollment {
 
   @ApiProperty({
     description: 'Role in class',
+    type: 'string',
     enum: Role,
     default: Role.student,
-    example: 'student',
+    example: Role.student,
   })
   roleIn: Role;
 
   @ApiProperty({
     description: 'Mark the class with a star',
     type: 'boolean',
+    example: false,
     default: false,
   })
   isStarred: boolean;
 
   @ApiProperty({
     description: 'Time join class',
+    type: 'string',
     example: '2026-03-19T10:00:00.000Z',
     nullable: true,
   })
@@ -47,8 +50,10 @@ export class Enrollment {
 
   @ApiProperty({
     description: 'Status of enrollment',
+    type: 'string',
     enum: EnrollmentStatus,
     default: EnrollmentStatus.pending,
+    example: EnrollmentStatus.pending,
   })
   status: EnrollmentStatus;
 }

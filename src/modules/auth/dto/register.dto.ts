@@ -49,6 +49,8 @@ export class RegisterDto {
 
   @ApiProperty({
     description: 'User role: student | teacher | admin',
+    type: 'string',
+    example: Role.student,
     enum: Role,
     default: Role.student,
   })

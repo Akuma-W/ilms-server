@@ -4,7 +4,8 @@ import { IsOptional, IsString } from 'class-validator';
 export class QueryTopicDto {
   @ApiPropertyOptional({
     description: 'Searching by title',
-    example: 'Chương 1',
+    type: 'string',
+    example: 'Chapter 1',
   })
   @IsOptional()
   @IsString()

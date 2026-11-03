@@ -3,4 +3,3 @@ export interface NotificationPayload {
   subject?: string;
   content: string;
 }
-

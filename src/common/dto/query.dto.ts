@@ -12,14 +12,24 @@ export class QueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ example: 1, default: 1 })
+  @ApiPropertyOptional({
+    description: 'Page number',
+    type: 'number',
+    example: 1,
+    default: 1,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page: number = 1;
 
-  @ApiPropertyOptional({ example: 10, default: 10 })
+  @ApiPropertyOptional({
+    description: 'Number of items per page',
+    type: 'number',
+    example: 10,
+    default: 10,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

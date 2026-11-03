@@ -4,14 +4,16 @@ import { IsString, IsOptional } from 'class-validator';
 export class CreateTopicDto {
   @ApiProperty({
     description: 'Title of topic',
-    example: 'Chương 1: Giới thiệu',
+    type: 'string',
+    example: 'Chapter 1: Introduction',
   })
   @IsString()
   title: string;
 
   @ApiPropertyOptional({
     description: 'Description / Introduction of topic',
-    example: 'Tổng quan về khóa học',
+    type: 'string',
+    example: 'Overview of the course',
   })
   @IsOptional()
   @IsString()

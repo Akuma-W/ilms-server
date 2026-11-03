@@ -49,7 +49,6 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: phongtt@runsystem.net
       storage: /data/acme.json
       dnsChallenge:
         provider: desec

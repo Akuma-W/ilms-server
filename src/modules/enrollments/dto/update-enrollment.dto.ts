@@ -5,9 +5,10 @@ import { Role, EnrollmentStatus } from 'src/generated/prisma/enums';
 export class UpdateEnrollmentDto {
   @ApiPropertyOptional({
     description: 'Role in class',
+    type: 'string',
     enum: Role,
     default: Role.student,
-    example: 'student',
+    example: Role.student,
   })
   @IsOptional()
   @IsEnum(Role)
@@ -16,6 +17,7 @@ export class UpdateEnrollmentDto {
   @ApiPropertyOptional({
     description: 'Mark the class with a star',
     type: 'boolean',
+    example: false,
     default: false,
   })
   @IsOptional()
@@ -24,6 +26,8 @@ export class UpdateEnrollmentDto {
 
   @ApiPropertyOptional({
     description: 'Status of enrollment',
+    type: 'string',
+    example: EnrollmentStatus.pending,
     enum: EnrollmentStatus,
     default: EnrollmentStatus.pending,
   })

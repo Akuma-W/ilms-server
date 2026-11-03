@@ -12,33 +12,31 @@ export const createLogger = (config: ConfigService) => {
   });
 
   // FILE TRANSPORT
-  const fileTransport = new winston.transports.File({
-    filename: 'logs/app.log',
-    level: 'info',
-    format: winston.format.json(),
-  });
-
-  // LOKI TRANSPORT
-  const lokiTransport = new LokiTransport({
-    host: config.get<string>('logger.lokiHost') || 'http://gateway:3100',
-    headers: {
-      'X-Scope-OrgID': 'tenant1',
-    },
-    labels: {
-      app: config.get<string>('appName'),
-      env: config.get<string>('nodeEnv'),
-    },
-    json: false,
-    batching: true,
-    interval: 5,
-    onConnectionError: (err) => console.error('Loki transport error: ', err),
-  });
-
   if (transportType === 'file' || transportType === 'both') {
+    const fileTransport = new winston.transports.File({
+      filename: 'logs/app.log',
+      level: 'info',
+      format: winston.format.json(),
+    });
     transports.push(fileTransport);
   }
 
+  // LOKI TRANSPORT
   if (transportType === 'loki' || transportType === 'both') {
+    const lokiTransport = new LokiTransport({
+      host: config.get<string>('logger.lokiHost') || 'http://gateway:3100',
+      headers: {
+        'X-Scope-OrgID': 'tenant1',
+      },
+      labels: {
+        app: config.get<string>('appName'),
+        env: config.get<string>('nodeEnv'),
+      },
+      json: false,
+      batching: true,
+      interval: 5,
+      onConnectionError: (err) => console.error('Loki transport error: ', err),
+    });
     transports.push(lokiTransport);
   }
 

@@ -4,14 +4,16 @@ import { FileType } from 'src/generated/prisma/enums';
 
 export class CreateMaterialDto {
   @ApiProperty({
-    description: 'Tiêu đề tài liệu học tập',
-    example: 'Slide Chương 1: Kiến trúc Client-Server',
+    description: 'Title of learning material',
+    type: 'string',
+    example: 'Slide Chapter 1: Client-Server Architecture',
   })
   @IsString()
   title: string;
 
   @ApiProperty({
-    description: 'Định dạng tài liệu',
+    description: 'Material format type',
+    type: 'string',
     enum: FileType,
     example: 'slide',
   })
@@ -19,15 +21,17 @@ export class CreateMaterialDto {
   materialType: FileType;
 
   @ApiPropertyOptional({
-    description: 'Đường dẫn tệp tin trên hệ thống storage',
-    example: 'uploads/materials/slide-chuong-1.pdf',
+    description: 'Storage file path',
+    type: 'string',
+    example: 'uploads/materials/slide-chapter-1.pdf',
   })
   @IsOptional()
   @IsString()
   fileUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Đường dẫn liên kết ngoài (nếu loại tài liệu là link)',
+    description: 'External link URL if material is a link',
+    type: 'string',
     example: 'https://youtube.com/...',
   })
   @IsOptional()

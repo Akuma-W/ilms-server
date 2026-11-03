@@ -7,14 +7,10 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
-    environment:
-      POSTGRES_USER: runsystem
-      POSTGRES_PASSWORD: 1234@Dcba
-      POSTGRES_DB: ilms_db
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     networks:
       - ilms-network
 
@@ -26,9 +22,9 @@ services:
       - ../.env
     command: >
       redis-server
-      --requirepass 1234@Dcba
+      --requirepass ${REDIS_PASSWORD}
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -39,26 +35,28 @@ services:
     container_name: minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
+    env_file:
+      - ../.env
     environment:
-      - MINIO_ROOT_USER=runsystem
-      - MINIO_ROOT_PASSWORD=1234@Dcba
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-      - MINIO_UPDATE=off
+      MINIO_ROOT_USER: ${MINIO_USERNAME:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+      MINIO_UPDATE: "off"
     ports:
-      - '9090:9000'
-      - '9001:9001'
+      - '${MINIO_PORT:-9090}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
     expose:
       - '9000'
       - '9001'
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.minio.rule=Host(`files.ilms.gzrcloud.com`)'
+      - 'traefik.http.routers.minio.rule=Host(`${MINIO_DOMAIN:-files.localhost}`)'
       - 'traefik.http.services.minio.loadbalancer.server.port=9000'
       - 'traefik.http.services.minio.entrypoints=websecure'
       - 'traefik.http.services.minio.tls=true'
       - 'traefik.http.routers.minio.tls.certresolver=letsencrypt'
 
-      - 'traefik.http.routers.minio-console.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/minio/`)'
+      - 'traefik.http.routers.minio-console.rule=Host(`${APP_DOMAIN:-localhost}`) && PathPrefix(`/minio/`)'
       - 'traefik.http.services.minio-console.loadbalancer.server.port=9001'
       - 'traefik.http.services.minio-console.entrypoints=websecure'
       - 'traefik.http.services.minio-console.tls=true'
@@ -79,5 +77,5 @@ volumes:
 
 networks:
   ilms-network:
+    name: ilms-network
     driver: bridge
-    external: true

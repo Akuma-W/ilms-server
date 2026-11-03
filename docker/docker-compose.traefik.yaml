@@ -2,10 +2,16 @@ services:
   traefik:
     image: traefik:v3.6.7
     container_name: traefik
+    profiles:
+      - traefik
+    restart: unless-stopped
+    env_file:
+      - ../.env
     command:
       - '--configFile=/etc/traefik/traefik.yml'
+      - '--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}'
     environment:
-      - 'DESEC_TOKEN='
+      - 'DESEC_TOKEN=${DESEC_TOKEN:-}'
     ports:
       - target: 80
         published: 80
@@ -20,14 +26,14 @@ services:
         protocol: tcp
         mode: host
     volumes:
-      - '/run/user/1001/docker.sock:/var/run/docker.sock:ro'
-      - './traefik/traefik.yml:/etc/traefik/traefik.yml'
-      - './traefik/conf.d:/etc/traefik/conf.d'
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - './traefik/traefik.yml:/etc/traefik/traefik.yml:ro'
+      - './traefik/conf.d:/etc/traefik/conf.d:ro'
       - './traefik/data:/data'
     networks:
       - ilms-network
 
 networks:
   ilms-network:
-    driver: bridge
+    name: ilms-network
     external: true

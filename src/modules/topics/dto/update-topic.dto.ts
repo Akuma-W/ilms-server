@@ -4,7 +4,8 @@ import { IsInt, IsOptional } from 'class-validator';
 
 export class UpdateTopicDto extends PartialType(CreateTopicDto) {
   @ApiPropertyOptional({
-    description: 'Display order',
+    description: 'Display order index',
+    type: 'number',
     example: 2,
   })
   @IsOptional()

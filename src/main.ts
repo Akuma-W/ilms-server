@@ -71,7 +71,9 @@ async function bootstrap() {
     const port = configService.get<number>('port') || 3000;
     await app.listen(port);
     console.log(`Server is running on http://localhost:${port}/api/v1`);
-    console.log(`API Document is running on http://localhost:${port}/docs`);
+    console.log(
+      `API Document is running on http://localhost:${port}/api/v1/docs`,
+    );
   } catch (error) {
     console.error('Server failed to start: ', error);
   }

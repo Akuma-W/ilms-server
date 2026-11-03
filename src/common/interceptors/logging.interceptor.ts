@@ -14,6 +14,7 @@ export class LoggingInterceptor<T> implements NestInterceptor<T, T> {
   constructor(private readonly logger: LoggerService) {}
 
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<T> {
+    // Step 1: Capture request metadata and initialize high-resolution timer
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
@@ -23,11 +24,13 @@ export class LoggingInterceptor<T> implements NestInterceptor<T, T> {
 
     const start = process.hrtime();
 
+    // Step 2: Handle downstream request pipeline and calculate execution duration
     return next.handle().pipe(
       tap((res: T) => {
         const diff = process.hrtime(start);
         const duration = diff[0] * 1000 + diff[1] / 1e6;
 
+        // Step 3: Format log payload and record API request audit
         const log = {
           timestamp: new Date().toISOString(),
           method,

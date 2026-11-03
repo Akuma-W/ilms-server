@@ -21,9 +21,10 @@ export class CreateEnrollmentDto {
 
   @ApiProperty({
     description: 'Role in class',
+    type: 'string',
+    example: Role.student,
     enum: Role,
     default: Role.student,
-    example: 'student',
   })
   @IsEnum(Role)
   roleIn: Role;
@@ -31,6 +32,7 @@ export class CreateEnrollmentDto {
   @ApiPropertyOptional({
     description: 'Mark the class with a star',
     type: 'boolean',
+    example: false,
     default: false,
   })
   @IsOptional()

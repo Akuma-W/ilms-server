@@ -29,7 +29,11 @@
 - **Identifiers:** All class names, method names, variables, constants, DTO properties, and database entities MUST be in English.
 - **Comments & JSDoc:** All inline comments, code notes, and method descriptions MUST be in English.
 - **Swagger Documentation:** All `@ApiOperation({ summary })`, `@ApiOkResponse({ description })`, parameter descriptions, and schema examples MUST be in clear, professional English.
-- **Concise Function Documentation:** Add a 1–2 line concise comment for each service method or controller action explaining its primary intent. Avoid redundant essays.
+- **DTO Swagger Declaration Rule:** Every property declaring `@ApiProperty` or `@ApiPropertyOptional` MUST contain `description`, `example`, and `type`.
+- **Targeted Code Comments Policy:** Add simple, concise comments ONLY for `controller`, `service`, `facade`, `provider`, `strategy`, `util`, `helper`. For advanced features, explain each step. For `filter` and `interceptor`, annotate code steps (`// Step 1: ...`). DO NOT add comments to `constant`, `decorator`, `guard`, `config`, `interface`, `type`, `spec`, `module`.
+- **File Endings:** Every file MUST end with exactly ONE single trailing newline (`\n`), no extra blank lines.
+- **Linter & Formatting:** Always run `npm run fix` and ensure 0 errors before reporting.
+- **Git Commit Approval:** Never commit git changes automatically. Always await explicit user approval.
 
 ```typescript
 /**

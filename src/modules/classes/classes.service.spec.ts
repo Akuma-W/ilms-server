@@ -29,7 +29,9 @@ describe('ClassesService', () => {
   });
 
   it('should generate a 6-character alphanumeric uppercase course code', () => {
-    const code = (service as any).generateCode();
+    const code = (
+      service as unknown as { generateCode: () => string }
+    ).generateCode();
     expect(code).toBeDefined();
     expect(code).toHaveLength(6);
     expect(code).toMatch(/^[A-Z0-9]{6}$/);

@@ -3,27 +3,34 @@ name: ilms-server
 services:
   ilms-server:
     container_name: ilms-server
-    image: ilmsserver
+    image: ilms-server:latest
     build:
       context: ..
       dockerfile: Dockerfile
+    restart: unless-stopped
     env_file:
       - ../.env
-    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ilms_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_INTERNAL_ENDPOINT: minio
+      MINIO_PORT: 9000
+      LOKI_HOST: http://gateway:3100
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.services.ilms.loadbalancer.server.port=3000'
-      - 'traefik.http.routers.ilms.rule=Host(`ilms.gzrcloud.com`) && PathPrefix(`/api/v1`)'
+      - 'traefik.http.services.ilms.loadbalancer.server.port=${PORT:-5000}'
+      - 'traefik.http.routers.ilms.rule=Host(`${APP_DOMAIN:-localhost}`) && PathPrefix(`/api/v1`)'
       - 'traefik.http.routers.ilms.entryPoints=web,websecure'
       - 'traefik.http.routers.ilms.priority=100'
       - 'traefik.http.routers.ilms.tls=true'
       - 'traefik.http.routers.ilms.tls.certresolver=letsencrypt'
     ports:
-      - 5000:5000
+      - '${PORT:-5000}:${PORT:-5000}'
     networks:
       - ilms-network
 
 networks:
   ilms-network:
-    driver: bridge
+    name: ilms-network
     external: true
