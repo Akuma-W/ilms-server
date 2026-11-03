@@ -21,6 +21,7 @@ import { TopicsModule } from './modules/topics/topics.module';
 import { SchoolsModule } from './modules/schools/schools.module';
 import { CustomThrottlerGuard } from './common/guards/throttler.guard';
 import { MaterialsModule } from './modules/materials/materials.module';
+import { NotificationModule } from './infrastructures/notification/notification.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { MaterialsModule } from './modules/materials/materials.module';
     RedisModule,
     LoggerModule,
     StorageModule,
+    NotificationModule,
     UsersModule,
     AuthModule,
     ClassesModule,

@@ -271,12 +271,12 @@ export class ClassesService {
    * - get school and teacher from request
    */
   private generateCode(): string {
-    const code = randomBytes(4)
-      .toString('base64') // encode
-      .replace(/[^A-Z0-9]/gi, '') // remove strange character
-      .toUpperCase()
-      .slice(0, 6); // 6 digit
-
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const bytes = randomBytes(6);
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars[bytes[i] % chars.length];
+    }
     return code;
   }
 
