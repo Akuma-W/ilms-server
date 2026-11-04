@@ -8,7 +8,7 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QueryClassDto } from './dto/query-class.dto';
-import { AuthUser } from '../auth/interfaces/auth-user.interface';
+import { AuthUser } from '../auth/session/interfaces/auth-user.interface';
 import { Role } from 'src/generated/prisma/enums';
 import { randomBytes } from 'crypto';
 import { UsersService } from '../users/users.service';

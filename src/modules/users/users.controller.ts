@@ -17,7 +17,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import type { AuthUser } from '../auth/session/interfaces/auth-user.interface';
 import { ApiUpdateAvatar } from './swagger/update-avatar.swagger';
 import { ApiGetProfile } from './swagger/get-profile.swagger';
 

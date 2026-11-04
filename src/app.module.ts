@@ -10,7 +10,7 @@ import { HealthModule } from './health/health.module';
 import { PrismaModule } from './infrastructures/prisma/prisma.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from './modules/auth/session/guards/jwt-auth.guard';
 import { RedisModule } from './infrastructures/redis/redis.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './logger/logger.module';

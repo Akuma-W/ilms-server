@@ -16,7 +16,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/generated/prisma/enums';
 import { ApiCreateClass } from './swagger/create-class.swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import type { AuthUser } from '../auth/interfaces/auth-user.interface';
+import type { AuthUser } from '../auth/session/interfaces/auth-user.interface';
 import { ApiGetClasses } from './swagger/get-classes.swagger';
 import { QueryClassDto } from './dto/query-class.dto';
 import { ApiGetClass } from './swagger/get-class.swagger';

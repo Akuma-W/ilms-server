@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AuthUser } from 'src/modules/auth/interfaces/auth-user.interface';
+import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
