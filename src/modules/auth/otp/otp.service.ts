@@ -17,7 +17,7 @@ export class OtpService {
   async saveOtp(
     key: string,
     payload: unknown,
-    ttl = OTP_CONSTANTS.DEFAULT_TTL,
+    ttl: number = OTP_CONSTANTS.DEFAULT_TTL,
   ): Promise<void> {
     await this.redis.set(key, payload, ttl);
   }
@@ -36,7 +36,7 @@ export class OtpService {
   async saveRegistrationOtp(
     email: string,
     payload: unknown,
-    ttl = OTP_CONSTANTS.DEFAULT_TTL,
+    ttl: number = OTP_CONSTANTS.DEFAULT_TTL,
   ): Promise<void> {
     const key = `${OTP_CONSTANTS.REGISTER_PREFIX}${email}`;
     await this.saveOtp(key, payload, ttl);
@@ -58,7 +58,7 @@ export class OtpService {
   async saveForgotPasswordOtp(
     email: string,
     otp: string,
-    ttl = OTP_CONSTANTS.DEFAULT_TTL,
+    ttl: number = OTP_CONSTANTS.DEFAULT_TTL,
   ): Promise<void> {
     const key = `${OTP_CONSTANTS.FORGOT_PASSWORD_PREFIX}${email}`;
     await this.saveOtp(key, { email, otp }, ttl);

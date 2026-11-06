@@ -12,7 +12,7 @@ Interactive LMS Backend is the core API service for the Interactive Learning Man
 - **Authentication & Security**: Passport.js (JWT, Google OAuth2), Bcrypt `^6.0.0`, Helmet `^8.1.0`, Cookie-Parser
 - **Documentation**: Swagger / OpenAPI (`@nestjs/swagger: ^11.2.6` at `/api/v1/docs`)
 - **Notifications**: Nodemailer `^7.0.12` (Email SMTP), Twilio `^5.11.1` (SMS)
-- **Logging & Monitoring**: Winston `^3.19.0`, Loki, Grafana 12.4, Grafana Alloy `v1.14.0`
+- **Logging & Monitoring**: Winston `^3.19.0`, Loki 3.4, Grafana 11.5
 - **DevOps**: Docker Multi-stage, Docker Compose (Modular infra/app/monitoring), Traefik v3.6.7 (SSL reverse proxy)
 
 ## Features
@@ -121,10 +121,10 @@ Service endpoints:
 ilms-server/
 ├── assets/                 # Brand assets and logo
 ├── docker/                 # Modular Docker Compose and Traefik configs
-│   ├── configs/            # Loki, Alloy, and Nginx configs
+│   ├── configs/            # Loki and Grafana configs
 │   ├── traefik/            # Traefik proxy and certificate configs
 │   ├── docker-compose.infra.yaml       # PostgreSQL, Redis, MinIO
-│   ├── docker-compose.monitoring.yaml  # Grafana, Loki, Alloy
+│   ├── docker-compose.monitoring.yaml  # Grafana and Loki stack
 │   ├── docker-compose.traefik.yaml     # Reverse proxy and SSL
 │   └── docker-compose.yaml             # Backend application service
 ├── prisma/                 # Prisma schema and migration files

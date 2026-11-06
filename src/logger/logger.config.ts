@@ -24,7 +24,7 @@ export const createLogger = (config: ConfigService) => {
   // LOKI TRANSPORT
   if (transportType === 'loki' || transportType === 'both') {
     const lokiTransport = new LokiTransport({
-      host: config.get<string>('logger.lokiHost') || 'http://gateway:3100',
+      host: config.get<string>('logger.lokiHost') || 'http://loki:3100',
       headers: {
         'X-Scope-OrgID': 'tenant1',
       },
