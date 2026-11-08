@@ -7,7 +7,6 @@ export class UpdateEnrollmentDto {
     description: 'Role in class',
     type: 'string',
     enum: Role,
-    default: Role.student,
     example: Role.student,
   })
   @IsOptional()
@@ -18,7 +17,6 @@ export class UpdateEnrollmentDto {
     description: 'Mark the class with a star',
     type: 'boolean',
     example: false,
-    default: false,
   })
   @IsOptional()
   @IsBoolean()
@@ -27,11 +25,10 @@ export class UpdateEnrollmentDto {
   @ApiPropertyOptional({
     description: 'Status of enrollment',
     type: 'string',
-    example: EnrollmentStatus.pending,
+    example: EnrollmentStatus.approved,
     enum: EnrollmentStatus,
-    default: EnrollmentStatus.pending,
   })
   @IsOptional()
   @IsEnum(EnrollmentStatus)
-  status: EnrollmentStatus = 'pending';
+  status?: EnrollmentStatus;
 }

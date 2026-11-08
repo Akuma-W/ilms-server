@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
@@ -23,17 +24,27 @@ import { ApiUpdateEnrollment } from './swagger/update-enrollment.swagger';
 import { ApiApproveEnrollment } from './swagger/approve-enrollment.swagger';
 import { ApiRejectEnrollment } from './swagger/reject-enrollment.swagger';
 import { ApiLeaveClass } from './swagger/leave-class.swagger';
+import { ApiGetStarredClasses } from './swagger/get-starred-classes.swagger';
+import { ApiGetClassRelation } from './swagger/get-class-relation.swagger';
+import { ApiToggleStar } from './swagger/toggle-star.swagger';
+import { ApiRemoveStudent } from './swagger/remove-student.swagger';
 
 @ApiTags('Enrollments')
 @Controller('enrollments')
 export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
-  // Join class
-  @Post('join')
+  // Join or request enrollment into a class
+  @Post(['', 'join'])
   @ApiJoinClass()
-  async create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
-    const result = await this.enrollmentsService.create(createEnrollmentDto);
+  async create(
+    @CurrentUser('id') currentUserId: string,
+    @Body() createEnrollmentDto: CreateEnrollmentDto,
+  ) {
+    const result = await this.enrollmentsService.create(
+      createEnrollmentDto,
+      currentUserId,
+    );
 
     return {
       message: 'Join class successful',
@@ -41,21 +52,22 @@ export class EnrollmentsController {
     };
   }
 
-  // Get all user enrollments
+  // Get all enrollments for a specific user (admin)
   @Get('user/:userId')
+  @Roles(Role.admin)
   @ApiGetUserEnrollments()
   async getUserEnrollments(
-    @Param('userId') userId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string,
     @Query() query: QueryEnrollmentDto,
   ) {
     const data = await this.enrollmentsService.findAll(userId, query);
     return {
-      message: `Get enrollments with status: ${query.status || 'all'}${query.isStarred !== undefined ? ` and starred: ${query.isStarred}` : ''}`,
+      message: 'Get user enrollments successful',
       data,
     };
   }
 
-  // Get all my enrollments
+  // Get all enrollments of current user
   @Get('me')
   @ApiGetMyEnrollments()
   async getMyEnrollments(
@@ -65,13 +77,14 @@ export class EnrollmentsController {
     const data = await this.enrollmentsService.findAll(userId, query);
 
     return {
-      message: `Get my enrollments with status: ${query.status || 'all'}${query.isStarred !== undefined ? ` and starred: ${query.isStarred}` : ''}`,
+      message: 'Get my enrollments successful',
       data,
     };
   }
 
-  // Get my starred classes
+  // Get all starred classes for current user
   @Get('me/star')
+  @ApiGetStarredClasses()
   async getStarredClasses(@CurrentUser('id') userId: string) {
     const data = await this.enrollmentsService.getStarredClasses(userId);
 
@@ -81,11 +94,12 @@ export class EnrollmentsController {
     };
   }
 
-  // Get my relation in class
-  @Get('me/:classId')
+  // Get current user relation or enrollment in a class
+  @Get(['me/:classId', 'classes/:classId/relation'])
+  @ApiGetClassRelation()
   async getMyClassRelation(
-    @Param('classId') classId: string,
     @CurrentUser('id') userId: string,
+    @Param('classId', new ParseUUIDPipe()) classId: string,
   ) {
     const enrollment = await this.enrollmentsService.findOne(userId, classId);
 
@@ -95,22 +109,13 @@ export class EnrollmentsController {
     };
   }
 
-  // Teacher can update enrollments
-  @Patch(':classId/users/:userId')
-  @Roles(Role.teacher, Role.admin)
-  @ApiUpdateEnrollment()
-  async updateEnrollment(
+  // Toggle star status of an enrollment
+  @Patch(':id/star')
+  @ApiToggleStar()
+  async toggleStar(
     @CurrentUser('id') userId: string,
-    @Param('classId') classId: string,
-    @Param('userId') targetUserId: string,
-    @Body() dto: UpdateEnrollmentDto,
+    @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.enrollmentsService.update(userId, classId, targetUserId, dto);
-  }
-
-  // Mark/remove star in class
-  @Patch('/:id/star')
-  async toggleStar(@CurrentUser('id') userId: string, @Param('id') id: string) {
     const data = await this.enrollmentsService.toggleStar(userId, id);
 
     return {
@@ -119,14 +124,37 @@ export class EnrollmentsController {
     };
   }
 
-  // Approve student
+  // Student leaves a class
+  @Delete([':classId/leave', 'classes/:classId/leave'])
+  @ApiLeaveClass()
+  async leaveClass(
+    @CurrentUser('id') userId: string,
+    @Param('classId', new ParseUUIDPipe()) classId: string,
+  ) {
+    return this.enrollmentsService.leaveClass(userId, classId);
+  }
+
+  // Teacher updates an enrollment
+  @Patch(':classId/users/:userId')
+  @Roles(Role.teacher, Role.admin)
+  @ApiUpdateEnrollment()
+  async updateEnrollment(
+    @CurrentUser('id') userId: string,
+    @Param('classId', new ParseUUIDPipe()) classId: string,
+    @Param('userId', new ParseUUIDPipe()) targetUserId: string,
+    @Body() dto: UpdateEnrollmentDto,
+  ) {
+    return this.enrollmentsService.update(userId, classId, targetUserId, dto);
+  }
+
+  // Teacher approves student enrollment
   @Patch(':classId/users/:userId/approve')
   @Roles(Role.teacher, Role.admin)
   @ApiApproveEnrollment()
   async approveEnrollment(
     @CurrentUser('id') userId: string,
-    @Param('classId') classId: string,
-    @Param('userId') studentId: string,
+    @Param('classId', new ParseUUIDPipe()) classId: string,
+    @Param('userId', new ParseUUIDPipe()) studentId: string,
   ) {
     return this.enrollmentsService.approveEnrollment(
       userId,
@@ -135,36 +163,26 @@ export class EnrollmentsController {
     );
   }
 
-  // Reject student
+  // Teacher rejects student enrollment
   @Patch(':classId/users/:userId/reject')
   @Roles(Role.teacher, Role.admin)
   @ApiRejectEnrollment()
   async rejectEnrollment(
     @CurrentUser('id') userId: string,
-    @Param('classId') classId: string,
-    @Param('userId') studentId: string,
+    @Param('classId', new ParseUUIDPipe()) classId: string,
+    @Param('userId', new ParseUUIDPipe()) studentId: string,
   ) {
     return this.enrollmentsService.rejectEnrollment(userId, classId, studentId);
   }
 
-  // Leave class
-  @Delete(':classId/leave')
-  @ApiLeaveClass()
-  async leaveClass(
-    @CurrentUser('id') userId: string,
-    @Param('classId') classId: string,
-  ) {
-    return this.enrollmentsService.leaveClass(userId, classId);
-  }
-
-  // Remove student (teacher)
+  // Teacher removes student from class
   @Delete(':classId/users/:userId')
   @Roles(Role.teacher, Role.admin)
-  @ApiLeaveClass()
+  @ApiRemoveStudent()
   async removeStudent(
     @CurrentUser('id') userId: string,
-    @Param('classId') classId: string,
-    @Param('userId') studentId: string,
+    @Param('classId', new ParseUUIDPipe()) classId: string,
+    @Param('userId', new ParseUUIDPipe()) studentId: string,
   ) {
     return this.enrollmentsService.removeStudent(userId, classId, studentId);
   }

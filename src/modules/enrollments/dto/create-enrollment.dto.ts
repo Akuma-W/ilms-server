@@ -3,13 +3,15 @@ import { IsBoolean, IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { Role } from 'src/generated/prisma/enums';
 
 export class CreateEnrollmentDto {
-  @ApiProperty({
-    description: 'Id of user join class',
+  @ApiPropertyOptional({
+    description:
+      'Id of user join class (defaults to authenticated user if omitted)',
     type: 'string',
     example: 'a3f1c9b2-1234-4cde-9abc-1234567890ab',
   })
+  @IsOptional()
   @IsUUID()
-  userId: string;
+  userId?: string;
 
   @ApiProperty({
     description: 'ID of class',
@@ -19,15 +21,16 @@ export class CreateEnrollmentDto {
   @IsUUID()
   classId: string;
 
-  @ApiProperty({
-    description: 'Role in class',
+  @ApiPropertyOptional({
+    description: 'Role in class (defaults to student)',
     type: 'string',
     example: Role.student,
     enum: Role,
     default: Role.student,
   })
+  @IsOptional()
   @IsEnum(Role)
-  roleIn: Role;
+  roleIn?: Role;
 
   @ApiPropertyOptional({
     description: 'Mark the class with a star',

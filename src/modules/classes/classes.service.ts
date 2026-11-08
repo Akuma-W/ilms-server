@@ -9,7 +9,7 @@ import { UpdateClassDto } from './dto/update-class.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QueryClassDto } from './dto/query-class.dto';
 import { AuthUser } from '../auth/session/interfaces/auth-user.interface';
-import { Role } from 'src/generated/prisma/enums';
+import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { randomBytes } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { Prisma } from 'src/generated/prisma/client';
@@ -101,8 +101,19 @@ export class ClassesService {
         },
         include: {
           teacher: true,
+          school: true,
           enrollments: {
             where: { userId: userId },
+          },
+          _count: {
+            select: {
+              enrollments: {
+                where: {
+                  roleIn: Role.student,
+                  status: EnrollmentStatus.approved,
+                },
+              },
+            },
           },
         },
       }),
@@ -115,6 +126,7 @@ export class ClassesService {
       return {
         ...cls,
         enrollment,
+        totalStudents: cls._count?.enrollments ?? 0,
       };
     });
 
@@ -133,28 +145,60 @@ export class ClassesService {
   async findOne(classId: string) {
     const classroom = await this.prisma.class.findUnique({
       where: { id: classId },
-      include: { teacher: true },
+      include: {
+        teacher: true,
+        school: true,
+        _count: {
+          select: {
+            enrollments: {
+              where: {
+                roleIn: Role.student,
+                status: EnrollmentStatus.approved,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!classroom) {
       throw new NotFoundException('Class not found');
     }
 
-    return classroom;
+    return {
+      ...classroom,
+      totalStudents: classroom._count?.enrollments ?? 0,
+    };
   }
 
   // Find One Class By Course Code
   async findByCourseCode(courseCode: string) {
     const classroom = await this.prisma.class.findUnique({
       where: { courseCode },
-      include: { teacher: true },
+      include: {
+        teacher: true,
+        school: true,
+        _count: {
+          select: {
+            enrollments: {
+              where: {
+                roleIn: Role.student,
+                status: EnrollmentStatus.approved,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!classroom) {
       throw new NotFoundException('Class not found');
     }
 
-    return classroom;
+    return {
+      ...classroom,
+      totalStudents: classroom._count?.enrollments ?? 0,
+    };
   }
 
   // Find Current user's Classes | Class I teaching
@@ -186,8 +230,19 @@ export class ClassesService {
         },
         include: {
           teacher: true,
+          school: true,
           enrollments: {
             where: { userId: userId },
+          },
+          _count: {
+            select: {
+              enrollments: {
+                where: {
+                  roleIn: Role.student,
+                  status: EnrollmentStatus.approved,
+                },
+              },
+            },
           },
         },
       }),
@@ -200,6 +255,7 @@ export class ClassesService {
       return {
         ...cls,
         enrollment,
+        totalStudents: cls._count?.enrollments ?? 0,
       };
     });
 

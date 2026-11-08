@@ -7,9 +7,8 @@ export class QueryEnrollmentDto extends QueryDto {
   @ApiPropertyOptional({
     description: 'Status of enrollment',
     type: 'string',
-    example: EnrollmentStatus.pending,
+    example: EnrollmentStatus.approved,
     enum: EnrollmentStatus,
-    default: EnrollmentStatus.pending,
   })
   @IsOptional()
   @IsEnum(EnrollmentStatus)
@@ -18,8 +17,7 @@ export class QueryEnrollmentDto extends QueryDto {
   @ApiPropertyOptional({
     description: 'Mark the class with a star',
     type: 'boolean',
-    example: false,
-    default: false,
+    example: true,
   })
   @IsOptional()
   @IsBoolean()

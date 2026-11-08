@@ -15,36 +15,87 @@ import { Prisma } from 'src/generated/prisma/client';
 export class EnrollmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Join class
-  async create(createEnrollmentDto: CreateEnrollmentDto) {
-    const { userId, classId } = createEnrollmentDto;
+  // Join or request enrollment into a class with school and privacy validations
+  async create(
+    createEnrollmentDto: CreateEnrollmentDto,
+    currentUserId?: string,
+  ) {
+    const classId = createEnrollmentDto.classId;
+    const userId = currentUserId || createEnrollmentDto.userId;
 
-    // Check class existed
-    const foundClass = await this.prisma.class.findUnique({
-      where: { id: classId },
-    });
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const [foundClass, foundUser] = await Promise.all([
+      this.prisma.class.findUnique({ where: { id: classId } }),
+      this.prisma.user.findUnique({ where: { id: userId } }),
+    ]);
 
     if (!foundClass) {
       throw new NotFoundException('Class not found');
     }
 
-    // Check if user joined
+    if (!foundUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (foundClass.schoolId !== foundUser.schoolId) {
+      throw new BadRequestException(
+        'User and class must belong to the same school',
+      );
+    }
+
     const existed = await this.prisma.enrollment.findUnique({
       where: { classId_userId: { classId, userId } },
     });
 
     if (existed) {
-      throw new BadRequestException('You have joined to this class');
+      if (existed.status === EnrollmentStatus.approved) {
+        throw new BadRequestException('You are already enrolled in this class');
+      }
+      if (existed.status === EnrollmentStatus.pending) {
+        throw new BadRequestException(
+          'Your enrollment request is pending approval',
+        );
+      }
+
+      const reapplyStatus = foundClass.isPrivate
+        ? EnrollmentStatus.pending
+        : EnrollmentStatus.approved;
+
+      return this.prisma.enrollment.update({
+        where: { id: existed.id },
+        select: this.enrollmentSelect,
+        data: {
+          status: reapplyStatus,
+          roleIn: createEnrollmentDto.roleIn ?? Role.student,
+          isStarred: createEnrollmentDto.isStarred ?? false,
+          joinedAt:
+            reapplyStatus === EnrollmentStatus.approved ? new Date() : null,
+        },
+      });
     }
 
-    const enrollment = await this.prisma.enrollment.create({
-      data: createEnrollmentDto,
-    });
+    const initialStatus = foundClass.isPrivate
+      ? EnrollmentStatus.pending
+      : EnrollmentStatus.approved;
 
-    return enrollment;
+    return this.prisma.enrollment.create({
+      select: this.enrollmentSelect,
+      data: {
+        classId,
+        userId,
+        roleIn: createEnrollmentDto.roleIn ?? Role.student,
+        status: initialStatus,
+        isStarred: createEnrollmentDto.isStarred ?? false,
+        joinedAt:
+          initialStatus === EnrollmentStatus.approved ? new Date() : null,
+      },
+    });
   }
 
-  // Get user enrollments
+  // Get user enrollments with accurate total count and pagination
   async findAll(userId: string, query: QueryEnrollmentDto) {
     const { status, isStarred, page, limit, search } = query;
 
@@ -62,30 +113,35 @@ export class EnrollmentsService {
         OR: [
           { title: { contains: search, mode: 'insensitive' } },
           { subject: { contains: search, mode: 'insensitive' } },
+          { courseCode: { contains: search, mode: 'insensitive' } },
           { semester: { contains: search, mode: 'insensitive' } },
           { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
         ],
       };
     }
 
-    const enrollments = await this.prisma.enrollment.findMany({
-      where,
-      skip,
-      take,
-      orderBy: {
-        joinedAt: 'desc',
-      },
-      select: this.enrollmentSelect,
-    });
+    const [enrollments, total] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where,
+        skip,
+        take,
+        orderBy: {
+          joinedAt: 'desc',
+        },
+        select: this.enrollmentSelect,
+      }),
+      this.prisma.enrollment.count({ where }),
+    ]);
 
     const data = enrollments.map((e) => ({
       ...e.class,
+      totalStudents: e.class?._count?.enrollments ?? 0,
       enrollment: {
         id: e.id,
         status: e.status,
         isStarred: e.isStarred,
         roleIn: e.roleIn,
-        joinAt: e.joinedAt,
+        joinedAt: e.joinedAt,
       },
     }));
 
@@ -94,15 +150,15 @@ export class EnrollmentsService {
       meta: {
         page,
         limit,
-        total: data.length,
-        totalPages: Math.ceil(data.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
       },
     };
   }
 
   // Get enrollment by user and class
   async findOne(userId: string, classId: string) {
-    const enrollment = await this.prisma.enrollment.findUnique({
+    return this.prisma.enrollment.findUnique({
       where: {
         classId_userId: {
           classId,
@@ -111,28 +167,31 @@ export class EnrollmentsService {
       },
       select: this.enrollmentSelect,
     });
-
-    return enrollment;
   }
 
+  // Get all starred classes for user
   async getStarredClasses(userId: string) {
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
         userId,
         isStarred: true,
-        status: 'approved',
+        status: EnrollmentStatus.approved,
       },
       select: this.enrollmentSelect,
+      orderBy: {
+        joinedAt: 'desc',
+      },
     });
 
     const data = enrollments.map((e) => ({
       ...e.class,
+      totalStudents: e.class?._count?.enrollments ?? 0,
       enrollment: {
         id: e.id,
         status: e.status,
         isStarred: e.isStarred,
         roleIn: e.roleIn,
-        joinAt: e.joinedAt,
+        joinedAt: e.joinedAt,
       },
     }));
 
@@ -149,7 +208,6 @@ export class EnrollmentsService {
     targetUserId: string,
     updateEnrollmentDto: UpdateEnrollmentDto,
   ) {
-    // Check if teacher has permission
     await this.checkTeacherPermission(userId, classId);
 
     const enrollment = await this.findOne(targetUserId, classId);
@@ -177,7 +235,7 @@ export class EnrollmentsService {
     };
   }
 
-  // UPDATE: Mark/remove star in a class had joined
+  // Mark/remove star in a class had joined
   async toggleStar(userId: string, enrollmentId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { id: enrollmentId },
@@ -191,17 +249,15 @@ export class EnrollmentsService {
       throw new BadRequestException('Cannot star inactive class');
     }
 
-    const updated = await this.prisma.enrollment.update({
+    return this.prisma.enrollment.update({
       where: { id: enrollmentId },
       data: {
         isStarred: !enrollment.isStarred,
       },
     });
-
-    return updated;
   }
 
-  // UPDATE: Approve enrollment
+  // Approve enrollment
   async approveEnrollment(
     currentUserId: string,
     classId: string,
@@ -229,6 +285,7 @@ export class EnrollmentsService {
       select: this.enrollmentSelect,
       data: {
         status: EnrollmentStatus.approved,
+        joinedAt: new Date(),
       },
     });
 
@@ -238,7 +295,7 @@ export class EnrollmentsService {
     };
   }
 
-  // UPDATE: Approve enrollment
+  // Reject enrollment
   async rejectEnrollment(
     currentUserId: string,
     classId: string,
@@ -283,7 +340,6 @@ export class EnrollmentsService {
       throw new NotFoundException('Enrollment does not exist');
     }
 
-    // Check if user is teacher of class
     if (enrollment.roleIn === Role.teacher) {
       const teacherCount = await this.prisma.enrollment.count({
         where: {
@@ -298,7 +354,6 @@ export class EnrollmentsService {
       }
     }
 
-    // delete enrollment
     await this.prisma.enrollment.delete({
       where: {
         classId_userId: {
@@ -325,7 +380,6 @@ export class EnrollmentsService {
       throw new NotFoundException('Enrollment does not exist');
     }
 
-    // Can't remove other teacher
     if (enrollment.roleIn === Role.teacher) {
       throw new ForbiddenException("Can't remove other teacher");
     }
@@ -342,7 +396,7 @@ export class EnrollmentsService {
     return { message: 'Remove student successful' };
   }
 
-  /** HELPER */
+  // Check teacher permission for this class
   private async checkTeacherPermission(userId: string, classId: string) {
     const enrollment = await this.prisma.enrollment.findFirst({
       where: {
@@ -360,7 +414,7 @@ export class EnrollmentsService {
     return enrollment;
   }
 
-  /** HELPER: select enrollments with class */
+  // Select fields definition for enrollments query
   private enrollmentSelect = {
     id: true,
     userId: true,
@@ -378,6 +432,13 @@ export class EnrollmentsService {
         courseCode: true,
         subject: true,
         semester: true,
+        isPrivate: true,
+        meetingUri: true,
+        meetingSpaceId: true,
+        isArchived: true,
+        createdAt: true,
+        schoolId: true,
+        teacherId: true,
         school: {
           select: {
             id: true,
@@ -386,7 +447,21 @@ export class EnrollmentsService {
         },
         teacher: {
           select: {
+            id: true,
             fullName: true,
+            email: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        _count: {
+          select: {
+            enrollments: {
+              where: {
+                roleIn: Role.student,
+                status: EnrollmentStatus.approved,
+              },
+            },
           },
         },
       },
