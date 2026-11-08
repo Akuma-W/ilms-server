@@ -20,6 +20,9 @@ import { ApiGetTopics } from './swagger/get-topics.swagger';
 import { ApiSearchTopic } from './swagger/search-topic.swagger';
 import { ApiUpdateTopic } from './swagger/update-topic.swagger';
 
+/**
+ * Controller handling classroom topic management and search.
+ */
 @ApiTags('Topics')
 @Controller('topics')
 export class TopicsController {

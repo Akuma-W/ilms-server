@@ -7,10 +7,16 @@ import { CreateTopicDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 
+/**
+ * Service managing topic organization and associated learning materials/references.
+ */
 @Injectable()
 export class TopicsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Creates a new topic inside a class with calculated order index.
+   */
   async create(
     userId: string,
     classId: string,
@@ -40,13 +46,27 @@ export class TopicsService {
     };
   }
 
+  /**
+   * Retrieves all topics for a class with eagerly loaded materials and references.
+   */
   async findAll(classId: string) {
     return this.prisma.topic.findMany({
       where: { classId },
+      include: {
+        materials: {
+          orderBy: { createdAt: 'asc' },
+        },
+        references: {
+          orderBy: { title: 'asc' },
+        },
+      },
       orderBy: { orderIndex: 'asc' },
     });
   }
 
+  /**
+   * Searches topics within a class by matching title substring.
+   */
   async findMany(classId: string, title?: string) {
     return this.prisma.topic.findMany({
       where: {
@@ -59,6 +79,9 @@ export class TopicsService {
     });
   }
 
+  /**
+   * Updates topic title, description, or ordering index.
+   */
   async update(userId: string, topicId: string, dto: UpdateTopicDto) {
     const topic = await this.prisma.topic.findUnique({
       where: { id: topicId },
@@ -67,7 +90,7 @@ export class TopicsService {
     if (!topic) throw new NotFoundException('Topic does not exist');
 
     if (topic.createdBy !== userId) {
-      throw new ForbiddenException('No permission');
+      await this.checkTeacher(userId, topic.classId);
     }
 
     return this.prisma.topic.update({
@@ -76,7 +99,9 @@ export class TopicsService {
     });
   }
 
-  // Delete topic with all resources
+  /**
+   * Cascading deletes a topic along with all associated learning resources.
+   */
   async delete(userId: string, topicId: string) {
     const topic = await this.prisma.topic.findUnique({
       where: { id: topicId },
@@ -85,7 +110,7 @@ export class TopicsService {
     if (!topic) throw new NotFoundException('Topic does not exist');
 
     if (topic.createdBy !== userId) {
-      throw new ForbiddenException('No permission');
+      await this.checkTeacher(userId, topic.classId);
     }
 
     await this.prisma.$transaction([
@@ -100,13 +125,31 @@ export class TopicsService {
     ]);
   }
 
-  /** HELPER: Check teacher is administrator of class */
+  /**
+   * Validates if the user is authorized as an instructor or class owner.
+   */
   private async checkTeacher(userId: string, classId: string) {
+    const classroom = await this.prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classroom) {
+      throw new NotFoundException('Class does not exist');
+    }
+
+    if (classroom.teacherId === userId) {
+      return;
+    }
+
     const enrollment = await this.prisma.enrollment.findFirst({
       where: { userId, classId },
     });
 
-    if (!enrollment || enrollment.roleIn !== 'teacher') {
+    if (
+      !enrollment ||
+      enrollment.roleIn !== 'teacher' ||
+      enrollment.status !== 'approved'
+    ) {
       throw new ForbiddenException('You are not teacher of class');
     }
   }

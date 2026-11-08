@@ -7,11 +7,16 @@ import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 
+/**
+ * Service orchestrating learning material operations and authorization checks.
+ */
 @Injectable()
 export class MaterialsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // 1. Create a new material under a topic
+  /**
+   * Creates a new material under an existing topic.
+   */
   async create(userId: string, topicId: string, dto: CreateMaterialDto) {
     const topic = await this.prisma.topic.findUnique({
       where: { id: topicId },
@@ -21,7 +26,6 @@ export class MaterialsService {
       throw new NotFoundException('Topic does not exist');
     }
 
-    // Check if the user is the teacher of the class associated with the topic
     await this.checkTeacher(userId, topic.classId);
 
     const material = await this.prisma.material.create({
@@ -30,7 +34,7 @@ export class MaterialsService {
         materialType: dto.materialType,
         fileUrl: dto.fileUrl,
         externalUrl: dto.externalUrl,
-        topicId: topicId,
+        topicId,
       },
     });
 
@@ -40,7 +44,9 @@ export class MaterialsService {
     };
   }
 
-  // 2. Find all materials for a topic
+  /**
+   * Retrieves all materials belonging to a topic.
+   */
   async findAllByTopic(topicId: string) {
     const topic = await this.prisma.topic.findUnique({
       where: { id: topicId },
@@ -56,7 +62,9 @@ export class MaterialsService {
     });
   }
 
-  // 3. Find one material by ID
+  /**
+   * Retrieves a single material by its ID.
+   */
   async findOne(id: string) {
     const material = await this.prisma.material.findUnique({
       where: { id },
@@ -69,7 +77,9 @@ export class MaterialsService {
     return material;
   }
 
-  // 4. Update material metadata
+  /**
+   * Updates an existing material's metadata.
+   */
   async update(userId: string, id: string, dto: UpdateMaterialDto) {
     const material = await this.prisma.material.findUnique({
       where: { id },
@@ -80,7 +90,6 @@ export class MaterialsService {
       throw new NotFoundException('Material does not exist');
     }
 
-    // Check if the user is the teacher of the class associated with the topic
     await this.checkTeacher(userId, material.topic.classId);
 
     const updatedMaterial = await this.prisma.material.update({
@@ -94,7 +103,9 @@ export class MaterialsService {
     };
   }
 
-  // 5. Delete material
+  /**
+   * Removes a material from storage and database.
+   */
   async delete(userId: string, id: string) {
     const material = await this.prisma.material.findUnique({
       where: { id },
@@ -105,7 +116,6 @@ export class MaterialsService {
       throw new NotFoundException('Material does not exist');
     }
 
-    // Check if the user is the teacher of the class associated with the topic
     await this.checkTeacher(userId, material.topic.classId);
 
     await this.prisma.material.delete({
@@ -117,13 +127,31 @@ export class MaterialsService {
     };
   }
 
-  /** HELPER: Check if user is teacher of the class */
+  /**
+   * Validates if the user is an authorized instructor for the class.
+   */
   private async checkTeacher(userId: string, classId: string) {
+    const classroom = await this.prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classroom) {
+      throw new NotFoundException('Class does not exist');
+    }
+
+    if (classroom.teacherId === userId) {
+      return;
+    }
+
     const enrollment = await this.prisma.enrollment.findFirst({
       where: { userId, classId },
     });
 
-    if (!enrollment || enrollment.roleIn !== 'teacher') {
+    if (
+      !enrollment ||
+      enrollment.roleIn !== 'teacher' ||
+      enrollment.status !== 'approved'
+    ) {
       throw new ForbiddenException('You are not teacher of class');
     }
   }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   Query,
@@ -7,8 +8,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { ApiTags } from '@nestjs/swagger';
 import { StorageService } from './storage.service';
 
+/**
+ * Controller handling file storage and MinIO uploads.
+ */
+@ApiTags('Storage')
 @Controller('storage')
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
@@ -19,7 +25,10 @@ export class StorageController {
     @UploadedFile() file: Express.Multer.File,
     @Query('folder') folder: string,
   ) {
-    const path = await this.storageService.upload(file, folder);
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const path = await this.storageService.upload(file, folder || 'general');
 
     return {
       path,
@@ -33,7 +42,13 @@ export class StorageController {
     @UploadedFiles() files: Express.Multer.File[],
     @Query('folder') folder: string,
   ) {
-    const paths = await this.storageService.uploadMany(files, folder);
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Files are required');
+    }
+    const paths = await this.storageService.uploadMany(
+      files,
+      folder || 'general',
+    );
 
     const results = await Promise.all(
       paths.map(async (path) => ({
