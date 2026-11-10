@@ -18,6 +18,7 @@ import { StorageModule } from './infrastructures/storage/storage.module';
 import { AcademicModule } from './modules/academic/academic.module';
 import { AssignModule } from './modules/assign/assign.module';
 import { LearningModule } from './modules/learning/learning.module';
+import { ForumModule } from './modules/forum/forum.module';
 import { CustomThrottlerGuard } from './common/guards/throttler.guard';
 import { NotificationModule } from './infrastructures/notification/notification.module';
 
@@ -50,6 +51,7 @@ import { NotificationModule } from './infrastructures/notification/notification.
     AcademicModule,
     AssignModule,
     LearningModule,
+    ForumModule,
   ],
   controllers: [],
   providers: [

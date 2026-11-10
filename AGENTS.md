@@ -33,6 +33,9 @@
 - **Explicit Return Types:** All public Service methods MUST declare explicit TypeScript return types (`Promise<ReturnType>`).
 - **Module-Scoped Utilities:** Utility functions specific to a feature module MUST reside in `src/modules/{module}/utils/` and MUST NOT be called or imported from outside that module.
 - **Swagger Documentation:** All `@ApiOperation({ summary })`, `@ApiOkResponse({ description })`, parameter descriptions, and schema examples MUST be in clear, professional English.
+- **100% English Exception & Response Messages:** All exception messages (`BadRequestException`, `NotFoundException`, `ForbiddenException`...) and controller response messages MUST be written in clear, professional English. Never throw Vietnamese strings from the backend.
+- **Definite Assignment in DTOs and Entities:** Non-optional properties in DTOs and Entities MUST use definite assignment assertions (`!:`) or explicit initializers to prevent `TS2564: Property has no initializer and is not definitely assigned in the constructor`.
+- **FORBIDDEN: Backend Module Forum Freeze:** The `src/modules/forum/` subsystem (including `forums/`, `comments/`, `interfaces/`, `utils/`) is completely implemented, optimized, and strictly frozen. Do NOT modify any files within `src/modules/forum/` unless explicitly instructed and approved by the user.
 - **DTO Swagger Declaration Rule:** Every property declaring `@ApiProperty` or `@ApiPropertyOptional` MUST contain `description`, `example`, and `type`.
 - **Targeted Code Comments Policy:** Add simple, concise comments ONLY for `controller`, `service`, `facade`, `provider`, `strategy`, `util`, `helper`. For advanced features, explain each step. For `filter` and `interceptor`, annotate code steps (`// Step 1: ...`). DO NOT add comments to `constant`, `decorator`, `guard`, `config`, `interface`, `type`, `spec`, `module`.
 - **File Endings:** Every file MUST end with exactly ONE single trailing newline (`\n`), no extra blank lines.
@@ -58,7 +61,7 @@ async create(schoolId: string, teacherId: string, dto: CreateClassDto): Promise<
 When implementing or extending any backend module in `src/modules/{module_name}/`, AI Agents **MUST NOT** deliver partial code (e.g., delivering only Controller and Service). Every module or feature addition is considered complete **ONLY** when all 5 elements are implemented:
 
 - **Entity Response Contracts:** Entities in `entities/` MUST be fully typed with `@ApiProperty` / `@ApiPropertyOptional`, serving as the official response contract. Empty or dummy entity classes are strictly forbidden.
-- **Microservices-Ready Subsystems (Bounded Contexts):** Modules are organized into subsystem directories reflecting their respective PostgreSQL schemas (`academic`, `assign`, `learning`, `auth`, `users`). Each subsystem provides an aggregator module (`academic.module.ts`, `assign.module.ts`, `learning.module.ts`):
+- **Microservices-Ready Subsystems (Bounded Contexts):** Modules are organized into subsystem directories reflecting their respective PostgreSQL schemas (`academic`, `assign`, `learning`, `forum`, `auth`, `users`). Each subsystem provides an aggregator module (`academic.module.ts`, `assign.module.ts`, `learning.module.ts`, `forum.module.ts`):
   ```text
   src/modules/
   ├── academic/                    # Subsystem: Academic (schema: academic)
@@ -75,9 +78,16 @@ When implementing or extending any backend module in `src/modules/{module_name}/
   │   ├── references/
   │   ├── topics/
   │   └── learning.module.ts
+  ├── forum/                       # Subsystem: Forums & Discussions (schema: forum) - STRICTLY FROZEN
+  │   ├── forums/
+  │   ├── comments/
+  │   ├── interfaces/              # Shared forum/comment interfaces
+  │   ├── utils/                   # Shared forum/comment utilities & tree builders
+  │   └── forum.module.ts
   ├── auth/                        # Subsystem: Authentication & Sessions (schema: auth)
   └── users/                       # Subsystem: User Management (schema: users)
   ```
+- **Subsystem Shared Interfaces & Utils:** When a subsystem manages multiple related entities, place cross-cutting domain interfaces in `src/modules/{subsystem}/interfaces/` and shared mapping/utility functions in `src/modules/{subsystem}/utils/`.
 - **Anti-God-Class Decomposition:** When a module exceeds 300 lines or encapsulates more than 6 distinct endpoint actions, proactively decompose it into cohesive sub-controllers and sub-services (exemplified by `src/modules/auth/`).
 
 ```text
@@ -169,7 +179,8 @@ The global `ResponseInterceptor` wraps all controller return values into a stand
 }
 ```
 
-In Controllers, return an object containing `message` and `data`:
+- **Array Preservation Rule:** Controller methods returning lists/arrays must return the array directly. `ResponseInterceptor` MUST explicitly check `if (Array.isArray(res))` first to preserve arrays (including empty arrays `[]`) as `data: [...]`. Spreading an array `{ ...payload }` into an indexed object `{ '0': ..., '1': ... }` or collapsing empty arrays into `null` is STRICTLY FORBIDDEN.
+- In Controllers, return an object containing `message` and `data` (or return the raw array/object directly for standard queries):
 
 ```typescript
 return {

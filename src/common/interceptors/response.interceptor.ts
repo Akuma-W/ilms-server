@@ -18,10 +18,19 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((res: unknown) => {
-        // Check if res is object and not null
+        // Step 1: If res is directly an Array, preserve it directly as array data
+        if (Array.isArray(res)) {
+          return {
+            success: true,
+            message: 'Success',
+            data: res,
+          };
+        }
+
+        // Step 2: Check if res is non-null object
         const isObject = typeof res === 'object' && res !== null;
 
-        // Extract message and data securely
+        // Step 3: Extract message and data securely
         let message = 'Success';
         let data = res;
 
@@ -29,8 +38,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
           const payload = res as ControllerResponse;
           if (payload.message) message = payload.message;
 
-          // If object response have field 'data', choose this field
-          // Else make data by all object (but remove field message)
+          // If object response has field 'data', choose this field (preserves array/object inside data)
           if (payload.data !== undefined) {
             data = payload.data;
           } else {
