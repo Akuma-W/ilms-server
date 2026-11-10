@@ -35,13 +35,34 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error(JSON.stringify(log));
 
-    // Step 4: Return unified error response
+    // Step 4: Extract error code and message
+    const exceptionResponse = exception.getResponse();
+    let message = exception.message;
+    let errorCode = `ERR_HTTP_${status}`;
+
+    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      const respObj = exceptionResponse as Record<string, unknown>;
+      if (typeof respObj.message === 'string') {
+        message = respObj.message;
+      } else if (Array.isArray(respObj.message)) {
+        message = respObj.message.join('; ');
+      }
+      if (typeof respObj.errorCode === 'string') {
+        errorCode = respObj.errorCode;
+      } else if (typeof respObj.error === 'string') {
+        errorCode = respObj.error.toUpperCase().replace(/\s+/g, '_');
+      }
+    }
+
+    // Step 5: Return unified error response
     res.status(status).json({
       success: false,
       statusCode: status,
+      errorCode,
+      message,
+      data: null,
       timestamp: log.timestamp,
       path: req.originalUrl,
-      message: exception.message,
     });
   }
 }

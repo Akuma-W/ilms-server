@@ -4,6 +4,7 @@ import { AuthUser } from './interfaces/auth-user.interface';
 import { RedisService } from 'src/infrastructures/redis/redis.service';
 import { UsersService } from 'src/modules/users/users.service';
 import { TokenService } from './token.service';
+import { UserStatus } from 'src/generated/prisma/enums';
 
 // Service managing active user sessions, token rotation, and session invalidation
 @Injectable()
@@ -14,7 +15,7 @@ export class SessionService {
     private readonly tokenService: TokenService,
   ) {}
 
-  // Rotates refresh token and generates new auth tokens
+  // Rotates refresh token, checks account status, and generates new auth tokens
   async refreshToken(refreshToken: string) {
     const payload = await this.tokenService.verifyRefreshToken(refreshToken);
     const key = `refresh:${payload.sub}:${payload.jti}`;
@@ -29,9 +30,16 @@ export class SessionService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const user = await this.usersService.findOne(payload.sub);
+    const user = await this.usersService.findOne(payload.sub).catch(() => {
+      throw new UnauthorizedException('User not found');
+    });
+
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.status !== UserStatus.active) {
+      throw new UnauthorizedException('User account is locked or inactive');
     }
 
     await this.redis.del(key);

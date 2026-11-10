@@ -15,15 +15,10 @@ import { RedisModule } from './infrastructures/redis/redis.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerModule } from './logger/logger.module';
 import { StorageModule } from './infrastructures/storage/storage.module';
-import { ClassesModule } from './modules/classes/classes.module';
-import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
-import { TopicsModule } from './modules/topics/topics.module';
-import { SchoolsModule } from './modules/schools/schools.module';
+import { AcademicModule } from './modules/academic/academic.module';
+import { AssignModule } from './modules/assign/assign.module';
+import { LearningModule } from './modules/learning/learning.module';
 import { CustomThrottlerGuard } from './common/guards/throttler.guard';
-import { MaterialsModule } from './modules/materials/materials.module';
-import { ReferencesModule } from './modules/references/references.module';
-import { AssignmentsModule } from './modules/assignments/assignments.module';
-import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { NotificationModule } from './infrastructures/notification/notification.module';
 
 @Module({
@@ -52,14 +47,9 @@ import { NotificationModule } from './infrastructures/notification/notification.
     NotificationModule,
     UsersModule,
     AuthModule,
-    ClassesModule,
-    EnrollmentsModule,
-    TopicsModule,
-    SchoolsModule,
-    MaterialsModule,
-    ReferencesModule,
-    AssignmentsModule,
-    SubmissionsModule,
+    AcademicModule,
+    AssignModule,
+    LearningModule,
   ],
   controllers: [],
   providers: [

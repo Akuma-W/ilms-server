@@ -3,7 +3,7 @@ import { SessionService } from './session.service';
 import { RedisService } from 'src/infrastructures/redis/redis.service';
 import { UsersService } from 'src/modules/users/users.service';
 import { TokenService } from './token.service';
-import { Role } from 'src/generated/prisma/enums';
+import { Role, UserStatus } from 'src/generated/prisma/enums';
 import { UnauthorizedException } from '@nestjs/common';
 import * as hashUtil from 'src/common/utils/hash.util';
 
@@ -105,6 +105,25 @@ describe('SessionService', () => {
       );
     });
 
+    it('should throw UnauthorizedException if user status is locked or banned', async () => {
+      tokenService.verifyRefreshToken.mockResolvedValueOnce({
+        sub: 'user-id',
+        jti: 'jti-id',
+        role: Role.student,
+      });
+      redisService.get.mockResolvedValueOnce('stored-hash');
+      jest.spyOn(hashUtil, 'compareToken').mockResolvedValueOnce(true);
+      usersService.findOne.mockResolvedValueOnce({
+        id: 'user-id',
+        role: Role.student,
+        status: UserStatus.locked,
+      });
+
+      await expect(service.refreshToken('refresh-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
     it('should rotate token and return new tokens on valid request', async () => {
       tokenService.verifyRefreshToken.mockResolvedValueOnce({
         sub: 'user-id',
@@ -116,6 +135,7 @@ describe('SessionService', () => {
       usersService.findOne.mockResolvedValueOnce({
         id: 'user-id',
         role: Role.student,
+        status: UserStatus.active,
       });
       tokenService.generateTokens.mockResolvedValueOnce({
         accessToken: 'new-access',

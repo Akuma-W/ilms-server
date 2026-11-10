@@ -8,12 +8,13 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QueryClassDto } from './dto/query-class.dto';
-import { AuthUser } from '../auth/session/interfaces/auth-user.interface';
+import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { randomBytes } from 'crypto';
-import { UsersService } from '../users/users.service';
+import { UsersService } from 'src/modules/users/users.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { AdminCreateClassDto } from './dto/admin-create-class.dto';
+import { ClassEntity } from './entities/class.entity';
 
 @Injectable()
 export class ClassesService {
@@ -22,14 +23,12 @@ export class ClassesService {
     private readonly usersService: UsersService,
   ) {}
 
-  /**
-   * Creates a new class and automatically enrolls the teacher.
-   */
+  // Creates a new class and automatically enrolls the teacher
   async create(
     schoolId: string,
     teacherId: string,
     createClassDto: CreateClassDto,
-  ) {
+  ): Promise<ClassEntity> {
     const courseCode = await this.generateUniqueCourseCode();
 
     const classroom = await this.prisma.class.create({
@@ -55,13 +54,20 @@ export class ClassesService {
     return classroom;
   }
 
-  async createByTeacher(userId: string, createClassDto: CreateClassDto) {
+  // Creates a class on behalf of a teacher
+  async createByTeacher(
+    userId: string,
+    createClassDto: CreateClassDto,
+  ): Promise<ClassEntity> {
     const { schoolId } = await this.usersService.findOne(userId);
 
     return this.create(schoolId, userId, createClassDto);
   }
 
-  async createByAdmin(adminCreateClassDto: AdminCreateClassDto) {
+  // Creates a class on behalf of an administrator
+  async createByAdmin(
+    adminCreateClassDto: AdminCreateClassDto,
+  ): Promise<ClassEntity> {
     const { schoolId, teacherId } = adminCreateClassDto;
 
     return this.create(schoolId, teacherId, adminCreateClassDto);

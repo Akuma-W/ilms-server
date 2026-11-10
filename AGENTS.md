@@ -27,7 +27,11 @@
 ### 2.1. English Language Standard for Code, Comments & Swagger
 
 - **Identifiers:** All class names, method names, variables, constants, DTO properties, and database entities MUST be in English.
-- **Comments & JSDoc:** All inline comments, code notes, and method descriptions MUST be in English.
+- **Comments & Formatting:** All inline comments, code notes, and method descriptions MUST be in English.
+  - **Single-line Comments:** Use `//` exclusively for 1-line notes.
+  - **Multi-line Comments:** Use `/* ... */` exclusively for notes spanning 2 lines or more. Avoid multi-line comment blocks for single-line notes.
+- **Explicit Return Types:** All public Service methods MUST declare explicit TypeScript return types (`Promise<ReturnType>`).
+- **Module-Scoped Utilities:** Utility functions specific to a feature module MUST reside in `src/modules/{module}/utils/` and MUST NOT be called or imported from outside that module.
 - **Swagger Documentation:** All `@ApiOperation({ summary })`, `@ApiOkResponse({ description })`, parameter descriptions, and schema examples MUST be in clear, professional English.
 - **DTO Swagger Declaration Rule:** Every property declaring `@ApiProperty` or `@ApiPropertyOptional` MUST contain `description`, `example`, and `type`.
 - **Targeted Code Comments Policy:** Add simple, concise comments ONLY for `controller`, `service`, `facade`, `provider`, `strategy`, `util`, `helper`. For advanced features, explain each step. For `filter` and `interceptor`, annotate code steps (`// Step 1: ...`). DO NOT add comments to `constant`, `decorator`, `guard`, `config`, `interface`, `type`, `spec`, `module`.
@@ -36,10 +40,8 @@
 - **Git Commit Approval:** Never commit git changes automatically. Always await explicit user approval.
 
 ```typescript
-/**
- * Creates a new class, generates a unique course code, and auto-enrolls the teacher.
- */
-async create(schoolId: string, teacherId: string, dto: CreateClassDto): Promise<Class> { ... }
+// Creates a new class, generates a unique course code, and auto-enrolls the teacher
+async create(schoolId: string, teacherId: string, dto: CreateClassDto): Promise<ClassEntity> { ... }
 ```
 
 ### 2.2. Naming Conventions
@@ -54,6 +56,29 @@ async create(schoolId: string, teacherId: string, dto: CreateClassDto): Promise<
 ## 3. THE COMPLETE MODULE RULE (MANDATORY REQUIREMENT)
 
 When implementing or extending any backend module in `src/modules/{module_name}/`, AI Agents **MUST NOT** deliver partial code (e.g., delivering only Controller and Service). Every module or feature addition is considered complete **ONLY** when all 5 elements are implemented:
+
+- **Entity Response Contracts:** Entities in `entities/` MUST be fully typed with `@ApiProperty` / `@ApiPropertyOptional`, serving as the official response contract. Empty or dummy entity classes are strictly forbidden.
+- **Microservices-Ready Subsystems (Bounded Contexts):** Modules are organized into subsystem directories reflecting their respective PostgreSQL schemas (`academic`, `assign`, `learning`, `auth`, `users`). Each subsystem provides an aggregator module (`academic.module.ts`, `assign.module.ts`, `learning.module.ts`):
+  ```text
+  src/modules/
+  ├── academic/                    # Subsystem: Academic (schema: academic)
+  │   ├── classes/
+  │   ├── enrollments/
+  │   ├── schools/
+  │   └── academic.module.ts
+  ├── assign/                      # Subsystem: Assignment & Grading (schema: assign)
+  │   ├── assignments/
+  │   ├── submissions/
+  │   └── assign.module.ts
+  ├── learning/                    # Subsystem: Learning Content (schema: learning)
+  │   ├── materials/
+  │   ├── references/
+  │   ├── topics/
+  │   └── learning.module.ts
+  ├── auth/                        # Subsystem: Authentication & Sessions (schema: auth)
+  └── users/                       # Subsystem: User Management (schema: users)
+  ```
+- **Anti-God-Class Decomposition:** When a module exceeds 300 lines or encapsulates more than 6 distinct endpoint actions, proactively decompose it into cohesive sub-controllers and sub-services (exemplified by `src/modules/auth/`).
 
 ```text
 src/modules/{module_name}/
@@ -162,9 +187,11 @@ return {
   {
     "success": false,
     "statusCode": 404,
+    "errorCode": "CLASS_NOT_FOUND",
+    "message": "Class not found",
+    "data": null,
     "timestamp": "2026-11-01T12:00:00.000Z",
-    "path": "/api/v1/classes/123",
-    "message": "Class not found"
+    "path": "/api/v1/classes/123"
   }
   ```
 
@@ -195,5 +222,5 @@ AI Agents MUST write and execute unit tests for all new services and controllers
 - Place tests next to the source: `{name}.service.spec.ts` and `{name}.controller.spec.ts`.
 - Use `Test.createTestingModule(...)` from `@nestjs/testing`.
 - Mock `PrismaService`, `RedisService`, and other dependencies using Jest mock functions (`jest.fn()`).
-- Verify both happy path and exception scenarios.
+- Verify both happy path, boundary errors, and exception/edge-case scenarios (e.g. NotFoundException, ConflictException, invalid input formats, inactive user states). Testing only successful responses is strictly insufficient.
 - Run tests via `npm test` or `npm run test -- {path}` to verify they pass before declaring completion.

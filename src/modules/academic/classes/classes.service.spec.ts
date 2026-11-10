@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { UsersService } from 'src/modules/users/users.service';
@@ -58,6 +59,22 @@ describe('ClassesService', () => {
 
     const result = await service.findOne('class-uuid');
     expect(result.totalStudents).toBe(34);
+  });
+
+  it('should throw NotFoundException if class not found in findOne', async () => {
+    prismaMock.class.findUnique.mockResolvedValue(null);
+
+    await expect(service.findOne('non-existent-uuid')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('should throw NotFoundException if class not found in findByCourseCode', async () => {
+    prismaMock.class.findUnique.mockResolvedValue(null);
+
+    await expect(service.findByCourseCode('INVALID')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should map totalStudents in findAll', async () => {
