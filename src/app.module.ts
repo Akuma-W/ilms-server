@@ -22,6 +22,8 @@ import { SchoolsModule } from './modules/schools/schools.module';
 import { CustomThrottlerGuard } from './common/guards/throttler.guard';
 import { MaterialsModule } from './modules/materials/materials.module';
 import { ReferencesModule } from './modules/references/references.module';
+import { AssignmentsModule } from './modules/assignments/assignments.module';
+import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { NotificationModule } from './infrastructures/notification/notification.module';
 
 @Module({
@@ -56,6 +58,8 @@ import { NotificationModule } from './infrastructures/notification/notification.
     SchoolsModule,
     MaterialsModule,
     ReferencesModule,
+    AssignmentsModule,
+    SubmissionsModule,
   ],
   controllers: [],
   providers: [

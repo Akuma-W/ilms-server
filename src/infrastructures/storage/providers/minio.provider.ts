@@ -22,6 +22,13 @@ export class MinioStorageProvider implements StorageProvider {
   }
 
   async upload(file: Express.Multer.File, folder: string): Promise<string> {
+    const bucketExists = await this.client
+      .bucketExists(this.bucket)
+      .catch(() => false);
+    if (!bucketExists) {
+      await this.client.makeBucket(this.bucket).catch(() => null);
+    }
+
     const fileName = generateFileName(file);
     const objectName = `${folder}/${fileName}`;
 
@@ -55,10 +62,26 @@ export class MinioStorageProvider implements StorageProvider {
   }
 
   async getFileUrl(filePath: string, expries?: number): Promise<string> {
+    let cleanPath = filePath;
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      try {
+        const parsed = new URL(filePath);
+        const pathname = parsed.pathname.replace(/^\/+/, '');
+        const parts = pathname.split('/');
+        if (parts[0] === this.bucket) {
+          cleanPath = parts.slice(1).join('/');
+        } else {
+          cleanPath = pathname;
+        }
+      } catch {
+        cleanPath = filePath;
+      }
+    }
+
     const presignedUrl = await this.client.presignedUrl(
       'GET',
       this.bucket,
-      filePath,
+      cleanPath,
       expries ?? 60 * 60, // default: 1h
     );
 

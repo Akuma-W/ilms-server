@@ -1,18 +1,22 @@
 import {
   BadRequestException,
   Controller,
+  Get,
   Post,
   Query,
+  Res,
   UploadedFile,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
+import { join } from 'path';
 import { StorageService } from './storage.service';
 
 /**
- * Controller handling file storage and MinIO uploads.
+ * Controller handling file storage, streaming, and MinIO uploads.
  */
 @ApiTags('Storage')
 @Controller('storage')
@@ -58,5 +62,30 @@ export class StorageController {
     );
 
     return results;
+  }
+
+  @Get('file')
+  async getFile(@Query('path') filePath: string, @Res() res: Response) {
+    if (!filePath) {
+      throw new BadRequestException('File path is required');
+    }
+    const url = await this.storageService.getUrl(filePath);
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return res.redirect(url);
+    }
+    const fullPath = join(
+      process.cwd(),
+      url.startsWith('/') ? url.slice(1) : url,
+    );
+    return res.sendFile(fullPath);
+  }
+
+  @Get('url')
+  async getUrl(@Query('path') filePath: string) {
+    if (!filePath) {
+      throw new BadRequestException('File path is required');
+    }
+    const url = await this.storageService.getUrl(filePath);
+    return { url };
   }
 }
