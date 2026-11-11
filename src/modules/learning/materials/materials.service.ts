@@ -28,12 +28,13 @@ export class MaterialsService {
 
     await this.checkTeacher(userId, topic.classId);
 
+    const hasExternal = Boolean(dto.externalUrl);
     const material = await this.prisma.material.create({
       data: {
         title: dto.title,
         materialType: dto.materialType,
-        fileUrl: dto.fileUrl,
-        externalUrl: dto.externalUrl,
+        fileUrl: hasExternal ? null : (dto.fileUrl ?? null),
+        externalUrl: hasExternal ? dto.externalUrl : null,
         topicId,
       },
     });
@@ -92,9 +93,28 @@ export class MaterialsService {
 
     await this.checkTeacher(userId, material.topic.classId);
 
+    const dataToUpdate: Record<string, unknown> = {};
+    if (dto.title !== undefined) {
+      dataToUpdate.title = dto.title;
+    }
+    if (dto.materialType !== undefined) {
+      dataToUpdate.materialType = dto.materialType;
+    }
+
+    if (dto.externalUrl) {
+      dataToUpdate.externalUrl = dto.externalUrl;
+      dataToUpdate.fileUrl = null;
+    } else if (dto.fileUrl) {
+      dataToUpdate.fileUrl = dto.fileUrl;
+      dataToUpdate.externalUrl = null;
+    } else {
+      if (dto.fileUrl === null) dataToUpdate.fileUrl = null;
+      if (dto.externalUrl === null) dataToUpdate.externalUrl = null;
+    }
+
     const updatedMaterial = await this.prisma.material.update({
       where: { id },
-      data: dto,
+      data: dataToUpdate,
     });
 
     return {

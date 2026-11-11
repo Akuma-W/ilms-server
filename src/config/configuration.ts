@@ -59,6 +59,7 @@ export default registerAs('', () => ({
     bucket: process.env.MINIO_BUCKET || 'ilms-bucket',
     publicEndPoint: process.env.MINIO_PUBLIC_ENDPOINT,
     useSSL: process.env.MINIO_USE_SSL === 'true',
+    urlExpiresIn: Number(process.env.MINIO_URL_EXPIRES_IN) || 7200,
   },
   // Storage driver & Google OAuth
   storage: {

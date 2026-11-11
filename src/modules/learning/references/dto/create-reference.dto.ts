@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateReferenceDto {
   @ApiProperty({
@@ -18,7 +18,6 @@ export class CreateReferenceDto {
   })
   @IsString()
   @IsNotEmpty()
-  @IsUrl()
   url: string;
 
   @ApiPropertyOptional({

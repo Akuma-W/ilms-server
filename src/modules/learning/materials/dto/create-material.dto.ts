@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { FileType } from 'src/generated/prisma/enums';
 
 export class CreateMaterialDto {
@@ -9,7 +9,7 @@ export class CreateMaterialDto {
     example: 'Slide Chapter 1: Client-Server Architecture',
   })
   @IsString()
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'Material format type',
@@ -18,23 +18,27 @@ export class CreateMaterialDto {
     example: 'slide',
   })
   @IsEnum(FileType)
-  materialType: FileType;
+  materialType!: FileType;
 
   @ApiPropertyOptional({
     description: 'Storage file path',
     type: 'string',
     example: 'uploads/materials/slide-chapter-1.pdf',
+    nullable: true,
   })
   @IsOptional()
+  @ValidateIf((_, val) => val !== null && val !== undefined)
   @IsString()
-  fileUrl?: string;
+  fileUrl?: string | null;
 
   @ApiPropertyOptional({
     description: 'External link URL if material is a link',
     type: 'string',
     example: 'https://youtube.com/...',
+    nullable: true,
   })
   @IsOptional()
+  @ValidateIf((_, val) => val !== null && val !== undefined)
   @IsString()
-  externalUrl?: string;
+  externalUrl?: string | null;
 }

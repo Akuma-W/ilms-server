@@ -78,11 +78,23 @@ export class MinioStorageProvider implements StorageProvider {
       }
     }
 
+    cleanPath = cleanPath.split('?')[0].replace(/^\/+/, '');
+    if (cleanPath.includes('%')) {
+      try {
+        cleanPath = decodeURIComponent(cleanPath);
+      } catch {
+        // Keep raw cleanPath if malformed URI component
+      }
+    }
+
+    const defaultExpires =
+      this.config.get<number>('minio.urlExpiresIn') || 7200;
+
     const presignedUrl = await this.client.presignedUrl(
       'GET',
       this.bucket,
       cleanPath,
-      expries ?? 60 * 60, // default: 1h
+      expries ?? defaultExpires,
     );
 
     const useSSL = this.config.get<boolean>('minio.useSSL');
