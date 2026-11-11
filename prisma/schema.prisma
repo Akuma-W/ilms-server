@@ -210,14 +210,16 @@ model MeetingAttendance {
 }
 
 model GradeCategory {
-  id      String @id @default(uuid()) @db.Uuid
-  name    String
-  weight  Float
-  classId String @map("class_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  weight     Float
+  orderIndex Int      @default(0) @map("order_index")
+  classId    String   @map("class_id") @db.Uuid
 
   class  Class   @relation(fields: [classId], references: [id])
   grades Grade[]
 
+  @@index([classId, orderIndex])
   @@map("grade_categories")
   @@schema("academic")
 }

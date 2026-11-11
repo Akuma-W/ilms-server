@@ -235,3 +235,10 @@ AI Agents MUST write and execute unit tests for all new services and controllers
 - Mock `PrismaService`, `RedisService`, and other dependencies using Jest mock functions (`jest.fn()`).
 - Verify both happy path, boundary errors, and exception/edge-case scenarios (e.g. NotFoundException, ConflictException, invalid input formats, inactive user states). Testing only successful responses is strictly insufficient.
 - Run tests via `npm test` or `npm run test -- {path}` to verify they pass before declaring completion.
+
+---
+
+## 10. FROZEN MODULES (LỆNH KHÓA ĐÓNG BĂNG)
+
+1. **Module Forum (`src/modules/forum/`):** Khóa cứng toàn bộ controllers, services, entities, DTOs, unit tests. Nghiêm cấm tự ý sửa đổi khi chưa có lệnh từ người dùng.
+2. **Module Grades & Grade Categories (`src/modules/academic/grades/`, `src/modules/academic/grade-categories/`):** Khóa cứng toàn bộ mã nguồn và unit tests. Tạm khóa đóng băng trước khi triển khai tính năng tính điểm tự động từ bài tập / quiz / meet về sau.
