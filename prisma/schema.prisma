@@ -127,8 +127,8 @@ model School {
   address   String?
   city      String
   status    SchoolStatus @default(active)
-  createdAt DateTime?    @map("created_at") @db.Timestamptz() @default(now())
-  updatedAt DateTime?    @map("updated_at") @db.Timestamptz() @updatedAt
+  createdAt DateTime?    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime?    @updatedAt @map("updated_at") @db.Timestamptz()
 
   users   User[]
   classes Class[]
@@ -150,7 +150,7 @@ model Class {
   meetingUri     String?   @map("meeting_uri")
   meetingSpaceId String?   @map("meeting_space_id")
   isArchived     Boolean   @default(false) @map("is_archived")
-  createdAt      DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   schoolId  String @map("school_id") @db.Uuid
   teacherId String @map("teacher_id") @db.Uuid
@@ -178,7 +178,7 @@ model Enrollment {
   id        String           @id @default(uuid()) @db.Uuid
   roleIn    Role             @map("role_in")
   isStarred Boolean          @default(false) @map("is_starred")
-  joinedAt  DateTime?        @map("joined_at") @default(now())
+  joinedAt  DateTime?        @default(now()) @map("joined_at")
   status    EnrollmentStatus @default(pending)
 
   classId String @map("class_id") @db.Uuid
@@ -210,11 +210,11 @@ model MeetingAttendance {
 }
 
 model GradeCategory {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String @id @default(uuid()) @db.Uuid
   name       String
   weight     Float
-  orderIndex Int      @default(0) @map("order_index")
-  classId    String   @map("class_id") @db.Uuid
+  orderIndex Int    @default(0) @map("order_index")
+  classId    String @map("class_id") @db.Uuid
 
   class  Class   @relation(fields: [classId], references: [id])
   grades Grade[]
@@ -248,8 +248,8 @@ model User {
   role         Role
   avatarUrl    String?    @map("avatar_url") @db.Text
   status       UserStatus @default(active)
-  createdAt    DateTime?  @map("created_at") @db.Timestamptz() @default(now())
-  updatedAt    DateTime?  @map("updated_at") @db.Timestamptz() @updatedAt
+  createdAt    DateTime?  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime?  @updatedAt @map("updated_at") @db.Timestamptz()
 
   schoolId String @map("school_id") @db.Uuid
   school   School @relation(fields: [schoolId], references: [id])
@@ -287,7 +287,7 @@ model Topic {
   title       String
   description String?
   orderIndex  Int?      @map("order_index")
-  createdAt   DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   classId   String @map("class_id") @db.Uuid
   createdBy String @map("created_by") @db.Uuid
@@ -314,7 +314,7 @@ model Material {
   materialType FileType  @map("material_type")
   fileUrl      String?   @map("file_url")
   externalUrl  String?   @map("external_url")
-  createdAt    DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   topicId            String             @map("topic_id") @db.Uuid
   topic              Topic              @relation(fields: [topicId], references: [id])
@@ -365,10 +365,8 @@ model Quiz {
   visibility Visibility @default(private)
   status     QuizStatus @default(draft)
 
-  openAt    DateTime? @map("open_at")
-  closeAt   DateTime? @map("close_at")
-  createdAt DateTime? @map("created_at") @db.Timestamptz() @default(now())
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz() @updatedAt
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
 
   createdBy String @map("created_by") @db.Uuid
   creator   User   @relation(fields: [createdBy], references: [id])
@@ -397,6 +395,8 @@ model QuizPublication {
   class Class? @relation(fields: [classId], references: [id])
   topic Topic? @relation(fields: [topicId], references: [id])
 
+  attempts QuizAttempt[]
+
   @@unique([quizId, classId])
   @@index([quizId])
   @@index([topicId])
@@ -412,6 +412,7 @@ model Question {
   questionType QuestionType @map("question_type")
   points       Float?
   orderIndex   Int?         @map("order_index")
+  explanation  String?
 
   quizId String? @map("quiz_id") @db.Uuid
   quiz   Quiz?   @relation(fields: [quizId], references: [id])
@@ -443,15 +444,18 @@ model QuizAttempt {
   startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz()
   submittedAt DateTime? @map("submitted_at") @db.Timestamptz()
 
-  quizId    String @map("quiz_id") @db.Uuid
-  studentId String @map("student_id") @db.Uuid
+  quizId        String  @map("quiz_id") @db.Uuid
+  studentId     String  @map("student_id") @db.Uuid
+  publicationId String? @map("publication_id") @db.Uuid
 
-  quiz    Quiz @relation(fields: [quizId], references: [id])
-  student User @relation(fields: [studentId], references: [id])
+  quiz        Quiz             @relation(fields: [quizId], references: [id])
+  student     User             @relation(fields: [studentId], references: [id])
+  publication QuizPublication? @relation(fields: [publicationId], references: [id], onDelete: SetNull)
 
   quizAnswers QuizAnswer[]
 
   @@index([quizId, studentId])
+  @@index([publicationId])
   @@map("quiz_attempts")
   @@schema("quiz")
 }
@@ -479,11 +483,11 @@ model Assignment {
   dueAt       DateTime? @map("due_at") @db.Timestamptz()
   maxScore    Float?    @map("max_score")
 
-  createdAt DateTime? @map("created_at") @db.Timestamptz() @default(now())
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz() @updatedAt
-  classId   String  @map("class_id") @db.Uuid
-  topicId   String? @map("topic_id") @db.Uuid
-  createdBy String  @map("created_by") @db.Uuid
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+  classId   String    @map("class_id") @db.Uuid
+  topicId   String?   @map("topic_id") @db.Uuid
+  createdBy String    @map("created_by") @db.Uuid
 
   class  Class  @relation(fields: [classId], references: [id])
   topic  Topic? @relation(fields: [topicId], references: [id])
@@ -503,7 +507,7 @@ model AssignmentMaterials {
   id           String    @id @default(uuid()) @db.Uuid
   fileUrl      String    @map("file_url")
   fileType     FileType? @map("file_type")
-  createdAt    DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz()
   assignmentId String    @map("assignment_id") @db.Uuid
 
   assignment Assignment @relation(fields: [assignmentId], references: [id])
@@ -519,7 +523,7 @@ model Submission {
   score       Float?
   feedback    String?
   isLate      Boolean   @default(false) @map("is_late")
-  submittedAt DateTime? @map("submitted_at") @db.Timestamptz() @default(now())
+  submittedAt DateTime? @default(now()) @map("submitted_at") @db.Timestamptz()
 
   assignmentId String @map("assignment_id") @db.Uuid
   studentId    String @map("student_id") @db.Uuid
@@ -538,7 +542,7 @@ model SubmissionFile {
   id           String    @id @default(uuid()) @db.Uuid
   fileUrl      String    @map("file_url")
   fileType     FileType? @map("file_type")
-  createdAt    DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz()
   submissionId String    @map("submission_id") @db.Uuid
 
   submission Submission @relation(fields: [submissionId], references: [id])
@@ -554,7 +558,7 @@ model Forum {
   content     String
   isAnonymous Boolean   @default(false) @map("is_anonymous")
   isDeleted   Boolean   @default(false) @map("is_deleted")
-  createdAt   DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   classId   String @map("class_id") @db.Uuid
   createdBy String @map("created_by") @db.Uuid
@@ -576,11 +580,11 @@ model Comment {
   content     String
   isAnonymous Boolean   @default(false) @map("is_anonymous")
   isDeleted   Boolean   @default(false) @map("is_deleted")
-  createdAt   DateTime? @map("created_at") @db.Timestamptz() @default(now())
-  updatedAt   DateTime? @map("updated_at") @db.Timestamptz() @updatedAt
-  forumId  String  @map("forum_id") @db.Uuid
-  authorId String  @map("author_id") @db.Uuid
-  parentId String? @map("parent_id") @db.Uuid
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+  forumId     String    @map("forum_id") @db.Uuid
+  authorId    String    @map("author_id") @db.Uuid
+  parentId    String?   @map("parent_id") @db.Uuid
 
   forum   Forum     @relation(fields: [forumId], references: [id])
   author  User      @relation(fields: [authorId], references: [id])
@@ -597,7 +601,7 @@ model Comment {
 model ChatRoom {
   id        String    @id @default(uuid()) @db.Uuid
   name      String
-  createdAt DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
   createdBy String    @map("created_by") @db.Uuid
 
   creator User @relation("ChatRoomCreator", fields: [createdBy], references: [id])
@@ -613,7 +617,7 @@ model ChatRoom {
 model ChatMember {
   id       String    @id @default(uuid()) @db.Uuid
   roleIn   String    @map("role_in")
-  joinedAt DateTime? @map("joined_at") @db.Timestamptz() @default(now())
+  joinedAt DateTime? @default(now()) @map("joined_at") @db.Timestamptz()
   roomId   String    @map("room_id") @db.Uuid
   memberId String    @map("member_id") @db.Uuid
 
@@ -631,7 +635,7 @@ model Message {
   id          String      @id @default(uuid()) @db.Uuid
   content     String
   messageType MessageType @map("message_type")
-  sendAt      DateTime?   @map("send_at") @db.Timestamptz() @default(now())
+  sendAt      DateTime?   @default(now()) @map("send_at") @db.Timestamptz()
 
   roomId   String @map("room_id") @db.Uuid
   senderId String @map("sender_id") @db.Uuid
@@ -648,7 +652,7 @@ model Message {
 
 model Reaction {
   reaction  String?
-  createdAt DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   messageId String @map("message_id") @db.Uuid
   userId    String @map("user_id") @db.Uuid
@@ -670,7 +674,7 @@ model NotificationEvent {
   relatedType RelatedType      @default(system) @map("related_type")
   relatedId   String?          @map("related_id") @db.Uuid
 
-  createdAt DateTime? @map("created_at") @default(now())
+  createdAt DateTime? @default(now()) @map("created_at")
 
   userId String @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id])
@@ -688,7 +692,7 @@ model NotificationDelivery {
   emailSent Boolean @default(false) @map("email_sent")
 
   readAt    DateTime? @map("read_at")
-  createdAt DateTime? @map("created_at") @default(now())
+  createdAt DateTime? @default(now()) @map("created_at")
 
   eventId String? @map("event_id") @db.Uuid
   userId  String? @map("user_id") @db.Uuid
@@ -705,8 +709,8 @@ model NotificationDelivery {
 model Conversation {
   id            String    @id @default(uuid()) @db.Uuid
   title         String
-  createdAt     DateTime? @map("created_at") @db.Timestamptz() @default(now())
-  lastMessageAt DateTime? @map("last_message_at") @db.Timestamptz() @updatedAt
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  lastMessageAt DateTime? @updatedAt @map("last_message_at") @db.Timestamptz()
 
   userId  String  @map("user_id") @db.Uuid
   classId String? @map("class_id") @db.Uuid
@@ -728,7 +732,7 @@ model AIMessage {
   role       String?
   content    String
   tokenCount Int?      @map("token_count")
-  createdAt  DateTime? @map("created_at") @default(now())
+  createdAt  DateTime? @default(now()) @map("created_at")
 
   conversationId String? @map("conversation_id") @db.Uuid
 
@@ -744,7 +748,7 @@ model Embedding {
   embedding  Unsupported("vector(1536)")
   chunkIndex Int?                        @map("chunk_index")
   tokenCount Int?                        @map("token_count")
-  createdAt  DateTime?                   @map("created_at") @db.Timestamptz() @default(now())
+  createdAt  DateTime?                   @default(now()) @map("created_at") @db.Timestamptz()
 
   topicId    String? @map("topic_id") @db.Uuid
   materialId String? @map("material_id") @db.Uuid
@@ -765,7 +769,7 @@ model AIRequest {
   completionTokens Int?          @map("completion_tokens")
   latencyMs        Int?          @map("latency_ms")
   model            String?
-  createdAt        DateTime?     @map("created_at") @db.Timestamptz() @default(now())
+  createdAt        DateTime?     @default(now()) @map("created_at") @db.Timestamptz()
 
   userId         String? @map("user_id") @db.Uuid
   conversationId String? @map("conversation_id") @db.Uuid
@@ -784,7 +788,7 @@ model RetrievalCache {
   id           String    @id @default(uuid()) @db.Uuid
   queryHash    String?   @map("query_hash")
   embeddingIds String[]  @map("embedding_ids")
-  createdAt    DateTime? @map("created_at") @db.Timestamptz() @default(now())
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   topicId String? @map("topic_id") @db.Uuid
   topic   Topic?  @relation(fields: [topicId], references: [id])

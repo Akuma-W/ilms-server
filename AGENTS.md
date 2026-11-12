@@ -35,6 +35,11 @@
 - **Swagger Documentation:** All `@ApiOperation({ summary })`, `@ApiOkResponse({ description })`, parameter descriptions, and schema examples MUST be in clear, professional English.
 - **100% English Exception & Response Messages:** All exception messages (`BadRequestException`, `NotFoundException`, `ForbiddenException`...) and controller response messages MUST be written in clear, professional English. Never throw Vietnamese strings from the backend.
 - **Definite Assignment in DTOs and Entities:** Non-optional properties in DTOs and Entities MUST use definite assignment assertions (`!:`) or explicit initializers to prevent `TS2564: Property has no initializer and is not definitely assigned in the constructor`.
+- **Single File per Interface:** Every domain or utility interface MUST reside in its own dedicated file (`*.interface.ts`) inside `interfaces/`. Grouping multiple interfaces into one file is strictly forbidden, except for `index.ts` which strictly re-exports them. All interfaces used by utility functions must also be placed in the subsystem/module `interfaces/` folder.
+- **Single File per Entity:** Every response entity class (including detail, summary, and helper entities) MUST reside in its own dedicated file (`*.entity.ts`) inside `entities/`. Never bundle multiple entity classes in a single file.
+- **Path Aliases (No Deep Relative Imports):** Avoid deep relative paths like `../../../`. Always prefer root-relative path aliases configured in `tsconfig.json` starting with `src/` (e.g. `src/modules/...`, `src/infrastructures/...`, `src/generated/...`).
+- **Strict Explicit Return Types for Services:** Every public method in NestJS services MUST declare an explicit, concrete return type (e.g., `Promise<QuizEntity>`, `Promise<PaginatedResult<QuizEntity>>`). Leaving return types inferred, or declaring `Promise<unknown>` or `Promise<any>`, is strictly forbidden.
+- **Optimized Payloads & Selective Fetching:** Prevent bloated responses and overfetching. In list queries, use selective projection (`select: { ... }`) and aggregations (`_count`) rather than eager-loading full relations. Reserve deep relation includes strictly for targeted detail queries.
 - **FORBIDDEN: Backend Module Forum Freeze:** The `src/modules/forum/` subsystem (including `forums/`, `comments/`, `interfaces/`, `utils/`) is completely implemented, optimized, and strictly frozen. Do NOT modify any files within `src/modules/forum/` unless explicitly instructed and approved by the user.
 - **DTO Swagger Declaration Rule:** Every property declaring `@ApiProperty` or `@ApiPropertyOptional` MUST contain `description`, `example`, and `type`.
 - **Targeted Code Comments Policy:** Add simple, concise comments ONLY for `controller`, `service`, `facade`, `provider`, `strategy`, `util`, `helper`. For advanced features, explain each step. For `filter` and `interceptor`, annotate code steps (`// Step 1: ...`). DO NOT add comments to `constant`, `decorator`, `guard`, `config`, `interface`, `type`, `spec`, `module`.
@@ -62,6 +67,7 @@ When implementing or extending any backend module in `src/modules/{module_name}/
 
 - **Entity Response Contracts:** Entities in `entities/` MUST be fully typed with `@ApiProperty` / `@ApiPropertyOptional`, serving as the official response contract. Empty or dummy entity classes are strictly forbidden.
 - **Microservices-Ready Subsystems (Bounded Contexts):** Modules are organized into subsystem directories reflecting their respective PostgreSQL schemas (`academic`, `assign`, `learning`, `forum`, `auth`, `users`). Each subsystem provides an aggregator module (`academic.module.ts`, `assign.module.ts`, `learning.module.ts`, `forum.module.ts`):
+
   ```text
   src/modules/
   ├── academic/                    # Subsystem: Academic (schema: academic)
@@ -87,6 +93,7 @@ When implementing or extending any backend module in `src/modules/{module_name}/
   ├── auth/                        # Subsystem: Authentication & Sessions (schema: auth)
   └── users/                       # Subsystem: User Management (schema: users)
   ```
+
 - **Subsystem Shared Interfaces & Utils:** When a subsystem manages multiple related entities, place cross-cutting domain interfaces in `src/modules/{subsystem}/interfaces/` and shared mapping/utility functions in `src/modules/{subsystem}/utils/`.
 - **Anti-God-Class Decomposition:** When a module exceeds 300 lines or encapsulates more than 6 distinct endpoint actions, proactively decompose it into cohesive sub-controllers and sub-services (exemplified by `src/modules/auth/`).
 
