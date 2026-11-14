@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -49,16 +50,11 @@ export class QuizzesService {
 
     if (query.scope === 'my') {
       where.createdBy = userId;
+      if (query.visibility) where.visibility = query.visibility;
+      if (query.status) where.status = query.status;
     } else {
-      where.OR = [{ visibility: 'public' }, { createdBy: userId }];
-    }
-
-    if (query.visibility) {
-      where.visibility = query.visibility;
-    }
-
-    if (query.status) {
-      where.status = query.status;
+      where.visibility = 'public';
+      where.status = 'published';
     }
 
     if (query.search) {
@@ -83,7 +79,7 @@ export class QuizzesService {
             select: { id: true, fullName: true, avatarUrl: true },
           },
           _count: {
-            select: { questions: true },
+            select: { questions: true, attempts: true },
           },
         },
       }),
@@ -91,7 +87,11 @@ export class QuizzesService {
     ]);
 
     return {
-      items,
+      items: items.map(({ _count, ...quiz }) => ({
+        ...quiz,
+        totalQuestions: _count.questions,
+        attemptCount: _count.attempts,
+      })),
       meta: {
         page,
         limit,
@@ -123,7 +123,10 @@ export class QuizzesService {
     }
 
     const isOwner = quiz.createdBy === userId;
-    if (quiz.visibility === 'private' && !isOwner) {
+    if (
+      !isOwner &&
+      (quiz.visibility !== 'public' || quiz.status !== 'published')
+    ) {
       throw new ForbiddenException(
         'You do not have permission to view this quiz',
       );
@@ -179,6 +182,19 @@ export class QuizzesService {
   async deleteQuiz(userId: string, quizId: string): Promise<QuizEntity> {
     await checkQuizOwnership(this.prisma, quizId, userId);
 
+    const submittedClassAttempts = await this.prisma.quizAttempt.count({
+      where: {
+        quizId,
+        publicationId: { not: null },
+        submittedAt: { not: null },
+      },
+    });
+    if (submittedClassAttempts > 0) {
+      throw new ConflictException(
+        'Quiz cannot be deleted because students have submitted attempts',
+      );
+    }
+
     return this.prisma.$transaction(async (tx) => {
       // Delete answers, options, questions first
       const questions = await tx.question.findMany({
@@ -232,11 +248,11 @@ export class QuizzesService {
     }
 
     if (
-      sourceQuiz.visibility === 'private' &&
-      sourceQuiz.createdBy !== userId
+      sourceQuiz.createdBy !== userId &&
+      (sourceQuiz.visibility !== 'public' || sourceQuiz.status !== 'published')
     ) {
       throw new ForbiddenException(
-        'Cannot clone a private quiz of another user',
+        'Cannot clone an unpublished or private quiz of another user',
       );
     }
 

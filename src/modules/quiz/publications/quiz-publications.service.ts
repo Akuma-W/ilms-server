@@ -28,45 +28,56 @@ export class QuizPublicationsService {
       throw new ForbiddenException('Cannot publish another user private quiz');
     }
 
-    return this.prisma.quizPublication.upsert({
-      where: {
-        quizId_classId: {
-          quizId,
-          classId: dto.classId,
-        },
-      },
-      create: {
-        quizId,
-        classId: dto.classId,
-        topicId: dto.topicId,
-        openAt: dto.openAt,
-        closeAt: dto.closeAt,
-        isPublic: dto.isPublic ?? false,
-        publishedAt: new Date(),
-      },
-      update: {
-        topicId: dto.topicId,
-        openAt: dto.openAt,
-        closeAt: dto.closeAt,
-        isPublic: dto.isPublic,
-      },
-      include: {
-        quiz: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            timeLimit: true,
-            _count: {
-              select: { questions: true },
-            },
+    const [publication] = await Promise.all([
+      this.prisma.quizPublication.upsert({
+        where: {
+          quizId_classId: {
+            quizId,
+            classId: dto.classId,
           },
         },
-        class: {
-          select: { id: true, title: true, courseCode: true },
+        create: {
+          quizId,
+          classId: dto.classId,
+          topicId: dto.topicId,
+          openAt: dto.openAt,
+          closeAt: dto.closeAt,
+          isPublic: dto.isPublic ?? false,
+          publishedAt: new Date(),
         },
-      },
-    });
+        update: {
+          topicId: dto.topicId,
+          openAt: dto.openAt,
+          closeAt: dto.closeAt,
+          isPublic: dto.isPublic,
+        },
+        include: {
+          quiz: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              timeLimit: true,
+              questions: {
+                select: { points: true },
+              },
+              _count: {
+                select: { questions: true },
+              },
+            },
+          },
+          class: {
+            select: { id: true, title: true, courseCode: true },
+          },
+        },
+      }),
+      this.prisma.quiz.update({
+        where: { id: quizId },
+        data: { status: 'published' },
+      }),
+    ]);
+
+    return publication;
   }
 
   // Get all quiz publications for a specific class
@@ -74,12 +85,15 @@ export class QuizPublicationsService {
     userId: string,
     classId: string,
   ): Promise<QuizPublicationEntity[]> {
-    const [isTeacher, isStudent] = await Promise.all([
+    const [isTeacher, enrolledCount, totalStudents] = await Promise.all([
       this.prisma.class.count({ where: { id: classId, teacherId: userId } }),
-      this.prisma.enrollment.count({ where: { classId, userId } }),
+      this.prisma.enrollment.count({
+        where: { classId, userId, status: 'approved' },
+      }),
+      this.prisma.enrollment.count({ where: { classId, status: 'approved' } }),
     ]);
 
-    if (!isTeacher && !isStudent) {
+    if (!isTeacher && !enrolledCount) {
       throw new ForbiddenException('You are not a member of this class');
     }
 
@@ -93,6 +107,9 @@ export class QuizPublicationsService {
             title: true,
             description: true,
             timeLimit: true,
+            questions: {
+              select: { points: true },
+            },
             _count: {
               select: { questions: true },
             },
@@ -118,20 +135,57 @@ export class QuizPublicationsService {
       },
     });
 
-    return publications.map((pub) => ({
-      id: pub.id,
-      quizId: pub.quizId,
-      classId: pub.classId,
-      topicId: pub.topicId,
-      topic: pub.topic,
-      openAt: pub.openAt,
-      closeAt: pub.closeAt,
-      isPublic: pub.isPublic,
-      publishedAt: pub.publishedAt,
-      totalAttemptsCount: pub._count.attempts,
-      latestUserAttempt: pub.attempts.length > 0 ? pub.attempts[0] : null,
-      quiz: pub.quiz,
-    }));
+    const submittedAttempts = publications.length
+      ? await this.prisma.quizAttempt.findMany({
+          where: {
+            publicationId: {
+              in: publications.map((publication) => publication.id),
+            },
+            submittedAt: { not: null },
+          },
+          distinct: ['publicationId', 'studentId'],
+          select: { publicationId: true, studentId: true },
+        })
+      : [];
+    const submittedCountByPublication = new Map<string, number>();
+    for (const attempt of submittedAttempts) {
+      if (attempt.publicationId) {
+        submittedCountByPublication.set(
+          attempt.publicationId,
+          (submittedCountByPublication.get(attempt.publicationId) ?? 0) + 1,
+        );
+      }
+    }
+
+    return publications.map((pub) => {
+      const totalPoints = pub.quiz?.questions?.length
+        ? Number(
+            pub.quiz.questions
+              .reduce((sum, q) => sum + (q.points || 0), 0)
+              .toFixed(1),
+          )
+        : 10;
+
+      return {
+        id: pub.id,
+        quizId: pub.quizId,
+        classId: pub.classId,
+        topicId: pub.topicId,
+        topic: pub.topic,
+        openAt: pub.openAt,
+        closeAt: pub.closeAt,
+        isPublic: pub.isPublic,
+        publishedAt: pub.publishedAt,
+        totalAttemptsCount: pub._count.attempts,
+        submittedCount: submittedCountByPublication.get(pub.id) ?? 0,
+        totalStudents,
+        latestUserAttempt: pub.attempts.length > 0 ? pub.attempts[0] : null,
+        quiz: {
+          ...pub.quiz,
+          totalPoints,
+        },
+      };
+    });
   }
 
   // Get publication by ID
@@ -180,6 +234,11 @@ export class QuizPublicationsService {
             title: publication.quiz.title,
             timeLimit: publication.quiz.timeLimit,
             totalQuestions: publication.quiz.questions.length,
+            totalPoints: Number(
+              publication.quiz.questions
+                .reduce((sum, q) => sum + (q.points || 0), 0)
+                .toFixed(1),
+            ),
           }
         : undefined,
     } as QuizPublicationEntity;
@@ -242,8 +301,26 @@ export class QuizPublicationsService {
       );
     }
 
-    return this.prisma.quizPublication.delete({
+    const deleted = await this.prisma.quizPublication.delete({
       where: { id: publicationId },
     });
+
+    const remainingPublications = await this.prisma.quizPublication.count({
+      where: { quizId: deleted.quizId },
+    });
+    if (remainingPublications === 0) {
+      const quiz = await this.prisma.quiz.findUnique({
+        where: { id: deleted.quizId },
+        select: { visibility: true },
+      });
+      if (quiz?.visibility === 'private') {
+        await this.prisma.quiz.update({
+          where: { id: deleted.quizId },
+          data: { status: 'draft' },
+        });
+      }
+    }
+
+    return deleted;
   }
 }

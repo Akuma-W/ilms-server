@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QuizzesService } from './quizzes.service';
@@ -10,6 +14,7 @@ describe('QuizzesService', () => {
     quiz: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
@@ -28,6 +33,7 @@ describe('QuizzesService', () => {
       deleteMany: jest.fn(),
     },
     quizAttempt: {
+      count: jest.fn(),
       deleteMany: jest.fn(),
     },
     quizPublication: {
@@ -90,7 +96,13 @@ describe('QuizzesService', () => {
 
   describe('getQuizzes', () => {
     it('should return paginated list of quizzes for user scope', async () => {
-      const items = [{ id: 'quiz-1', title: 'Q1', totalQuestions: 0 }];
+      const items = [
+        {
+          id: 'quiz-1',
+          title: 'Q1',
+          _count: { questions: 8, attempts: 13 },
+        },
+      ];
       mockPrisma.quiz.findMany.mockResolvedValue(items);
       mockPrisma.quiz.count.mockResolvedValue(1);
 
@@ -100,9 +112,22 @@ describe('QuizzesService', () => {
         limit: 10,
       });
 
-      expect(mockPrisma.quiz.findMany).toHaveBeenCalled();
+      expect(mockPrisma.quiz.findMany).toHaveBeenCalledWith({
+        where: { createdBy: 'user-1' },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          creator: { select: { id: true, fullName: true, avatarUrl: true } },
+          _count: { select: { questions: true, attempts: true } },
+        },
+      });
       expect(mockPrisma.quiz.count).toHaveBeenCalled();
-      expect(result.items).toEqual(items);
+      expect(result.items[0]).toMatchObject({
+        id: 'quiz-1',
+        totalQuestions: 8,
+        attemptCount: 13,
+      });
       expect(result.meta.total).toBe(1);
     });
 
@@ -113,6 +138,28 @@ describe('QuizzesService', () => {
       await service.getQuizzes('user-1', { search: 'biology' });
 
       expect(mockPrisma.quiz.findMany).toHaveBeenCalled();
+    });
+
+    it('should expose only published public quizzes outside personal scope', async () => {
+      mockPrisma.quiz.findMany.mockResolvedValue([]);
+      mockPrisma.quiz.count.mockResolvedValue(0);
+
+      await service.getQuizzes('user-1', { scope: 'all' });
+
+      const expectedWhere = { visibility: 'public', status: 'published' };
+      expect(mockPrisma.quiz.findMany).toHaveBeenCalledWith({
+        where: expectedWhere,
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          creator: { select: { id: true, fullName: true, avatarUrl: true } },
+          _count: { select: { questions: true, attempts: true } },
+        },
+      });
+      expect(mockPrisma.quiz.count).toHaveBeenCalledWith({
+        where: expectedWhere,
+      });
     });
   });
 
@@ -142,6 +189,7 @@ describe('QuizzesService', () => {
       mockPrisma.quiz.findUnique.mockResolvedValue({
         id: 'quiz-1',
         visibility: 'public',
+        status: 'published',
         createdBy: 'user-2',
         questions: [
           {
@@ -188,14 +236,42 @@ describe('QuizzesService', () => {
         service.updateQuiz('user-1', 'quiz-1', { title: 'Hacked' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should hide public draft quizzes from non-owners', async () => {
+      mockPrisma.quiz.findUnique.mockResolvedValue({
+        id: 'quiz-1',
+        visibility: 'public',
+        status: 'draft',
+        createdBy: 'user-2',
+        questions: [],
+      });
+
+      await expect(service.getQuizById('user-1', 'quiz-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
   });
 
   describe('deleteQuiz', () => {
+    it('should block deletion when a class attempt has been submitted', async () => {
+      mockPrisma.quiz.findUnique.mockResolvedValue({
+        id: 'quiz-1',
+        createdBy: 'user-1',
+      });
+      mockPrisma.quizAttempt.count.mockResolvedValue(1);
+
+      await expect(service.deleteQuiz('user-1', 'quiz-1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    });
+
     it('should delete quiz and associated entities in transaction', async () => {
       mockPrisma.quiz.findUnique.mockResolvedValue({
         id: 'quiz-1',
         createdBy: 'user-1',
       });
+      mockPrisma.quizAttempt.count.mockResolvedValue(0);
       mockPrisma.question.findMany.mockResolvedValue([{ id: 'q-1' }]);
       mockPrisma.quiz.delete.mockResolvedValue({ id: 'quiz-1' });
 
@@ -222,6 +298,20 @@ describe('QuizzesService', () => {
       );
     });
 
+    it('should not clone public draft quizzes from another owner', async () => {
+      mockPrisma.quiz.findUnique.mockResolvedValue({
+        id: 'quiz-1',
+        visibility: 'public',
+        status: 'draft',
+        createdBy: 'user-2',
+        questions: [],
+      });
+
+      await expect(service.cloneQuiz('user-1', 'quiz-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
     it('should clone public quiz with its questions and options', async () => {
       mockPrisma.quiz.findUnique
         .mockResolvedValueOnce({
@@ -230,6 +320,7 @@ describe('QuizzesService', () => {
           description: 'Desc',
           timeLimit: 40,
           visibility: 'public',
+          status: 'published',
           createdBy: 'user-2',
           questions: [
             {
@@ -249,6 +340,10 @@ describe('QuizzesService', () => {
         });
 
       mockPrisma.quiz.create.mockResolvedValue({ id: 'quiz-new' });
+      mockPrisma.quiz.findUniqueOrThrow.mockResolvedValue({
+        id: 'quiz-new',
+        title: '[Copy] Original Quiz',
+      });
       mockPrisma.question.create.mockResolvedValue({ id: 'q-new' });
 
       const result = await service.cloneQuiz('user-1', 'quiz-1');

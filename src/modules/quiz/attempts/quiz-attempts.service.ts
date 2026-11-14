@@ -6,11 +6,17 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { StartAttemptDto, SubmitAttemptDto } from './dto';
-import { SubmittedAttemptResult } from './interfaces/submitted-attempt-result.interface';
+import {
+  AttemptReviewResult,
+  SubmittedAttemptResult,
+  TakeQuizSessionResult,
+  UserPastAttemptSummary,
+} from './interfaces/submitted-attempt-result.interface';
 import { ClassQuizStatsResult } from '../interfaces';
 import {
   gradeQuizSubmission,
   calculateClassQuizPerformance,
+  buildAttemptDetailResults,
 } from '../utils/quiz-scoring.util';
 
 @Injectable()
@@ -18,14 +24,20 @@ export class QuizAttemptsService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Start a new quiz attempt and return exam questions with masked answers
-  async startAttempt(userId: string, quizId: string, dto: StartAttemptDto) {
+  async startAttempt(
+    userId: string,
+    quizId: string,
+    dto: StartAttemptDto,
+  ): Promise<TakeQuizSessionResult> {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
         questions: {
           orderBy: { orderIndex: 'asc' },
           include: {
-            options: true,
+            options: {
+              select: { id: true, content: true },
+            },
           },
         },
       },
@@ -79,19 +91,6 @@ export class QuizAttemptsService {
       },
     });
 
-    // Mask isCorrect and explanation to prevent student cheating
-    const questions = quiz.questions.map((q) => ({
-      id: q.id,
-      content: q.content,
-      questionType: q.questionType,
-      points: q.points,
-      orderIndex: q.orderIndex,
-      options: q.options.map((opt) => ({
-        id: opt.id,
-        content: opt.content,
-      })),
-    }));
-
     return {
       attemptId: attempt.id,
       quizId: quiz.id,
@@ -99,7 +98,17 @@ export class QuizAttemptsService {
       timeLimit: quiz.timeLimit,
       startedAt: attempt.startedAt,
       publicationId: dto.publicationId,
-      questions,
+      questions: quiz.questions.map((q) => ({
+        id: q.id,
+        content: q.content,
+        questionType: q.questionType,
+        points: q.points,
+        orderIndex: q.orderIndex,
+        options: q.options.map((opt) => ({
+          id: opt.id,
+          content: opt.content,
+        })),
+      })),
     };
   }
 
@@ -139,7 +148,6 @@ export class QuizAttemptsService {
     const questions = attempt.quiz.questions;
     const gradingResult = gradeQuizSubmission(questions, dto.answers);
 
-    // Persist grading score and student selected answers
     await this.prisma.$transaction(async (tx) => {
       await tx.quizAttempt.update({
         where: { id: attemptId },
@@ -172,22 +180,16 @@ export class QuizAttemptsService {
       }
     });
 
-    // Build comprehensive response with correct answers and explanations
-    const detailedResults = gradingResult.details.map((detail) => {
-      const q = questions.find((item) => item.id === detail.questionId);
-      const studentAns = dto.answers.find(
-        (a) => a.questionId === detail.questionId,
-      );
-      const correctOptionIds = q
-        ? q.options.filter((o) => o.isCorrect).map((o) => o.id)
-        : [];
+    const answersMap = new Map<string, string[]>();
+    for (const ans of dto.answers) {
+      answersMap.set(ans.questionId, ans.selectedOptionIds || []);
+    }
 
-      return {
-        ...detail,
-        selectedOptionIds: studentAns ? studentAns.selectedOptionIds : [],
-        correctOptionIds,
-      };
-    });
+    const details = buildAttemptDetailResults(
+      questions,
+      gradingResult.details,
+      answersMap,
+    );
 
     return {
       attemptId,
@@ -196,12 +198,15 @@ export class QuizAttemptsService {
       totalQuestions: gradingResult.totalQuestions,
       correctCount: gradingResult.correctCount,
       submittedAt: new Date(),
-      details: detailedResults,
+      details,
     };
   }
 
   // Get single attempt result review
-  async getAttemptResult(userId: string, attemptId: string) {
+  async getAttemptResult(
+    userId: string,
+    attemptId: string,
+  ): Promise<AttemptReviewResult> {
     const attempt = await this.prisma.quizAttempt.findUnique({
       where: { id: attemptId },
       include: {
@@ -240,7 +245,6 @@ export class QuizAttemptsService {
       );
     }
 
-    // Map answers by question
     const answersMap = new Map<string, string[]>();
     for (const ans of attempt.quizAnswers) {
       const current = answersMap.get(ans.questionId) || [];
@@ -254,21 +258,11 @@ export class QuizAttemptsService {
     }));
 
     const grading = gradeQuizSubmission(attempt.quiz.questions, submittedItems);
-
-    const details = grading.details.map((detail) => {
-      const q = attempt.quiz.questions.find(
-        (item) => item.id === detail.questionId,
-      );
-      const correctOptionIds = q
-        ? q.options.filter((o) => o.isCorrect).map((o) => o.id)
-        : [];
-
-      return {
-        ...detail,
-        selectedOptionIds: answersMap.get(detail.questionId) || [],
-        correctOptionIds,
-      };
-    });
+    const details = buildAttemptDetailResults(
+      attempt.quiz.questions,
+      grading.details,
+      answersMap,
+    );
 
     return {
       attemptId: attempt.id,
@@ -290,7 +284,7 @@ export class QuizAttemptsService {
     userId: string,
     quizId: string,
     publicationId?: string,
-  ) {
+  ): Promise<UserPastAttemptSummary[]> {
     const where: { quizId: string; studentId: string; publicationId?: string } =
       {
         quizId,

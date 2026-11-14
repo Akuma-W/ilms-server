@@ -76,6 +76,29 @@ export function gradeQuizSubmission(
   };
 }
 
+// Build detailed review payload associating questions with student submissions and correct options
+export function buildAttemptDetailResults(
+  questions: Array<{
+    id: string;
+    options: Array<{ id: string; isCorrect: boolean }>;
+  }>,
+  gradingDetails: QuestionGradingDetail[],
+  answersMap: Map<string, string[]>,
+) {
+  return gradingDetails.map((detail) => {
+    const q = questions.find((item) => item.id === detail.questionId);
+    const correctOptionIds = q
+      ? q.options.filter((o) => o.isCorrect).map((o) => o.id)
+      : [];
+
+    return {
+      ...detail,
+      selectedOptionIds: answersMap.get(detail.questionId) || [],
+      correctOptionIds,
+    };
+  });
+}
+
 // Calculate grade distribution and score metrics for classroom quiz publication
 export function calculateClassQuizPerformance(
   publicationId: string,

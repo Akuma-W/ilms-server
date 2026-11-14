@@ -73,6 +73,13 @@ export class QuizEntity {
   totalQuestions?: number;
 
   @ApiPropertyOptional({
+    description: 'Total number of attempts for the quiz',
+    example: 120,
+    type: 'number',
+  })
+  attemptCount?: number;
+
+  @ApiPropertyOptional({
     description: 'Total points sum of questions in quiz',
     example: 10,
     type: 'number',

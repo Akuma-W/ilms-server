@@ -1,3 +1,18 @@
+export interface StudentForStats {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string | null;
+}
+
+export interface AttemptForStats {
+  id: string;
+  studentId: string;
+  score: number | null;
+  startedAt: Date;
+  submittedAt: Date | null;
+}
+
 interface ClassQuizStudentScoreRow {
   studentId: string;
   name: string;

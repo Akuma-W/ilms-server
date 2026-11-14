@@ -16,6 +16,10 @@ describe('QuizPublicationsService', () => {
     },
     quiz: {
       findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    quizAttempt: {
+      findMany: jest.fn(),
     },
     quizPublication: {
       upsert: jest.fn(),
@@ -23,6 +27,7 @@ describe('QuizPublicationsService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -91,7 +96,9 @@ describe('QuizPublicationsService', () => {
 
     it('should return list of publications with latest attempt for member', async () => {
       mockPrisma.class.count.mockResolvedValue(0);
-      mockPrisma.enrollment.count.mockResolvedValue(1);
+      mockPrisma.enrollment.count
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(32);
       mockPrisma.quizPublication.findMany.mockResolvedValue([
         {
           id: 'pub-1',
@@ -113,12 +120,18 @@ describe('QuizPublicationsService', () => {
           attempts: [{ id: 'att-1', score: 9.0 }],
         },
       ]);
+      mockPrisma.quizAttempt.findMany.mockResolvedValue([
+        { publicationId: 'pub-1', studentId: 'student-1' },
+        { publicationId: 'pub-1', studentId: 'student-2' },
+      ]);
 
       const result = await service.getClassPublications('student-1', 'class-1');
 
       expect(result).toHaveLength(1);
       expect(result[0].latestUserAttempt).toBeDefined();
       expect(result[0].totalAttemptsCount).toBe(10);
+      expect(result[0].submittedCount).toBe(2);
+      expect(result[0].totalStudents).toBe(32);
     });
   });
 
@@ -157,9 +170,22 @@ describe('QuizPublicationsService', () => {
     it('should delete publication when user is teacher', async () => {
       mockPrisma.quizPublication.findUnique.mockResolvedValue({
         id: 'pub-1',
+        quizId: 'quiz-1',
         class: { teacherId: 'teacher-1' },
       });
-      mockPrisma.quizPublication.delete.mockResolvedValue({ id: 'pub-1' });
+      mockPrisma.quizPublication.delete.mockResolvedValue({
+        id: 'pub-1',
+        quizId: 'quiz-1',
+      });
+      mockPrisma.quizPublication.count.mockResolvedValue(0);
+      mockPrisma.quiz.findUnique.mockResolvedValue({
+        id: 'quiz-1',
+        visibility: 'private',
+      });
+      mockPrisma.quiz.update.mockResolvedValue({
+        id: 'quiz-1',
+        status: 'draft',
+      });
 
       await service.deletePublication('teacher-1', 'pub-1');
 

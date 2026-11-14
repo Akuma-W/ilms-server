@@ -78,6 +78,20 @@ export class QuizPublicationEntity {
   totalAttemptsCount?: number;
 
   @ApiPropertyOptional({
+    description: 'Number of distinct students who submitted the quiz',
+    example: 28,
+    type: 'number',
+  })
+  submittedCount?: number;
+
+  @ApiPropertyOptional({
+    description: 'Number of approved students enrolled in the class',
+    example: 40,
+    type: 'number',
+  })
+  totalStudents?: number;
+
+  @ApiPropertyOptional({
     description: 'Latest user attempt in class context',
     type: 'object',
     additionalProperties: false,
