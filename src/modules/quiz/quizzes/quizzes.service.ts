@@ -24,6 +24,7 @@ export class QuizzesService {
         timeLimit: dto.timeLimit,
         visibility: dto.visibility ?? 'private',
         status: dto.status ?? 'draft',
+        reviewMode: dto.reviewMode ?? 'after_submission',
         createdBy: userId,
       },
       include: {
@@ -132,10 +133,18 @@ export class QuizzesService {
       );
     }
 
+    const totalPoints = quiz.questions.reduce(
+      (sum, q) => sum + (q.points || 0),
+      0,
+    );
+    const totalQuestions = quiz.questions.length;
+
     // Mask isCorrect if viewer is not the owner to prevent exam leaks
     if (!isOwner) {
       return {
         ...quiz,
+        totalPoints,
+        totalQuestions,
         questions: quiz.questions.map((q) => ({
           ...q,
           explanation: null,
@@ -147,7 +156,11 @@ export class QuizzesService {
       };
     }
 
-    return quiz;
+    return {
+      ...quiz,
+      totalPoints,
+      totalQuestions,
+    };
   }
 
   // Update quiz metadata
@@ -166,6 +179,7 @@ export class QuizzesService {
         ...(dto.timeLimit !== undefined && { timeLimit: dto.timeLimit }),
         ...(dto.visibility !== undefined && { visibility: dto.visibility }),
         ...(dto.status !== undefined && { status: dto.status }),
+        ...(dto.reviewMode !== undefined && { reviewMode: dto.reviewMode }),
       },
       include: {
         creator: {

@@ -18,7 +18,6 @@ export function gradeQuizSubmission(
     answerMap.set(ans.questionId, ans.selectedOptionIds || []);
   }
 
-  let totalMaxPoints = 0;
   let totalPointsEarned = 0;
   let correctCount = 0;
   const details: QuestionGradingDetail[] = [];
@@ -26,7 +25,6 @@ export function gradeQuizSubmission(
   for (const question of questions) {
     const maxPoints =
       question.points && question.points > 0 ? question.points : 1;
-    totalMaxPoints += maxPoints;
 
     const selectedOptionIds = answerMap.get(question.id) || [];
     const correctOptionIds = question.options
@@ -64,9 +62,7 @@ export function gradeQuizSubmission(
     });
   }
 
-  const rawScore =
-    totalMaxPoints > 0 ? (totalPointsEarned / totalMaxPoints) * 10 : 0;
-  const score = Math.round(rawScore * 10) / 10;
+  const score = Math.round(totalPointsEarned * 100) / 100;
 
   return {
     score,
@@ -128,8 +124,8 @@ export function calculateClassQuizPerformance(
 
   const studentRows = students.map((s) => {
     const att = studentAttemptMap.get(s.id);
-    const isSubmitted = !!att;
-    const score = att?.score ?? null;
+    const isSubmitted = Boolean(att && att.submittedAt !== null);
+    const score = isSubmitted ? (att?.score ?? null) : null;
 
     if (isSubmitted && score !== null) {
       submittedCount += 1;

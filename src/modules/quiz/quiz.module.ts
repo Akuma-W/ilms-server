@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructures/prisma/prisma.module';
 import { QuizAttemptsController } from './attempts/quiz-attempts.controller';
 import { QuizAttemptsService } from './attempts/quiz-attempts.service';
+import { QuizTakingService } from './attempts/quiz-taking.service';
 import { QuizPublicationsController } from './publications/quiz-publications.controller';
 import { QuizPublicationsService } from './publications/quiz-publications.service';
 import { QuestionsController } from './questions/questions.controller';
@@ -22,12 +23,14 @@ import { QuizzesService } from './quizzes/quizzes.service';
     QuestionsService,
     QuizPublicationsService,
     QuizAttemptsService,
+    QuizTakingService,
   ],
   exports: [
     QuizzesService,
     QuestionsService,
     QuizPublicationsService,
     QuizAttemptsService,
+    QuizTakingService,
   ],
 })
 export class QuizModule {}

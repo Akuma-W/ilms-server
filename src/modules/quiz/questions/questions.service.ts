@@ -131,18 +131,49 @@ export class QuestionsService {
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.options && dto.options.length > 0) {
-        // Delete previous options and recreate
-        await tx.option.deleteMany({
+        // Update options in-place to preserve FK references for existing attempts
+        const existingOptions = await tx.option.findMany({
           where: { questionId },
+          orderBy: { id: 'asc' },
         });
 
-        await tx.option.createMany({
-          data: dto.options.map((opt) => ({
-            questionId,
-            content: opt.content,
-            isCorrect: opt.isCorrect,
-          })),
-        });
+        for (let i = 0; i < dto.options.length; i++) {
+          const optData = dto.options[i];
+          if (i < existingOptions.length) {
+            await tx.option.update({
+              where: { id: existingOptions[i].id },
+              data: {
+                content: optData.content,
+                isCorrect: optData.isCorrect,
+              },
+            });
+          } else {
+            await tx.option.create({
+              data: {
+                questionId,
+                content: optData.content,
+                isCorrect: optData.isCorrect,
+              },
+            });
+          }
+        }
+
+        if (existingOptions.length > dto.options.length) {
+          for (let j = dto.options.length; j < existingOptions.length; j++) {
+            const optId = existingOptions[j].id;
+            const refCount = await tx.quizAnswer.count({
+              where: { selectedOption: optId },
+            });
+            if (refCount === 0) {
+              await tx.option.delete({ where: { id: optId } });
+            } else {
+              await tx.option.update({
+                where: { id: optId },
+                data: { isCorrect: false },
+              });
+            }
+          }
+        }
       }
 
       await tx.question.update({

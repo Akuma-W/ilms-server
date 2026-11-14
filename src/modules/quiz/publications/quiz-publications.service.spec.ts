@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QuizPublicationsService } from './quiz-publications.service';
@@ -22,6 +22,7 @@ describe('QuizPublicationsService', () => {
       findMany: jest.fn(),
     },
     quizPublication: {
+      create: jest.fn(),
       upsert: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -63,7 +64,7 @@ describe('QuizPublicationsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('should upsert publication when teacher has permission', async () => {
+    it('should throw ConflictException if quiz is already published in class', async () => {
       mockPrisma.class.findUnique.mockResolvedValue({
         id: 'class-1',
         teacherId: 'teacher-1',
@@ -73,13 +74,33 @@ describe('QuizPublicationsService', () => {
         visibility: 'public',
         createdBy: 'teacher-1',
       });
-      mockPrisma.quizPublication.upsert.mockResolvedValue({ id: 'pub-1' });
+      mockPrisma.quizPublication.findUnique.mockResolvedValue({
+        id: 'existing-pub',
+      });
+
+      await expect(
+        service.publishToClass('teacher-1', 'quiz-1', { classId: 'class-1' }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should create publication when teacher has permission', async () => {
+      mockPrisma.class.findUnique.mockResolvedValue({
+        id: 'class-1',
+        teacherId: 'teacher-1',
+      });
+      mockPrisma.quiz.findUnique.mockResolvedValue({
+        id: 'quiz-1',
+        visibility: 'public',
+        createdBy: 'teacher-1',
+      });
+      mockPrisma.quizPublication.findUnique.mockResolvedValue(null);
+      mockPrisma.quizPublication.create.mockResolvedValue({ id: 'pub-1' });
 
       const result = await service.publishToClass('teacher-1', 'quiz-1', {
         classId: 'class-1',
       });
 
-      expect(mockPrisma.quizPublication.upsert).toHaveBeenCalled();
+      expect(mockPrisma.quizPublication.create).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
   });
@@ -109,6 +130,7 @@ describe('QuizPublicationsService', () => {
           openAt: null,
           closeAt: null,
           isPublic: false,
+          reviewMode: 'after_submission',
           publishedAt: new Date(),
           quiz: {
             id: 'quiz-1',

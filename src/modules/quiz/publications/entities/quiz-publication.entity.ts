@@ -51,6 +51,13 @@ export class QuizPublicationEntity {
   })
   isPublic!: boolean;
 
+  @ApiProperty({
+    description: 'Review mode for student results in this publication',
+    example: 'after_submission',
+    type: 'string',
+  })
+  reviewMode!: string;
+
   @ApiPropertyOptional({
     description: 'Publication creation timestamp',
     example: '2026-11-12T02:00:00.000Z',

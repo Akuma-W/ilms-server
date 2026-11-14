@@ -5,204 +5,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
-import { StartAttemptDto, SubmitAttemptDto } from './dto';
-import {
-  AttemptReviewResult,
-  SubmittedAttemptResult,
-  TakeQuizSessionResult,
-  UserPastAttemptSummary,
-} from './interfaces/submitted-attempt-result.interface';
 import { ClassQuizStatsResult } from '../interfaces';
 import {
-  gradeQuizSubmission,
-  calculateClassQuizPerformance,
+  AttemptReviewResult,
+  UserPastAttemptSummary,
+} from './interfaces/submitted-attempt-result.interface';
+import {
   buildAttemptDetailResults,
+  calculateClassQuizPerformance,
+  gradeQuizSubmission,
 } from '../utils/quiz-scoring.util';
 
 @Injectable()
 export class QuizAttemptsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Start a new quiz attempt and return exam questions with masked answers
-  async startAttempt(
-    userId: string,
-    quizId: string,
-    dto: StartAttemptDto,
-  ): Promise<TakeQuizSessionResult> {
-    const quiz = await this.prisma.quiz.findUnique({
-      where: { id: quizId },
-      include: {
-        questions: {
-          orderBy: { orderIndex: 'asc' },
-          include: {
-            options: {
-              select: { id: true, content: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!quiz) {
-      throw new NotFoundException('Quiz not found');
-    }
-
-    if (dto.publicationId) {
-      const pub = await this.prisma.quizPublication.findUnique({
-        where: { id: dto.publicationId },
-        include: { class: { select: { id: true, teacherId: true } } },
-      });
-
-      if (!pub || pub.quizId !== quizId) {
-        throw new NotFoundException('Quiz publication not found for this quiz');
-      }
-
-      const now = new Date();
-      if (pub.openAt && now < pub.openAt) {
-        throw new BadRequestException('This quiz is not opened yet');
-      }
-      if (pub.closeAt && now > pub.closeAt) {
-        throw new BadRequestException('This quiz submission window has closed');
-      }
-
-      if (pub.classId) {
-        const isEnrolled = await this.prisma.enrollment.count({
-          where: { classId: pub.classId, userId },
-        });
-        const isTeacher = pub.class?.teacherId === userId;
-        if (!isEnrolled && !isTeacher) {
-          throw new ForbiddenException(
-            'You are not enrolled in this class to take the quiz',
-          );
-        }
-      }
-    } else if (quiz.visibility === 'private' && quiz.createdBy !== userId) {
-      throw new ForbiddenException(
-        'Cannot take a private quiz of another user',
-      );
-    }
-
-    const attempt = await this.prisma.quizAttempt.create({
-      data: {
-        quizId,
-        studentId: userId,
-        publicationId: dto.publicationId,
-        startedAt: new Date(),
-      },
-    });
-
-    return {
-      attemptId: attempt.id,
-      quizId: quiz.id,
-      title: quiz.title,
-      timeLimit: quiz.timeLimit,
-      startedAt: attempt.startedAt,
-      publicationId: dto.publicationId,
-      questions: quiz.questions.map((q) => ({
-        id: q.id,
-        content: q.content,
-        questionType: q.questionType,
-        points: q.points,
-        orderIndex: q.orderIndex,
-        options: q.options.map((opt) => ({
-          id: opt.id,
-          content: opt.content,
-        })),
-      })),
-    };
-  }
-
-  // Submit quiz attempt, auto grade answers and record score
-  async submitAttempt(
-    userId: string,
-    attemptId: string,
-    dto: SubmitAttemptDto,
-  ): Promise<SubmittedAttemptResult> {
-    const attempt = await this.prisma.quizAttempt.findUnique({
-      where: { id: attemptId },
-      include: {
-        quiz: {
-          include: {
-            questions: {
-              include: { options: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!attempt) {
-      throw new NotFoundException('Quiz attempt not found');
-    }
-
-    if (attempt.studentId !== userId) {
-      throw new ForbiddenException('You can only submit your own attempt');
-    }
-
-    if (attempt.submittedAt !== null) {
-      throw new BadRequestException(
-        'This quiz attempt has already been submitted',
-      );
-    }
-
-    const questions = attempt.quiz.questions;
-    const gradingResult = gradeQuizSubmission(questions, dto.answers);
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.quizAttempt.update({
-        where: { id: attemptId },
-        data: {
-          score: gradingResult.score,
-          submittedAt: new Date(),
-        },
-      });
-
-      const answerRecords: Array<{
-        attemptId: string;
-        questionId: string;
-        selectedOption: string;
-      }> = [];
-
-      for (const ans of dto.answers) {
-        for (const optId of ans.selectedOptionIds || []) {
-          answerRecords.push({
-            attemptId,
-            questionId: ans.questionId,
-            selectedOption: optId,
-          });
-        }
-      }
-
-      if (answerRecords.length > 0) {
-        await tx.quizAnswer.createMany({
-          data: answerRecords,
-        });
-      }
-    });
-
-    const answersMap = new Map<string, string[]>();
-    for (const ans of dto.answers) {
-      answersMap.set(ans.questionId, ans.selectedOptionIds || []);
-    }
-
-    const details = buildAttemptDetailResults(
-      questions,
-      gradingResult.details,
-      answersMap,
-    );
-
-    return {
-      attemptId,
-      quizId: attempt.quizId,
-      score: gradingResult.score,
-      totalQuestions: gradingResult.totalQuestions,
-      correctCount: gradingResult.correctCount,
-      submittedAt: new Date(),
-      details,
-    };
-  }
-
-  // Get single attempt result review
+  // Retrieves graded attempt review with visibility rules applied
   async getAttemptResult(
     userId: string,
     attemptId: string,
@@ -258,10 +76,45 @@ export class QuizAttemptsService {
     }));
 
     const grading = gradeQuizSubmission(attempt.quiz.questions, submittedItems);
-    const details = buildAttemptDetailResults(
+    const rawDetails = buildAttemptDetailResults(
       attempt.quiz.questions,
       grading.details,
       answersMap,
+    );
+
+    const reviewMode =
+      attempt.publication?.reviewMode ||
+      attempt.quiz.reviewMode ||
+      'after_submission';
+    let canViewAnswers = true;
+    let message: string | undefined;
+
+    if (isStudent && !isTeacher && !isQuizOwner) {
+      if (reviewMode === 'never') {
+        canViewAnswers = false;
+        message = 'Giảng viên đã tắt tính năng xem lại đáp án cho đề thi này.';
+      } else if (
+        reviewMode === 'after_closed' &&
+        attempt.publication?.closeAt &&
+        new Date() < attempt.publication.closeAt
+      ) {
+        canViewAnswers = false;
+        message = `Đáp án chi tiết sẽ được mở sau khi đợt thi kết thúc vào ${attempt.publication.closeAt.toLocaleString('vi-VN')}.`;
+      }
+    }
+
+    const details = canViewAnswers
+      ? rawDetails
+      : rawDetails.map((item) => ({
+          ...item,
+          isCorrect: false,
+          explanation: null,
+          correctOptionIds: [],
+        }));
+
+    const totalPoints = attempt.quiz.questions.reduce(
+      (sum, q) => sum + (q.points || 0),
+      0,
     );
 
     return {
@@ -271,32 +124,41 @@ export class QuizAttemptsService {
       studentId: attempt.studentId,
       publicationId: attempt.publicationId,
       score: attempt.score,
+      totalPoints,
       startedAt: attempt.startedAt,
       submittedAt: attempt.submittedAt,
       totalQuestions: grading.totalQuestions,
       correctCount: grading.correctCount,
+      reviewMode,
+      canViewAnswers,
+      message,
       details,
     };
   }
 
-  // Get user attempts history for a quiz
+  // Retrieves user past attempt history for a specific quiz
   async getUserAttempts(
     userId: string,
     quizId: string,
     publicationId?: string,
   ): Promise<UserPastAttemptSummary[]> {
-    const where: { quizId: string; studentId: string; publicationId?: string } =
-      {
-        quizId,
-        studentId: userId,
-      };
+    const where: {
+      quizId: string;
+      studentId: string;
+      submittedAt: { not: null };
+      publicationId?: string;
+    } = {
+      quizId,
+      studentId: userId,
+      submittedAt: { not: null },
+    };
     if (publicationId) {
       where.publicationId = publicationId;
     }
 
     return this.prisma.quizAttempt.findMany({
       where,
-      orderBy: { startedAt: 'desc' },
+      orderBy: { submittedAt: 'desc' },
       select: {
         id: true,
         quizId: true,
@@ -308,7 +170,7 @@ export class QuizAttemptsService {
     });
   }
 
-  // Get class-wide statistics and student score matrix for a quiz publication
+  // Computes class-wide score performance and grade distribution matrix
   async getClassPublicationStats(
     userId: string,
     publicationId: string,

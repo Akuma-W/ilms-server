@@ -45,6 +45,13 @@ export class QuizEntity {
   status!: string;
 
   @ApiProperty({
+    description: 'Review mode of the quiz',
+    example: 'after_submission',
+    type: 'string',
+  })
+  reviewMode!: string;
+
+  @ApiProperty({
     description: 'User ID of creator',
     example: '11111111-1111-1111-1111-111111111111',
     type: 'string',

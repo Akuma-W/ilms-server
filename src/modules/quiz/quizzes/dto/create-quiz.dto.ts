@@ -7,7 +7,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { QuizStatus, Visibility } from 'src/generated/prisma/enums';
+import { QuizStatus, ReviewMode, Visibility } from 'src/generated/prisma/enums';
 
 export class CreateQuizDto {
   @ApiProperty({
@@ -59,4 +59,15 @@ export class CreateQuizDto {
   @IsOptional()
   @IsEnum(QuizStatus)
   status?: QuizStatus;
+
+  @ApiPropertyOptional({
+    description: 'Result display review mode for self-paced practice',
+    example: 'after_submission',
+    type: 'string',
+    enum: ['immediate', 'after_submission', 'never'],
+    default: 'after_submission',
+  })
+  @IsOptional()
+  @IsEnum(ReviewMode)
+  reviewMode?: ReviewMode;
 }

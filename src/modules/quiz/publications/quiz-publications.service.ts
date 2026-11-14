@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -28,28 +29,31 @@ export class QuizPublicationsService {
       throw new ForbiddenException('Cannot publish another user private quiz');
     }
 
-    const [publication] = await Promise.all([
-      this.prisma.quizPublication.upsert({
-        where: {
-          quizId_classId: {
-            quizId,
-            classId: dto.classId,
-          },
+    const existing = await this.prisma.quizPublication.findUnique({
+      where: {
+        quizId_classId: {
+          quizId,
+          classId: dto.classId,
         },
-        create: {
+      },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'Đề thi này đã được xuất bản vào lớp học. Vui lòng chỉnh sửa đợt thi thay vì xuất bản lại.',
+      );
+    }
+
+    const [publication] = await Promise.all([
+      this.prisma.quizPublication.create({
+        data: {
           quizId,
           classId: dto.classId,
           topicId: dto.topicId,
           openAt: dto.openAt,
           closeAt: dto.closeAt,
           isPublic: dto.isPublic ?? false,
+          reviewMode: dto.reviewMode ?? 'after_submission',
           publishedAt: new Date(),
-        },
-        update: {
-          topicId: dto.topicId,
-          openAt: dto.openAt,
-          closeAt: dto.closeAt,
-          isPublic: dto.isPublic,
         },
         include: {
           quiz: {
@@ -175,6 +179,7 @@ export class QuizPublicationsService {
         openAt: pub.openAt,
         closeAt: pub.closeAt,
         isPublic: pub.isPublic,
+        reviewMode: pub.reviewMode,
         publishedAt: pub.publishedAt,
         totalAttemptsCount: pub._count.attempts,
         submittedCount: submittedCountByPublication.get(pub.id) ?? 0,
@@ -272,6 +277,7 @@ export class QuizPublicationsService {
         ...(dto.openAt !== undefined && { openAt: dto.openAt }),
         ...(dto.closeAt !== undefined && { closeAt: dto.closeAt }),
         ...(dto.isPublic !== undefined && { isPublic: dto.isPublic }),
+        ...(dto.reviewMode !== undefined && { reviewMode: dto.reviewMode }),
       },
       include: {
         quiz: {

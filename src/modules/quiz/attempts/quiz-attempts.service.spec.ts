@@ -11,38 +11,17 @@ describe('QuizAttemptsService', () => {
   let service: QuizAttemptsService;
 
   const mockPrisma = {
-    quiz: {
+    quizAttempt: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
     },
     quizPublication: {
       findUnique: jest.fn(),
     },
-    enrollment: {
-      count: jest.fn(),
-    },
-    quizAttempt: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      findMany: jest.fn(),
-    },
-    quizAnswer: {
-      createMany: jest.fn(),
-    },
-    $transaction: jest.fn(),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-
-    mockPrisma.$transaction.mockImplementation(
-      async (cbOrArr: ((tx: unknown) => Promise<unknown>) | unknown[]) => {
-        if (typeof cbOrArr === 'function') {
-          return cbOrArr(mockPrisma);
-        }
-        return cbOrArr;
-      },
-    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,119 +40,29 @@ describe('QuizAttemptsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('startAttempt', () => {
-    it('should throw NotFoundException if quiz does not exist', async () => {
-      mockPrisma.quiz.findUnique.mockResolvedValue(null);
+  describe('getAttemptResult', () => {
+    it('should throw NotFoundException if attempt does not exist', async () => {
+      mockPrisma.quizAttempt.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.startAttempt('student-1', 'quiz-none', {}),
+        service.getAttemptResult('student-1', 'att-none'),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException if publication is closed', async () => {
-      mockPrisma.quiz.findUnique.mockResolvedValue({
-        id: 'quiz-1',
-        questions: [],
-      });
-      mockPrisma.quizPublication.findUnique.mockResolvedValue({
-        id: 'pub-1',
-        quizId: 'quiz-1',
-        closeAt: new Date(Date.now() - 3600000),
-      });
-
-      await expect(
-        service.startAttempt('student-1', 'quiz-1', { publicationId: 'pub-1' }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should mask answers and explanation when returning exam questions', async () => {
-      mockPrisma.quiz.findUnique.mockResolvedValue({
-        id: 'quiz-1',
-        title: 'Midterm',
-        timeLimit: 45,
-        visibility: 'public',
-        questions: [
-          {
-            id: 'q-1',
-            content: 'Question 1',
-            questionType: 'multiple_choice',
-            explanation: 'Hidden Explanation',
-            options: [{ id: 'opt-1', content: 'Choice A', isCorrect: true }],
-          },
-        ],
-      });
-      mockPrisma.quizAttempt.create.mockResolvedValue({
-        id: 'att-1',
-        startedAt: new Date(),
-      });
-
-      const result = await service.startAttempt('student-1', 'quiz-1', {});
-
-      expect(result.attemptId).toBe('att-1');
-      expect(result.questions[0]).not.toHaveProperty('explanation');
-      expect(result.questions[0].options[0]).not.toHaveProperty('isCorrect');
-    });
-  });
-
-  describe('submitAttempt', () => {
-    it('should throw ForbiddenException when submitting another user attempt', async () => {
+    it('should throw ForbiddenException if user is not author or teacher', async () => {
       mockPrisma.quizAttempt.findUnique.mockResolvedValue({
         id: 'att-1',
         studentId: 'student-2',
+        quiz: { createdBy: 'teacher-2' },
+        publication: { class: { teacherId: 'teacher-3' } },
       });
 
       await expect(
-        service.submitAttempt('student-1', 'att-1', { answers: [] }),
+        service.getAttemptResult('student-1', 'att-1'),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('should throw BadRequestException when attempt was already submitted', async () => {
-      mockPrisma.quizAttempt.findUnique.mockResolvedValue({
-        id: 'att-1',
-        studentId: 'student-1',
-        submittedAt: new Date(),
-      });
-
-      await expect(
-        service.submitAttempt('student-1', 'att-1', { answers: [] }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should auto-grade, record score, and return detailed results', async () => {
-      mockPrisma.quizAttempt.findUnique.mockResolvedValue({
-        id: 'att-1',
-        quizId: 'quiz-1',
-        studentId: 'student-1',
-        submittedAt: null,
-        quiz: {
-          questions: [
-            {
-              id: 'q-1',
-              points: 1,
-              questionType: 'multiple_choice',
-              explanation: 'Ex 1',
-              options: [
-                { id: 'opt-1', isCorrect: true },
-                { id: 'opt-2', isCorrect: false },
-              ],
-            },
-          ],
-        },
-      });
-
-      const result = await service.submitAttempt('student-1', 'att-1', {
-        answers: [{ questionId: 'q-1', selectedOptionIds: ['opt-1'] }],
-      });
-
-      expect(mockPrisma.quizAttempt.update).toHaveBeenCalled();
-      expect(result.score).toBe(10);
-      expect(result.correctCount).toBe(1);
-      expect(result.details[0].isCorrect).toBe(true);
-    });
-  });
-
-  describe('getAttemptResult', () => {
-    it('should throw BadRequestException if attempt is not submitted yet', async () => {
+    it('should throw BadRequestException if attempt is not yet submitted', async () => {
       mockPrisma.quizAttempt.findUnique.mockResolvedValue({
         id: 'att-1',
         studentId: 'student-1',
@@ -198,6 +87,7 @@ describe('QuizAttemptsService', () => {
         quiz: {
           title: 'Quiz 1',
           createdBy: 'teacher-1',
+          reviewMode: 'after_submission',
           questions: [
             {
               id: 'q-1',
@@ -216,6 +106,43 @@ describe('QuizAttemptsService', () => {
       expect(result.score).toBe(10);
       expect(result.details[0].selectedOptionIds).toEqual(['opt-1']);
       expect(result.details[0].correctOptionIds).toEqual(['opt-1']);
+      expect(result.canViewAnswers).toBe(true);
+    });
+
+    it('should mask answers when reviewMode is never', async () => {
+      mockPrisma.quizAttempt.findUnique.mockResolvedValue({
+        id: 'att-1',
+        quizId: 'quiz-1',
+        studentId: 'student-1',
+        score: 10,
+        startedAt: new Date(),
+        submittedAt: new Date(),
+        quiz: {
+          title: 'Quiz 1',
+          createdBy: 'teacher-1',
+          reviewMode: 'never',
+          questions: [
+            {
+              id: 'q-1',
+              points: 1,
+              questionType: 'multiple_choice',
+              explanation: 'Exp',
+              options: [{ id: 'opt-1', isCorrect: true }],
+            },
+          ],
+        },
+        publication: {
+          reviewMode: 'never',
+          class: { teacherId: 'teacher-1' },
+        },
+        quizAnswers: [{ questionId: 'q-1', selectedOption: 'opt-1' }],
+      });
+
+      const result = await service.getAttemptResult('student-1', 'att-1');
+
+      expect(result.canViewAnswers).toBe(false);
+      expect(result.details[0].correctOptionIds).toEqual([]);
+      expect(result.details[0].explanation).toBeNull();
     });
   });
 

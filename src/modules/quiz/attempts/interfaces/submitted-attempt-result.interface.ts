@@ -27,13 +27,23 @@ export interface TakeQuizSessionResult {
   timeLimit: number;
   startedAt: Date;
   publicationId?: string | null;
+  reviewMode?: string;
   questions: TakeQuizSessionQuestion[];
+}
+
+export interface CheckedAnswerResult {
+  questionId: string;
+  isCorrect: boolean;
+  pointsEarned: number;
+  correctOptionIds: string[];
+  explanation: string | null;
 }
 
 export interface SubmittedAttemptResult {
   attemptId: string;
   quizId: string;
   score: number;
+  totalPoints: number;
   totalQuestions: number;
   correctCount: number;
   submittedAt: Date;
@@ -47,10 +57,14 @@ export interface AttemptReviewResult {
   studentId: string;
   publicationId: string | null;
   score: number | null;
+  totalPoints: number;
   startedAt: Date;
   submittedAt: Date | null;
   totalQuestions: number;
   correctCount: number;
+  reviewMode?: string;
+  canViewAnswers: boolean;
+  message?: string;
   details: QuestionResultDetail[];
 }
 

@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDate, IsOptional, IsUUID } from 'class-validator';
+import { IsBoolean, IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { ReviewMode } from 'src/generated/prisma/enums';
 
 export class UpdatePublicationDto {
   @ApiPropertyOptional({
@@ -42,4 +43,14 @@ export class UpdatePublicationDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Updated review mode for student results in this publication',
+    example: 'after_submission',
+    type: 'string',
+    enum: ['immediate', 'after_submission', 'after_closed', 'never'],
+  })
+  @IsOptional()
+  @IsEnum(ReviewMode)
+  reviewMode?: ReviewMode;
 }

@@ -3,10 +3,12 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsUUID,
 } from 'class-validator';
+import { ReviewMode } from 'src/generated/prisma/enums';
 
 export class PublishQuizDto {
   @ApiProperty({
@@ -58,4 +60,15 @@ export class PublishQuizDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean = false;
+
+  @ApiPropertyOptional({
+    description: 'Review mode for student results in this publication',
+    example: 'after_submission',
+    type: 'string',
+    enum: ['immediate', 'after_submission', 'after_closed', 'never'],
+    default: 'after_submission',
+  })
+  @IsOptional()
+  @IsEnum(ReviewMode)
+  reviewMode?: ReviewMode = ReviewMode.after_submission;
 }

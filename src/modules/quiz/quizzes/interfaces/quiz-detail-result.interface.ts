@@ -10,6 +10,8 @@ export interface QuizDetailResult {
   createdBy: string;
   createdAt: Date | null;
   updatedAt: Date | null;
+  totalPoints?: number;
+  totalQuestions?: number;
   creator?: {
     id: string;
     fullName: string;

@@ -75,6 +75,15 @@ enum QuestionType {
   @@schema("quiz")
 }
 
+enum ReviewMode {
+  immediate
+  after_submission
+  after_closed
+  never
+
+  @@schema("quiz")
+}
+
 enum MessageType {
   text
   image
@@ -364,6 +373,7 @@ model Quiz {
 
   visibility Visibility @default(private)
   status     QuizStatus @default(draft)
+  reviewMode ReviewMode @default(after_submission) @map("review_mode")
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
@@ -382,14 +392,15 @@ model Quiz {
 }
 
 model QuizPublication {
-  id          String    @id @default(uuid()) @db.Uuid
-  openAt      DateTime? @map("open_at")
-  closeAt     DateTime? @map("close_at")
-  isPublic    Boolean   @default(false) @map("is_public")
-  publishedAt DateTime? @map("published_at") @db.Timestamptz()
-  quizId      String    @map("quiz_id") @db.Uuid
-  classId     String?   @map("class_id") @db.Uuid
-  topicId     String?   @map("topic_id") @db.Uuid
+  id          String     @id @default(uuid()) @db.Uuid
+  openAt      DateTime?  @map("open_at")
+  closeAt     DateTime?  @map("close_at")
+  isPublic    Boolean    @default(false) @map("is_public")
+  reviewMode  ReviewMode @default(after_submission) @map("review_mode")
+  publishedAt DateTime?  @map("published_at") @db.Timestamptz()
+  quizId      String     @map("quiz_id") @db.Uuid
+  classId     String?    @map("class_id") @db.Uuid
+  topicId     String?    @map("topic_id") @db.Uuid
 
   quiz  Quiz   @relation(fields: [quizId], references: [id])
   class Class? @relation(fields: [classId], references: [id])
@@ -420,6 +431,8 @@ model Question {
   options     Option[]
   quizAnswers QuizAnswer[]
 
+  @@index([quizId])
+  @@index([quizId, orderIndex])
   @@map("questions")
   @@schema("quiz")
 }
@@ -434,6 +447,7 @@ model Option {
 
   quizAnswers QuizAnswer[]
 
+  @@index([questionId])
   @@map("options")
   @@schema("quiz")
 }
@@ -681,6 +695,9 @@ model NotificationEvent {
 
   deliveries NotificationDelivery[]
 
+  @@index([userId])
+  @@index([relatedType, relatedId])
+  @@index([createdAt])
   @@map("notification_events")
   @@schema("notification")
 }
@@ -701,6 +718,8 @@ model NotificationDelivery {
   user  User?              @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([eventId])
+  @@index([userId, createdAt])
   @@index([userId, isRead])
   @@map("notification_deliveries")
   @@schema("notification")

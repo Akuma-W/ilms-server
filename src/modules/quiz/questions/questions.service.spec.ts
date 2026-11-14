@@ -21,8 +21,13 @@ describe('QuestionsService', () => {
     option: {
       createMany: jest.fn(),
       deleteMany: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn(),
     },
     quizAnswer: {
+      count: jest.fn(),
       deleteMany: jest.fn(),
     },
     $transaction: jest.fn(),
@@ -140,6 +145,10 @@ describe('QuestionsService', () => {
         id: 'quiz-1',
         createdBy: 'user-1',
       });
+      mockPrisma.option.findMany.mockResolvedValue([
+        { id: 'opt-1', content: 'Old 1', isCorrect: false },
+        { id: 'opt-2', content: 'Old 2', isCorrect: false },
+      ]);
 
       const result = await service.updateQuestion('user-1', 'q-1', {
         content: 'New Content',
@@ -149,10 +158,7 @@ describe('QuestionsService', () => {
         ],
       });
 
-      expect(mockPrisma.option.deleteMany).toHaveBeenCalledWith({
-        where: { questionId: 'q-1' },
-      });
-      expect(mockPrisma.option.createMany).toHaveBeenCalled();
+      expect(mockPrisma.option.update).toHaveBeenCalled();
       expect(mockPrisma.question.update).toHaveBeenCalled();
       expect(result).toBeDefined();
     });

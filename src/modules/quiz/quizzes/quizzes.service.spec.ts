@@ -20,25 +20,11 @@ describe('QuizzesService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
-    question: {
-      findMany: jest.fn(),
-      deleteMany: jest.fn(),
-      create: jest.fn(),
-    },
-    option: {
-      deleteMany: jest.fn(),
-      createMany: jest.fn(),
-    },
-    quizAnswer: {
-      deleteMany: jest.fn(),
-    },
-    quizAttempt: {
-      count: jest.fn(),
-      deleteMany: jest.fn(),
-    },
-    quizPublication: {
-      deleteMany: jest.fn(),
-    },
+    question: { findMany: jest.fn(), deleteMany: jest.fn(), create: jest.fn() },
+    option: { deleteMany: jest.fn(), createMany: jest.fn() },
+    quizAnswer: { deleteMany: jest.fn() },
+    quizAttempt: { count: jest.fn(), deleteMany: jest.fn() },
+    quizPublication: { deleteMany: jest.fn() },
     $transaction: jest.fn(),
   };
 
@@ -46,21 +32,14 @@ describe('QuizzesService', () => {
     jest.clearAllMocks();
 
     mockPrisma.$transaction.mockImplementation(
-      async (cbOrArr: ((tx: unknown) => Promise<unknown>) | unknown[]) => {
-        if (typeof cbOrArr === 'function') {
-          return cbOrArr(mockPrisma);
-        }
-        return cbOrArr;
-      },
+      async (cbOrArr: ((tx: unknown) => Promise<unknown>) | unknown[]) =>
+        typeof cbOrArr === 'function' ? cbOrArr(mockPrisma) : cbOrArr,
     );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QuizzesService,
-        {
-          provide: PrismaService,
-          useValue: mockPrisma,
-        },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
