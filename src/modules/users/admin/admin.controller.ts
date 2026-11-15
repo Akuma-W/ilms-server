@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -45,7 +46,7 @@ export class AdminController {
   // Retrieves user details by id
   @Get(':id')
   @ApiGetUser()
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.findOne(id);
   }
 
@@ -53,7 +54,7 @@ export class AdminController {
   @Patch(':id')
   @ApiUpdateAdminUser()
   updateAdminUser(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.adminService.updateAdminUser(id, updateUserDto);
@@ -62,7 +63,7 @@ export class AdminController {
   // Deactivates user account (soft delete) by admin
   @Delete(':id')
   @ApiDeleteUser()
-  delete(@Param('id') id: string) {
+  delete(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.delete(id);
   }
 }

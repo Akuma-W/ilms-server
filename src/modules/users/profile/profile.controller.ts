@@ -23,26 +23,26 @@ import {
 
 @ApiTags('Profile')
 @ApiBearerAuth('access-token')
-@Controller('users/me')
+@Controller('users')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   // Retrieves authenticated user personal profile
-  @Get()
+  @Get('me')
   @ApiGetProfile()
   getProfile(@CurrentUser() user: AuthUser) {
     return this.profileService.getProfile(user.id);
   }
 
   // Retrieves classes for current user profile with learning metrics
-  @Get('classes')
+  @Get('me/classes')
   @ApiGetProfileClasses()
   getProfileClasses(@CurrentUser() user: AuthUser) {
     return this.profileService.getProfileClasses(user.id, user.role);
   }
 
   // Updates authenticated user profile details
-  @Patch('profile')
+  @Patch('me/profile')
   @ApiUpdateProfile()
   updateProfile(
     @CurrentUser() user: AuthUser,
@@ -52,7 +52,7 @@ export class ProfileController {
   }
 
   // Uploads authenticated user avatar image to storage
-  @Patch('avatar')
+  @Patch('me/avatar')
   @ApiUpdateAvatar()
   @UseInterceptors(FileInterceptor('avatar', multerConfig))
   async updateAvatar(

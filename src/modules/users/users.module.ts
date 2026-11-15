@@ -5,9 +5,9 @@ import { AdminUserModule } from './admin/admin.module';
 import { ProfileModule } from './profile/profile.module';
 
 @Module({
-  imports: [StorageModule, AdminUserModule, ProfileModule],
+  imports: [StorageModule, ProfileModule, AdminUserModule],
   controllers: [],
   providers: [UsersService],
-  exports: [UsersService, AdminUserModule, ProfileModule],
+  exports: [UsersService, ProfileModule, AdminUserModule],
 })
 export class UsersModule {}
