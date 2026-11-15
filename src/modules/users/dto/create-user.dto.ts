@@ -19,7 +19,7 @@ export class CreateUserDto {
     example: 'user01@gmail.com',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiPropertyOptional({
     description:
@@ -46,7 +46,7 @@ export class CreateUserDto {
     example: 'Nguyen Van A',
   })
   @IsString()
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty({
     description: 'User role: student | teacher | admin',
@@ -56,7 +56,7 @@ export class CreateUserDto {
     default: Role.student,
   })
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 
   @ApiProperty({
     description: 'Id of user school',
@@ -64,7 +64,7 @@ export class CreateUserDto {
     example: '133c7575-1b40-4ba3-9a24-9484964b9a24',
   })
   @IsUUID()
-  schoolId: string;
+  schoolId!: string;
 
   @ApiPropertyOptional({
     description: 'Google Id (for Auth GG)',
@@ -101,5 +101,5 @@ export class CreateUserDto {
     default: UserStatus.active,
   })
   @IsEnum(UserStatus)
-  status: UserStatus;
+  status!: UserStatus;
 }

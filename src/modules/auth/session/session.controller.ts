@@ -40,7 +40,10 @@ export class SessionController {
   @Public()
   @Post('refresh')
   @ApiRefresh()
-  async refresh(@Req() req: Request, @Res() res: Response) {
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const refreshToken = req.cookies[COOKIE_KEYS.REFRESH] as string;
 
     const result = await this.sessionService.refreshToken(refreshToken);

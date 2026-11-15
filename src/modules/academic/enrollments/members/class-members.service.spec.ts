@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
+import { StorageService } from 'src/infrastructures/storage/storage.service';
 import { ClassMembersService } from './class-members.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 
@@ -73,6 +74,23 @@ describe('ClassMembersService', () => {
           provide: PrismaService,
           useValue: prismaMock,
         },
+        {
+          provide: StorageService,
+          useValue: {
+            getUrl: jest
+              .fn()
+              .mockImplementation((path: string) =>
+                Promise.resolve(`http://localhost:9000/${path}`),
+              ),
+            getAvatarUrl: jest
+              .fn()
+              .mockImplementation((path: string | null) => {
+                if (!path) return Promise.resolve(null);
+                const clean = path.startsWith('/') ? path.slice(1) : path;
+                return Promise.resolve(`http://localhost:9000/${clean}`);
+              }),
+          },
+        },
       ],
     }).compile();
 
@@ -111,6 +129,33 @@ describe('ClassMembersService', () => {
       expect(result[0].role).toBe(Role.teacher);
       expect(result[1].role).toBe(Role.student);
       expect(result[1].studentCode).toBe('SV001');
+    });
+
+    it('should resolve avatarUrl for members and owner teacher', async () => {
+      prismaMock.class.findUnique.mockResolvedValue({
+        ...mockClass,
+        teacher: { ...mockTeacher, avatarUrl: 'avatars/teacher.png' },
+      });
+      prismaMock.enrollment.findMany.mockResolvedValue([
+        {
+          id: 'en-1',
+          userId: 'student-uuid',
+          classId: 'class-uuid',
+          roleIn: Role.student,
+          status: EnrollmentStatus.approved,
+          joinedAt: new Date(),
+          user: { ...mockStudent, avatarUrl: '/avatars/student.png' },
+        },
+      ]);
+
+      const result = await service.getMembers('teacher-uuid', 'class-uuid');
+      expect(result).toHaveLength(2);
+      expect(result[0].user.avatarUrl).toBe(
+        'http://localhost:9000/avatars/teacher.png',
+      );
+      expect(result[1].user.avatarUrl).toBe(
+        'http://localhost:9000/avatars/student.png',
+      );
     });
   });
 

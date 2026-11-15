@@ -56,31 +56,4 @@ describe('NotificationFacade', () => {
     await facade.sendSms(payload);
     expect(smsService.send).toHaveBeenCalledWith(payload);
   });
-
-  it('should route to email in sendOtp when recipient contains @', async () => {
-    await facade.sendOtp('user@domain.com', '123456');
-    expect(emailService.send).toHaveBeenCalledTimes(1);
-    const mockSend = emailService.send as jest.Mock<
-      Promise<void>,
-      [NotificationPayload]
-    >;
-    const [callArg] = mockSend.mock.calls[0];
-    expect(callArg.to).toBe('user@domain.com');
-    expect(callArg.subject).toBe('OTP Verification');
-    expect(callArg.content).toContain('123456');
-    expect(smsService.send).not.toHaveBeenCalled();
-  });
-
-  it('should route to sms in sendOtp when recipient is a phone number', async () => {
-    await facade.sendOtp('0901234567', '654321');
-    expect(smsService.send).toHaveBeenCalledTimes(1);
-    const mockSend = smsService.send as jest.Mock<
-      Promise<void>,
-      [NotificationPayload]
-    >;
-    const [callArg] = mockSend.mock.calls[0];
-    expect(callArg.to).toBe('0901234567');
-    expect(callArg.content).toContain('654321');
-    expect(emailService.send).not.toHaveBeenCalled();
-  });
 });

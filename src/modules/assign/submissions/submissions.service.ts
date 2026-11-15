@@ -7,17 +7,13 @@ import {
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { SubmitAssignmentDto } from './dto/submit-assignment.dto';
 import { GradeSubmissionDto } from './dto/grade-submission.dto';
+import { checkTeacherPermission } from 'src/modules/academic/utils/academic-permission.util';
 
-/**
- * Service managing student assignment submissions and instructor grading.
- */
 @Injectable()
 export class SubmissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Submits student work for an assignment (creates or updates draft submission).
-   */
+  // Submits student work for an assignment (creates or updates draft submission).
   async submit(userId: string, assignmentId: string, dto: SubmitAssignmentDto) {
     const assignment = await this.prisma.assignment.findUnique({
       where: { id: assignmentId },
@@ -117,9 +113,7 @@ export class SubmissionsService {
     };
   }
 
-  /**
-   * Updates an existing student submission.
-   */
+  // Updates an existing student submission.
   async update(userId: string, id: string, dto: SubmitAssignmentDto) {
     const submission = await this.prisma.submission.findUnique({
       where: { id },
@@ -188,9 +182,7 @@ export class SubmissionsService {
     };
   }
 
-  /**
-   * Evaluates and records teacher grade and feedback for a submission.
-   */
+  // Evaluates and records teacher grade and feedback for a submission.
   async grade(teacherId: string, id: string, dto: GradeSubmissionDto) {
     const submission = await this.prisma.submission.findUnique({
       where: { id },
@@ -242,9 +234,7 @@ export class SubmissionsService {
     };
   }
 
-  /**
-   * Cancels/unsubmits student work and deletes submitted files.
-   */
+  // Cancels/unsubmits student work and deletes submitted files.
   async delete(userId: string, id: string) {
     const submission = await this.prisma.submission.findUnique({
       where: { id },
@@ -280,40 +270,14 @@ export class SubmissionsService {
     };
   }
 
-  /**
-   * Helper verifying teacher privileges for a class.
-   */
+  // Helper verifying teacher privileges for a class.
   private async checkTeacher(userId: string, classId: string) {
-    const user = await this.prisma.user?.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-    if (user?.role === 'admin') {
-      return;
-    }
-
-    const classroom = await this.prisma.class.findUnique({
-      where: { id: classId },
-    });
-
-    if (!classroom) {
-      throw new NotFoundException('Class does not exist');
-    }
-
-    if (classroom.teacherId === userId) {
-      return;
-    }
-
-    const enrollment = await this.prisma.enrollment.findFirst({
-      where: { userId, classId },
-    });
-
-    if (
-      !enrollment ||
-      enrollment.roleIn !== 'teacher' ||
-      enrollment.status !== 'approved'
-    ) {
-      throw new ForbiddenException('You are not teacher of class');
-    }
+    return checkTeacherPermission(
+      this.prisma,
+      userId,
+      classId,
+      undefined,
+      'You are not teacher of class',
+    );
   }
 }

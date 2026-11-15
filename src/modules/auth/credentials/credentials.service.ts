@@ -16,6 +16,7 @@ import { SessionService } from '../session/session.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { createForgotPasswordOtpTemplate } from 'src/infrastructures/notification/email/templates/forgot-password-otp.template';
 
 // Service managing user credentials, password lifecycle, and authentication validation
 @Injectable()
@@ -78,14 +79,21 @@ export class CredentialsService {
     const otp = this.otpService.generateOtp();
 
     await this.otpService.saveForgotPasswordOtp(dto.email, otp);
-    await this.notificationFacade.sendOtp(dto.email, otp);
+    const template = createForgotPasswordOtpTemplate(otp, 'vi');
+    await this.notificationFacade.sendEmailTemplate(dto.email, template);
 
     return { message: 'Reset password OTP sent' };
   }
 
-  // Alias for backward compatibility
-  async forgotPassword(dto: ForgotPasswordDto) {
-    return this.sendForgotPasswordOtp(dto);
+  // Verifies forgot password OTP code before allowing password reset
+  async verifyForgotPasswordOtp(dto: { email: string; otp: string }) {
+    const cached = await this.otpService.getForgotPasswordOtp(dto.email);
+
+    if (!cached || cached.otp !== dto.otp) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    return { message: 'OTP verified successfully' };
   }
 
   // Verifies forgot-password OTP, updates password, and revokes all active sessions
@@ -102,7 +110,7 @@ export class CredentialsService {
     }
 
     const hashedPassword = await hashPassword(dto.newPassword);
-    await this.usersService.update(user.id, { password: hashedPassword });
+    await this.usersService.updatePassword(user.id, hashedPassword);
 
     await this.otpService.deleteForgotPasswordOtp(dto.email);
     await this.sessionService.clearUserSessions(user.id);
@@ -131,7 +139,7 @@ export class CredentialsService {
     }
 
     const hashedPassword = await hashPassword(dto.newPassword);
-    await this.usersService.update(userId, { password: hashedPassword });
+    await this.usersService.updatePassword(userId, hashedPassword);
 
     await this.sessionService.clearUserSessions(userId);
 

@@ -35,5 +35,5 @@ export class CreateGoogleUserDto extends OmitType(CreateUserDto, [
     example: '123-456-7890',
   })
   @IsString()
-  googleId: string;
+  googleId!: string;
 }

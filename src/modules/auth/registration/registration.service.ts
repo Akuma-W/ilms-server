@@ -13,6 +13,7 @@ import { VerifyRegistrationOtpDto } from './dto/verify-registration-otp.dto';
 import { ResendRegistrationOtpDto } from './dto/resend-registration-otp.dto';
 import { OtpService } from '../otp/otp.service';
 import { RegisterOtpPayload } from './interfaces/register-otp.interface';
+import { createRegisterOtpTemplate } from 'src/infrastructures/notification/email/templates/register-otp.template';
 
 // Service coordinating registration lifecycle, OTP dispatch, and user provisioning
 @Injectable()
@@ -50,7 +51,8 @@ export class RegistrationService {
     };
 
     await this.otpService.saveRegistrationOtp(email, payload);
-    await this.notificationFacade.sendOtp(email, otp);
+    const template = createRegisterOtpTemplate(otp, 'vi');
+    await this.notificationFacade.sendEmailTemplate(email, template);
 
     return { message: 'OTP sent successfully' };
   }
@@ -71,7 +73,7 @@ export class RegistrationService {
 
     await this.otpService.deleteRegistrationOtp(dto.email);
 
-    const user = await this.usersService.create({
+    const user = await this.usersService.createRegisteredUser({
       email: cached.email,
       password: cached.password,
       fullName: cached.fullName,
@@ -105,7 +107,8 @@ export class RegistrationService {
     };
 
     await this.otpService.saveRegistrationOtp(dto.email, updatedPayload);
-    await this.notificationFacade.sendOtp(dto.email, newOtp);
+    const template = createRegisterOtpTemplate(newOtp, 'vi');
+    await this.notificationFacade.sendEmailTemplate(dto.email, template);
 
     return { message: 'Registration OTP resent successfully' };
   }

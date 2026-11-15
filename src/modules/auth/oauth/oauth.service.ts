@@ -8,7 +8,7 @@ import { UsersService } from 'src/modules/users/users.service';
 import { TokenService } from '../session/token.service';
 import { GoogleProfile } from './interfaces/google-profile.interface';
 import { Role, UserStatus } from 'src/generated/prisma/enums';
-import { UserResponseDto } from 'src/modules/users/dto/user-response.dto';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { GoogleRegisterDto } from './dto/google-register.dto';
 import { GoogleLoginResult } from './interfaces/google-login-result.interface';
 import { GooglePayload } from './interfaces/google-payload.interface';
@@ -94,7 +94,7 @@ export class OauthService {
 
     this.validateIdentity(dto.role, dto.identityCode);
 
-    let user: UserResponseDto | null = await this.usersService.findByEmail(
+    let user: UserEntity | null = await this.usersService.findByEmail(
       payload.email,
     );
 
@@ -103,7 +103,7 @@ export class OauthService {
         throw new BadRequestException('User already registered');
       }
 
-      user = await this.usersService.update(user.id, {
+      user = await this.usersService.updateRegisteredUser(user.id, {
         email: payload.email,
         googleId: payload.googleId,
         fullName: dto.fullName ?? payload.fullName,
@@ -159,12 +159,12 @@ export class OauthService {
     }
 
     if (Object.keys(updateData).length > 0) {
-      await this.usersService.update(user.id, updateData);
+      await this.usersService.updateGoogleAccount(user.id, updateData);
     }
   }
 
   // Checks whether mandatory profile fields are fully completed
-  private isProfileComplete(user: UserResponseDto) {
+  private isProfileComplete(user: UserEntity) {
     if (user.role === Role.admin) {
       return true;
     }
@@ -182,7 +182,7 @@ export class OauthService {
     payload: GooglePayload,
     dto: GoogleRegisterDto,
   ) {
-    return await this.usersService.create({
+    return await this.usersService.createRegisteredUser({
       email: payload.email,
       googleId: payload.googleId,
       fullName: dto.fullName ?? payload.fullName,

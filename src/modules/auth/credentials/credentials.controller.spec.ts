@@ -10,6 +10,7 @@ describe('CredentialsController', () => {
   let credentialsService: {
     login: jest.Mock;
     sendForgotPasswordOtp: jest.Mock;
+    verifyForgotPasswordOtp: jest.Mock;
     resetPassword: jest.Mock;
     changePassword: jest.Mock;
   };
@@ -28,6 +29,7 @@ describe('CredentialsController', () => {
     credentialsService = {
       login: jest.fn(),
       sendForgotPasswordOtp: jest.fn(),
+      verifyForgotPasswordOtp: jest.fn(),
       resetPassword: jest.fn(),
       changePassword: jest.fn(),
     };
@@ -95,6 +97,25 @@ describe('CredentialsController', () => {
         data: null,
       });
       expect(credentialsService.sendForgotPasswordOtp).toHaveBeenCalledWith(
+        dto,
+      );
+    });
+  });
+
+  describe('verifyForgotPasswordOtp', () => {
+    it('should delegate to credentialsService.verifyForgotPasswordOtp', async () => {
+      const dto = { email: 'test@example.com', otp: '123456' };
+      credentialsService.verifyForgotPasswordOtp.mockResolvedValueOnce({
+        message: 'OTP verified successfully',
+      });
+
+      const result = await controller.verifyForgotPasswordOtp(dto);
+
+      expect(result).toEqual({
+        message: 'OTP verified successfully',
+        data: null,
+      });
+      expect(credentialsService.verifyForgotPasswordOtp).toHaveBeenCalledWith(
         dto,
       );
     });

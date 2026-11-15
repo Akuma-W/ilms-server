@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EmailService } from './email/email.service';
 import { SmsService } from './sms/sms.service';
 import { NotificationPayload } from './interfaces/notification-payload.interface';
+import { EmailTemplate } from './interfaces/email-template.interface';
 
 // Facade coordinating notification channels (Email, SMS) and OTP routing
 @Injectable()
@@ -16,25 +17,18 @@ export class NotificationFacade {
     return this.email.send(payload);
   }
 
+  // Dispatches email using reusable EmailTemplate
+  async sendEmailTemplate(to: string, template: EmailTemplate): Promise<void> {
+    return this.sendEmail({
+      to,
+      subject: template.subject,
+      content: template.content,
+      html: template.content,
+    });
+  }
+
   // Dispatches an SMS notification
   async sendSms(payload: NotificationPayload): Promise<void> {
     return this.sms.send(payload);
-  }
-
-  // Routes OTP code to Email or SMS based on recipient format
-  async sendOtp(to: string, otp: string): Promise<void> {
-    const content = `Your OTP code is ${otp}. It will expire in 5 minutes.`;
-
-    if (to.includes('@')) {
-      return this.sendEmail({
-        to,
-        subject: 'OTP Verification',
-        content,
-      });
-    }
-    return this.sendSms({
-      to,
-      content,
-    });
   }
 }

@@ -10,7 +10,7 @@ import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QueryClassDto } from './dto/query-class.dto';
 import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
-import { randomBytes } from 'crypto';
+import { generateRandomCode } from 'src/common/utils/random.util';
 import { UsersService } from 'src/modules/users/users.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { AdminCreateClassDto } from './dto/admin-create-class.dto';
@@ -333,13 +333,7 @@ export class ClassesService {
    * - get school and teacher from request
    */
   private generateCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const bytes = randomBytes(6);
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars[bytes[i] % chars.length];
-    }
-    return code;
+    return generateRandomCode(6);
   }
 
   private async generateUniqueCourseCode(): Promise<string> {

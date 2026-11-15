@@ -60,7 +60,8 @@ export class EmailService implements NotificationChannel {
       from,
       to: payload.to,
       subject: payload.subject,
-      text: payload.content,
+      html: payload.html || payload.content,
+      text: payload.content.replace(/<[^>]*>/g, '').trim(),
     });
 
     this.logger.log(`Email sent to ${payload.to}`);

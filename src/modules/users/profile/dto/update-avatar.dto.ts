@@ -7,5 +7,5 @@ export class UpdateAvatarDto {
     format: 'binary',
     example: 'http://localhost:9000/files/avatars/123abc.png',
   })
-  avatar: Express.Multer.File;
+  avatar!: Express.Multer.File;
 }

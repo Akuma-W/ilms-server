@@ -1,23 +1,18 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import { checkTeacherPermission } from 'src/modules/academic/utils/academic-permission.util';
 
-/**
- * Service managing classroom assignments, attachments, and permissions.
- */
 @Injectable()
 export class AssignmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Creates a new assignment with optional resource materials.
-   */
+  // Creates a new assignment with optional resource materials.
   async create(userId: string, classId: string, dto: CreateAssignmentDto) {
     const classroom = await this.prisma.class.findUnique({
       where: { id: classId },
@@ -67,9 +62,7 @@ export class AssignmentsService {
     };
   }
 
-  /**
-   * Retrieves all assignments for a class with calculated metrics.
-   */
+  // Retrieves all assignments for a class with calculated metrics.
   async findAllByClass(userId: string, classId: string) {
     const classroom = await this.prisma.class.findUnique({
       where: { id: classId },
@@ -123,9 +116,7 @@ export class AssignmentsService {
     });
   }
 
-  /**
-   * Retrieves a single assignment by ID.
-   */
+  // Retrieves a single assignment by ID.
   async findOne(userId: string, id: string) {
     const assignment = await this.prisma.assignment.findUnique({
       where: { id },
@@ -176,9 +167,7 @@ export class AssignmentsService {
     };
   }
 
-  /**
-   * Updates an existing assignment and optionally replaces its materials.
-   */
+  // Updates an existing assignment and optionally replaces its materials.
   async update(userId: string, id: string, dto: UpdateAssignmentDto) {
     const assignment = await this.prisma.assignment.findUnique({
       where: { id },
@@ -246,9 +235,7 @@ export class AssignmentsService {
     };
   }
 
-  /**
-   * Deletes an assignment and cleanly removes all dependent submissions and files.
-   */
+  // Deletes an assignment and cleanly removes all dependent submissions and files.
   async delete(userId: string, id: string) {
     const assignment = await this.prisma.assignment.findUnique({
       where: { id },
@@ -291,27 +278,18 @@ export class AssignmentsService {
     };
   }
 
-  /**
-   * Verifies if user has instructor privileges for the class.
-   */
+  // Verifies if user has instructor privileges for the class.
   private async checkTeacher(userId: string, classId: string) {
-    const classroom = await this.prisma.class.findUnique({
-      where: { id: classId },
-    });
-
-    if (!classroom) {
-      throw new NotFoundException('Class does not exist');
-    }
-
-    const isTeacher = await this.isUserTeacher(userId, classroom);
-    if (!isTeacher) {
-      throw new ForbiddenException('You are not teacher of class');
-    }
+    return checkTeacherPermission(
+      this.prisma,
+      userId,
+      classId,
+      undefined,
+      'You are not teacher of class',
+    );
   }
 
-  /**
-   * Helper checking whether user is instructor or enrolled teacher.
-   */
+  // Helper checking whether user is instructor or enrolled teacher.
   private async isUserTeacher(
     userId: string,
     classroom: { id: string; teacherId: string },

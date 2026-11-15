@@ -1,43 +1,41 @@
-import { Exclude } from 'class-transformer';
 import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Role, UserStatus } from 'src/generated/prisma/enums';
+import { SchoolEntity } from 'src/modules/academic/schools/entities/school.entity';
 
-export class User {
+export class UserEntity {
   @IsUUID()
-  id: string;
+  id!: string;
 
   @IsEmail()
-  email: string;
-
-  @Exclude()
-  @IsString()
-  password: string | null;
+  email!: string;
 
   @IsString()
-  fullName: string;
+  fullName!: string;
 
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 
   @IsUUID()
-  schoolId: string;
+  schoolId!: string;
 
   @IsOptional()
   @IsString()
-  googleId: string | null;
+  avatarUrl!: string | null;
 
   @IsOptional()
   @IsString()
-  avatarUrl: string | null;
+  avatar!: string | null;
 
   @IsOptional()
   @IsString()
-  identityCode: string | null;
+  identityCode!: string | null;
 
   @IsEnum(UserStatus)
-  status: UserStatus | null;
+  status!: UserStatus;
 
-  constructor(partial: Partial<User>) {
-    Object.assign(this, partial);
-  }
+  @IsOptional()
+  createdAt!: Date | null;
+
+  @IsOptional()
+  school?: SchoolEntity | null;
 }

@@ -5,11 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
+import { StorageService } from 'src/infrastructures/storage/storage.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
+import { checkTeacherPermission } from 'src/modules/academic/utils/academic-permission.util';
 
 @Injectable()
 export class ClassMembersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   // Retrieve all members of a class including instructors, assistants and students
   async getMembers(currentUserId: string, classId: string) {
@@ -32,28 +37,33 @@ export class ClassMembersService {
       orderBy: [{ roleIn: 'asc' }, { joinedAt: 'asc' }],
     });
 
-    const members = enrollments.map((e) => ({
-      id: e.id,
-      userId: e.userId,
-      user: {
-        id: e.user.id,
-        fullName: e.user.fullName,
-        email: e.user.email,
-        avatarUrl: e.user.avatarUrl,
-        identityCode: e.user.identityCode,
-        role: e.user.role,
-      },
-      role: e.roleIn,
-      status: e.status,
-      joinedAt: e.joinedAt ?? new Date(),
-      studentCode: e.user.identityCode ?? undefined,
-    }));
+    const members = await Promise.all(
+      enrollments.map(async (e) => ({
+        id: e.id,
+        userId: e.userId,
+        user: {
+          id: e.user.id,
+          fullName: e.user.fullName,
+          email: e.user.email,
+          avatarUrl: await this.storage.getAvatarUrl(e.user.avatarUrl),
+          identityCode: e.user.identityCode,
+          role: e.user.role,
+        },
+        role: e.roleIn,
+        status: e.status,
+        joinedAt: e.joinedAt ?? new Date(),
+        studentCode: e.user.identityCode ?? undefined,
+      })),
+    );
 
     const hasHeadTeacher = members.some(
       (m) => m.userId === targetClass.teacherId && m.role === Role.teacher,
     );
 
     if (!hasHeadTeacher && targetClass.teacher) {
+      const teacherAvatarUrl = await this.storage.getAvatarUrl(
+        targetClass.teacher.avatarUrl,
+      );
       members.unshift({
         id: `owner-${targetClass.id}`,
         userId: targetClass.teacher.id,
@@ -61,7 +71,7 @@ export class ClassMembersService {
           id: targetClass.teacher.id,
           fullName: targetClass.teacher.fullName,
           email: targetClass.teacher.email,
-          avatarUrl: targetClass.teacher.avatarUrl,
+          avatarUrl: teacherAvatarUrl,
           identityCode: targetClass.teacher.identityCode,
           role: targetClass.teacher.role,
         },
@@ -209,33 +219,12 @@ export class ClassMembersService {
 
   // Verify that the acting user has teacher or owner privileges for this class
   private async checkTeacherPermission(userId: string, classId: string) {
-    const targetClass = await this.prisma.class.findUnique({
-      where: { id: classId },
-    });
-
-    if (!targetClass) {
-      throw new NotFoundException('Class not found');
-    }
-
-    if (targetClass.teacherId === userId) {
-      return targetClass;
-    }
-
-    const teacherEnrollment = await this.prisma.enrollment.findFirst({
-      where: {
-        classId,
-        userId,
-        roleIn: Role.teacher,
-        status: EnrollmentStatus.approved,
-      },
-    });
-
-    if (!teacherEnrollment) {
-      throw new ForbiddenException(
-        'You are not an authorized teacher of this class',
-      );
-    }
-
-    return targetClass;
+    return checkTeacherPermission(
+      this.prisma,
+      userId,
+      classId,
+      undefined,
+      'You are not an authorized teacher of this class',
+    );
   }
 }

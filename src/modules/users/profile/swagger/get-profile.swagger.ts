@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApiAuth } from 'src/common/swagger/api-auth.decorator';
+import { UserEntity } from '../../entities/user.entity';
 
 export function ApiGetProfile() {
   return applyDecorators(
@@ -8,11 +9,8 @@ export function ApiGetProfile() {
     ApiAuth(),
     ApiResponse({
       status: 200,
-      description: 'Current user profile fetched successfully',
-    }),
-    ApiResponse({
-      status: 401,
-      description: 'Unauthorized',
+      description: 'Profile retrieved successfully',
+      type: UserEntity,
     }),
   );
 }

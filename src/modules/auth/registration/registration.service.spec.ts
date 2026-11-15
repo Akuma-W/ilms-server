@@ -12,7 +12,7 @@ describe('RegistrationService', () => {
   let service: RegistrationService;
   let usersService: {
     findByEmail: jest.Mock;
-    create: jest.Mock;
+    createRegisteredUser: jest.Mock;
   };
   let otpService: {
     generateOtp: jest.Mock;
@@ -22,12 +22,13 @@ describe('RegistrationService', () => {
   };
   let notificationFacade: {
     sendOtp: jest.Mock;
+    sendEmailTemplate: jest.Mock;
   };
 
   beforeEach(async () => {
     usersService = {
       findByEmail: jest.fn(),
-      create: jest.fn(),
+      createRegisteredUser: jest.fn(),
     };
     otpService = {
       generateOtp: jest.fn(),
@@ -37,6 +38,7 @@ describe('RegistrationService', () => {
     };
     notificationFacade = {
       sendOtp: jest.fn(),
+      sendEmailTemplate: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -97,10 +99,11 @@ describe('RegistrationService', () => {
           otp: '123456',
         }),
       );
-      expect(notificationFacade.sendOtp).toHaveBeenCalledWith(
-        registerDto.email,
-        '123456',
-      );
+      expect(notificationFacade.sendEmailTemplate).toHaveBeenCalled();
+      const calls = notificationFacade.sendEmailTemplate.mock
+        .calls as unknown as [string, { subject: string; content: string }][];
+      expect(calls[0][0]).toBe(registerDto.email);
+      expect(calls[0][1].content).toContain('123456');
     });
   });
 
@@ -139,7 +142,7 @@ describe('RegistrationService', () => {
 
     it('should create user and delete OTP when code matches', async () => {
       otpService.getRegistrationOtp.mockResolvedValueOnce(cachedPayload);
-      usersService.create.mockResolvedValueOnce({
+      usersService.createRegisteredUser.mockResolvedValueOnce({
         id: 'new-user-id',
         email: cachedPayload.email,
         status: UserStatus.active,
@@ -154,7 +157,7 @@ describe('RegistrationService', () => {
       expect(otpService.deleteRegistrationOtp).toHaveBeenCalledWith(
         'test@example.com',
       );
-      expect(usersService.create).toHaveBeenCalledWith({
+      expect(usersService.createRegisteredUser).toHaveBeenCalledWith({
         email: cachedPayload.email,
         password: cachedPayload.password,
         fullName: cachedPayload.fullName,
@@ -202,10 +205,11 @@ describe('RegistrationService', () => {
           otp: '654321',
         }),
       );
-      expect(notificationFacade.sendOtp).toHaveBeenCalledWith(
-        'test@example.com',
-        '654321',
-      );
+      expect(notificationFacade.sendEmailTemplate).toHaveBeenCalled();
+      const calls = notificationFacade.sendEmailTemplate.mock
+        .calls as unknown as [string, { subject: string; content: string }][];
+      expect(calls[0][0]).toBe('test@example.com');
+      expect(calls[0][1].content).toContain('654321');
     });
   });
 });

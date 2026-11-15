@@ -10,6 +10,7 @@ import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { QueryEnrollmentDto } from './dto/query-enrollment.dto';
 import { Prisma } from 'src/generated/prisma/client';
+import { checkTeacherPermission } from 'src/modules/academic/utils/academic-permission.util';
 
 @Injectable()
 export class EnrollmentsService {
@@ -398,20 +399,13 @@ export class EnrollmentsService {
 
   // Check teacher permission for this class
   private async checkTeacherPermission(userId: string, classId: string) {
-    const enrollment = await this.prisma.enrollment.findFirst({
-      where: {
-        userId,
-        classId,
-        roleIn: Role.teacher,
-        status: EnrollmentStatus.approved,
-      },
-    });
-
-    if (!enrollment) {
-      throw new ForbiddenException('You are not teacher of this class');
-    }
-
-    return enrollment;
+    return checkTeacherPermission(
+      this.prisma,
+      userId,
+      classId,
+      undefined,
+      'You are not teacher of this class',
+    );
   }
 
   // Select fields definition for enrollments query

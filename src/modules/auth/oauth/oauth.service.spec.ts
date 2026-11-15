@@ -14,8 +14,9 @@ describe('OauthService', () => {
   let service: OauthService;
   let usersService: {
     findByEmail: jest.Mock;
-    update: jest.Mock;
-    create: jest.Mock;
+    updateGoogleAccount: jest.Mock;
+    updateRegisteredUser: jest.Mock;
+    createRegisteredUser: jest.Mock;
   };
   let tokenService: {
     generateTokens: jest.Mock;
@@ -26,8 +27,9 @@ describe('OauthService', () => {
   beforeEach(async () => {
     usersService = {
       findByEmail: jest.fn(),
-      update: jest.fn(),
-      create: jest.fn(),
+      updateGoogleAccount: jest.fn(),
+      updateRegisteredUser: jest.fn(),
+      createRegisteredUser: jest.fn(),
     };
     tokenService = {
       generateTokens: jest.fn(),
@@ -124,7 +126,7 @@ describe('OauthService', () => {
 
       await service.googleLogin(profile);
 
-      expect(usersService.update).toHaveBeenCalledWith('user-id', {
+      expect(usersService.updateGoogleAccount).toHaveBeenCalledWith('user-id', {
         googleId: 'g-123',
         avatarUrl: 'avatar.png',
       });
@@ -205,7 +207,7 @@ describe('OauthService', () => {
         avatar: 'avatar.png',
       });
       usersService.findByEmail.mockResolvedValueOnce(null);
-      usersService.create.mockResolvedValueOnce({
+      usersService.createRegisteredUser.mockResolvedValueOnce({
         id: 'created-id',
         role: Role.teacher,
         status: UserStatus.active,

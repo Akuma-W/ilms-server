@@ -18,7 +18,7 @@ describe('CredentialsService', () => {
   let usersService: {
     findByEmail: jest.Mock;
     findOne: jest.Mock;
-    update: jest.Mock;
+    updatePassword: jest.Mock;
   };
   let tokenService: {
     generateTokens: jest.Mock;
@@ -31,6 +31,7 @@ describe('CredentialsService', () => {
   };
   let notificationFacade: {
     sendOtp: jest.Mock;
+    sendEmailTemplate: jest.Mock;
   };
   let sessionService: {
     clearUserSessions: jest.Mock;
@@ -40,7 +41,7 @@ describe('CredentialsService', () => {
     usersService = {
       findByEmail: jest.fn(),
       findOne: jest.fn(),
-      update: jest.fn(),
+      updatePassword: jest.fn(),
     };
     tokenService = {
       generateTokens: jest.fn(),
@@ -53,6 +54,7 @@ describe('CredentialsService', () => {
     };
     notificationFacade = {
       sendOtp: jest.fn(),
+      sendEmailTemplate: jest.fn(),
     };
     sessionService = {
       clearUserSessions: jest.fn(),
@@ -197,10 +199,52 @@ describe('CredentialsService', () => {
         'test@example.com',
         '123456',
       );
-      expect(notificationFacade.sendOtp).toHaveBeenCalledWith(
-        'test@example.com',
-        '123456',
-      );
+      expect(notificationFacade.sendEmailTemplate).toHaveBeenCalled();
+      const calls = notificationFacade.sendEmailTemplate.mock
+        .calls as unknown as [string, { subject: string; content: string }][];
+      expect(calls[0][0]).toBe('test@example.com');
+      expect(calls[0][1].content).toContain('123456');
+    });
+  });
+
+  describe('verifyForgotPasswordOtp', () => {
+    it('should throw BadRequestException if OTP not found or expired', async () => {
+      otpService.getForgotPasswordOtp.mockResolvedValueOnce(null);
+
+      await expect(
+        service.verifyForgotPasswordOtp({
+          email: 'test@example.com',
+          otp: '123456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if OTP does not match', async () => {
+      otpService.getForgotPasswordOtp.mockResolvedValueOnce({
+        email: 'test@example.com',
+        otp: '123456',
+      });
+
+      await expect(
+        service.verifyForgotPasswordOtp({
+          email: 'test@example.com',
+          otp: '654321',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return success message if OTP is valid', async () => {
+      otpService.getForgotPasswordOtp.mockResolvedValueOnce({
+        email: 'test@example.com',
+        otp: '123456',
+      });
+
+      const result = await service.verifyForgotPasswordOtp({
+        email: 'test@example.com',
+        otp: '123456',
+      });
+
+      expect(result).toEqual({ message: 'OTP verified successfully' });
     });
   });
 
@@ -268,9 +312,10 @@ describe('CredentialsService', () => {
       });
 
       expect(result).toEqual({ message: 'Password reset successfully' });
-      expect(usersService.update).toHaveBeenCalledWith('user-id', {
-        password: 'hashed-new-password',
-      });
+      expect(usersService.updatePassword).toHaveBeenCalledWith(
+        'user-id',
+        'hashed-new-password',
+      );
       expect(otpService.deleteForgotPasswordOtp).toHaveBeenCalledWith(
         'test@example.com',
       );
@@ -355,9 +400,10 @@ describe('CredentialsService', () => {
       });
 
       expect(result).toEqual({ message: 'Password changed successfully' });
-      expect(usersService.update).toHaveBeenCalledWith('user-id', {
-        password: 'hashed-new-pass',
-      });
+      expect(usersService.updatePassword).toHaveBeenCalledWith(
+        'user-id',
+        'hashed-new-pass',
+      );
       expect(sessionService.clearUserSessions).toHaveBeenCalledWith('user-id');
     });
   });

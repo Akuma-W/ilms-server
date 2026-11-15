@@ -9,10 +9,12 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CredentialsService } from './credentials.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyForgotPasswordOtpDto } from './dto/verify-forgot-password-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ApiLogin } from './swagger/login.swagger';
 import { ApiForgotPassword } from './swagger/forgot-password.swagger';
+import { ApiVerifyForgotPasswordOtp } from './swagger/verify-forgot-password-otp.swagger';
 import { ApiResetPassword } from './swagger/reset-password.swagger';
 import { ApiChangePassword } from './swagger/change-password.swagger';
 import type { AuthUser } from '../session/interfaces/auth-user.interface';
@@ -59,6 +61,19 @@ export class CredentialsController {
   @ApiForgotPassword()
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     const result = await this.credentialsService.sendForgotPasswordOtp(dto);
+
+    return {
+      message: result.message,
+      data: null,
+    };
+  }
+
+  // Verifies reset OTP code before entering new password
+  @Public()
+  @Post('forgot-password/verify-otp')
+  @ApiVerifyForgotPasswordOtp()
+  async verifyForgotPasswordOtp(@Body() dto: VerifyForgotPasswordOtpDto) {
+    const result = await this.credentialsService.verifyForgotPasswordOtp(dto);
 
     return {
       message: result.message,
