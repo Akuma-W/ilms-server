@@ -14,8 +14,13 @@ describe('ClassMembersService', () => {
   let prismaMock: {
     class: {
       findUnique: jest.Mock;
+      update: jest.Mock;
+    };
+    user: {
+      findUnique: jest.Mock;
     };
     enrollment: {
+      create: jest.Mock;
       findMany: jest.Mock;
       findUnique: jest.Mock;
       findFirst: jest.Mock;
@@ -51,14 +56,21 @@ describe('ClassMembersService', () => {
     schoolId: 'school-uuid',
     teacher: mockTeacher,
     createdAt: new Date('2026-01-01'),
+    totalStudents: 0,
+    maxStudents: 60,
   };
 
   beforeEach(async () => {
     prismaMock = {
       class: {
         findUnique: jest.fn(),
+        update: jest.fn(),
+      },
+      user: {
+        findUnique: jest.fn(),
       },
       enrollment: {
+        create: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
         findFirst: jest.fn(),
@@ -158,13 +170,85 @@ describe('ClassMembersService', () => {
     });
   });
 
+  describe('addAssistant', () => {
+    it('should throw ForbiddenException if user is not head teacher or admin', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+
+      await expect(
+        service.addAssistant(
+          'class-uuid',
+          'other-teacher',
+          'not-owner',
+          Role.teacher,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException if adding head teacher as assistant', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+
+      await expect(
+        service.addAssistant(
+          'class-uuid',
+          'teacher-uuid',
+          'teacher-uuid',
+          Role.teacher,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should add assistant successfully when user exists in same school', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: 'assistant-uuid',
+        schoolId: 'school-uuid',
+      });
+      prismaMock.enrollment.findUnique.mockResolvedValue(null);
+      prismaMock.enrollment.create.mockResolvedValue({
+        id: 'en-assistant',
+        roleIn: Role.teacher,
+        status: EnrollmentStatus.approved,
+      });
+
+      const res = await service.addAssistant(
+        'class-uuid',
+        'assistant-uuid',
+        'teacher-uuid',
+        Role.teacher,
+      );
+      expect(res.message).toBe('Assistant teacher added successfully');
+      expect(prismaMock.enrollment.create).toHaveBeenCalled();
+    });
+  });
+
   describe('approveMember', () => {
+    it('should throw BadRequestException when class capacity is reached', async () => {
+      prismaMock.class.findUnique.mockResolvedValue({
+        ...mockClass,
+        totalStudents: 60,
+        maxStudents: 60,
+      });
+      prismaMock.enrollment.findFirst.mockResolvedValue({
+        id: 'en-pending',
+        userId: 'student-uuid',
+        classId: 'class-uuid',
+        roleIn: Role.student,
+        status: EnrollmentStatus.pending,
+        user: mockStudent,
+      });
+
+      await expect(
+        service.approveMember('class-uuid', 'en-pending'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should approve a pending member', async () => {
       prismaMock.class.findUnique.mockResolvedValue(mockClass);
       prismaMock.enrollment.findFirst.mockResolvedValue({
         id: 'en-pending',
         userId: 'student-uuid',
         classId: 'class-uuid',
+        roleIn: Role.student,
         status: EnrollmentStatus.pending,
         user: mockStudent,
       });
@@ -203,6 +287,7 @@ describe('ClassMembersService', () => {
         id: 'en-pending',
         userId: 'student-uuid',
         classId: 'class-uuid',
+        roleIn: Role.student,
         status: EnrollmentStatus.pending,
         user: mockStudent,
       });

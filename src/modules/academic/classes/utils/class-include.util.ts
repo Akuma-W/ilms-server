@@ -4,6 +4,7 @@ import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 export const classDetailInclude = {
   teacher: true,
   school: true,
+  subjectRef: true,
   _count: {
     select: {
       enrollments: {
@@ -21,6 +22,7 @@ export function getClassListInclude(userId: string) {
   return {
     teacher: true,
     school: true,
+    subjectRef: true,
     enrollments: { where: { userId } },
     _count: {
       select: {

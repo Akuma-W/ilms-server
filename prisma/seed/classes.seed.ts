@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from "../../src/generated/prisma/client";
+import { PrismaClient, Role } from '../../src/generated/prisma/client';
 import classes from './data/classes.json';
 
 export async function seedClasses(prisma: PrismaClient) {
@@ -13,22 +13,30 @@ export async function seedClasses(prisma: PrismaClient) {
   }
 
   const data = await Promise.all(
-classes.map(async (cls) => {
-    const { teacherId, ...classData } = cls;
-    
-    const teacher = await prisma.user.findFirstOrThrow({
-      where: {
-        identityCode: teacherId,
-      },
-    });
+    classes.map(async (cls) => {
+      const { teacherId, subjectCode, ...classData } = cls;
 
-    return {
-      ...classData,
-      schoolId: teacher?.schoolId,
-      teacherId: teacher?.id,
-      createdAt: new Date(),
-    }
-  })
+      const teacher = await prisma.user.findFirstOrThrow({
+        where: {
+          identityCode: teacherId,
+        },
+      });
+
+      const subject = await prisma.subject.findFirstOrThrow({
+        where: {
+          code: subjectCode,
+          schoolId: teacher.schoolId,
+        },
+      });
+
+      return {
+        ...classData,
+        subjectId: subject.id,
+        schoolId: teacher.schoolId,
+        teacherId: teacher.id,
+        createdAt: new Date(),
+      };
+    }),
   );
 
   const result = await prisma.class.createMany({

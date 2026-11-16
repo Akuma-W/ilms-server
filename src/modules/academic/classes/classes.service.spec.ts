@@ -23,6 +23,12 @@ describe('ClassesService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    subject: {
+      findUnique: jest.fn(),
+    },
+    user: {
+      findUnique: jest.fn(),
+    },
     enrollment: {
       create: jest.fn(),
       deleteMany: jest.fn(),
@@ -89,6 +95,12 @@ describe('ClassesService', () => {
   });
 
   it('should create a class and automatically enroll teacher', async () => {
+    prismaMock.subject.findUnique.mockResolvedValue({
+      id: 'sub-uuid-1',
+      name: 'Software Engineering',
+      schoolId: 'school-uuid-1',
+      isActive: true,
+    });
     prismaMock.class.findUnique.mockResolvedValue(null);
     prismaMock.class.create.mockResolvedValue({
       id: 'class-uuid-1',
@@ -101,7 +113,7 @@ describe('ClassesService', () => {
 
     const result = await service.create('school-uuid-1', 'teacher-uuid-1', {
       title: 'DevOps',
-      subject: 'SE',
+      subjectId: 'sub-uuid-1',
       isPrivate: false,
     });
 
@@ -112,6 +124,12 @@ describe('ClassesService', () => {
 
   it('should create a class on behalf of teacher', async () => {
     usersMock.findOne.mockResolvedValue({ schoolId: 'school-uuid-1' });
+    prismaMock.subject.findUnique.mockResolvedValue({
+      id: 'sub-uuid-1',
+      name: 'Software Engineering',
+      schoolId: 'school-uuid-1',
+      isActive: true,
+    });
     prismaMock.class.findUnique.mockResolvedValue(null);
     prismaMock.class.create.mockResolvedValue({
       id: 'class-uuid-1',
@@ -121,12 +139,60 @@ describe('ClassesService', () => {
 
     const result = await service.createByTeacher('teacher-uuid-1', {
       title: 'DevOps',
-      subject: 'SE',
+      subjectId: 'sub-uuid-1',
       isPrivate: false,
     });
 
     expect(usersMock.findOne).toHaveBeenCalledWith('teacher-uuid-1');
     expect(result.id).toBe('class-uuid-1');
+  });
+
+  it('should throw BadRequestException if subject does not belong to school', async () => {
+    prismaMock.subject.findUnique.mockResolvedValue({
+      id: 'sub-1',
+      schoolId: 'different-school',
+      name: 'Math',
+    });
+
+    await expect(
+      service.create('school-uuid-1', 'teacher-uuid-1', {
+        title: 'Math Class',
+        subjectId: 'sub-1',
+        isPrivate: false,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('should create class with subjectId and assistants', async () => {
+    prismaMock.subject.findUnique.mockResolvedValue({
+      id: 'sub-1',
+      schoolId: 'school-uuid-1',
+      name: 'Computer Science',
+    });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 'assistant-1',
+      schoolId: 'school-uuid-1',
+    });
+    prismaMock.class.findUnique.mockResolvedValue(null);
+    prismaMock.class.create.mockResolvedValue({
+      id: 'class-uuid-1',
+      title: 'CS 101',
+      subject: 'Computer Science',
+      subjectId: 'sub-1',
+      maxStudents: 60,
+      totalStudents: 0,
+    });
+    prismaMock.enrollment.create.mockResolvedValue({});
+
+    const result = await service.create('school-uuid-1', 'teacher-uuid-1', {
+      title: 'CS 101',
+      subjectId: 'sub-1',
+      assistantIds: ['assistant-1'],
+      isPrivate: false,
+    });
+
+    expect(result.id).toBe('class-uuid-1');
+    expect(prismaMock.enrollment.create).toHaveBeenCalledTimes(2);
   });
 
   it('should map totalStudents in findAll and exclude archived by default', async () => {

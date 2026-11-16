@@ -14,6 +14,7 @@ describe('EnrollmentsService', () => {
     class: {
       findUnique: jest.Mock;
       findFirst: jest.Mock;
+      update: jest.Mock;
     };
     user: {
       findUnique: jest.Mock;
@@ -44,6 +45,8 @@ describe('EnrollmentsService', () => {
     isPrivate: false,
     isArchived: false,
     teacherId: 'teacher-uuid',
+    totalStudents: 0,
+    maxStudents: 60,
   };
 
   const mockPrivateClass = {
@@ -53,6 +56,8 @@ describe('EnrollmentsService', () => {
     isPrivate: true,
     isArchived: false,
     teacherId: 'teacher-uuid',
+    totalStudents: 0,
+    maxStudents: 60,
   };
 
   beforeEach(async () => {
@@ -60,6 +65,7 @@ describe('EnrollmentsService', () => {
       class: {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
+        update: jest.fn(),
       },
       user: {
         findUnique: jest.fn(),
@@ -132,6 +138,22 @@ describe('EnrollmentsService', () => {
 
       await expect(
         service.create({ classId: 'class-uuid' }, 'user-uuid'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if class has reached maximum student capacity', async () => {
+      prismaMock.class.findUnique.mockResolvedValue({
+        ...mockPublicClass,
+        totalStudents: 60,
+        maxStudents: 60,
+      });
+      prismaMock.user.findUnique.mockResolvedValue(mockUser);
+
+      await expect(
+        service.create(
+          { classId: 'class-uuid', roleIn: Role.student },
+          'user-uuid',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 

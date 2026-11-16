@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedSchools } from './schools.seed';
+import { seedSubjects } from './subjects.seed';
 import { seedUsers } from './users.seed';
 import { seedClasses } from './classes.seed';
 import { seedEnrollments } from './enrollments.seed';
@@ -14,6 +15,7 @@ async function main() {
   console.log('Start seeding...');
 
   await seedSchools(prisma);
+  await seedSubjects(prisma);
   await seedUsers(prisma);
   await seedClasses(prisma);
   await seedEnrollments(prisma);

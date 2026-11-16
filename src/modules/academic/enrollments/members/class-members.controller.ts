@@ -13,8 +13,10 @@ import { ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/generated/prisma/enums';
+import type { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 import { ClassMembersService } from './class-members.service';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { AddAssistantDto } from './dto/add-assistant.dto';
 import { ApiGetClassMembers } from './swagger/get-class-members.swagger';
 import { ApiApproveMember } from './swagger/approve-member.swagger';
 import { ApiRejectMember } from './swagger/reject-member.swagger';
@@ -23,12 +25,31 @@ import { ApiUpdateMemberRole } from './swagger/update-member-role.swagger';
 import { ApiBanMember } from './swagger/ban-member.swagger';
 import { ApiUnbanMember } from './swagger/unban-member.swagger';
 import { ApiReApproveMember } from './swagger/re-approve-member.swagger';
+import { ApiAddAssistant } from './swagger/add-assistant.swagger';
 import { ClassTeacherGuard, ClassMemberGuard } from 'src/common/guards';
 
 @ApiTags('Class Members')
 @Controller('classes/:classId')
 export class ClassMembersController {
   constructor(private readonly membersService: ClassMembersService) {}
+
+  // Add an assistant teacher directly to the class
+  @Post('members/assistants')
+  @Roles(Role.teacher, Role.admin)
+  @UseGuards(ClassTeacherGuard)
+  @ApiAddAssistant()
+  async addAssistant(
+    @Param('classId', new ParseUUIDPipe()) classId: string,
+    @Body() dto: AddAssistantDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.membersService.addAssistant(
+      classId,
+      dto.userId,
+      user.id,
+      user.role,
+    );
+  }
 
   // Get all members for the specified class
   @Get('members')

@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -20,6 +19,16 @@ import {
   classDetailInclude,
   getClassListInclude,
 } from './utils/class-include.util';
+import {
+  mapToClassDetailItem,
+  mapToClassListItem,
+} from './utils/class-mapper.util';
+import {
+  buildClassListWhere,
+  buildTeachingClassesWhere,
+} from './utils/class-query.util';
+import { enrollClassAssistants } from './utils/class-assistant.util';
+import { findClassWithPermission } from './utils/class-permission.util';
 
 type PaginatedClassesResult = PaginatedResult<
   ClassEntity & { totalStudents: number; enrollment: unknown }
@@ -38,14 +47,32 @@ export class ClassesService {
     teacherId: string,
     createClassDto: CreateClassDto,
   ): Promise<ClassEntity> {
+    const { assistantIds, subjectId, ...classPayload } = createClassDto;
+
+    const subjectRecord = await this.prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: { id: true, name: true, schoolId: true, isActive: true },
+    });
+    if (!subjectRecord || subjectRecord.schoolId !== schoolId) {
+      throw new BadRequestException(
+        'Subject not found or does not belong to this school',
+      );
+    }
+
     const courseCode = await generateUniqueCourseCode(this.prisma);
 
     const classroom = await this.prisma.class.create({
       data: {
-        ...createClassDto,
+        ...classPayload,
+        subjectId,
+        maxStudents: classPayload.maxStudents ?? 60,
+        totalStudents: 0,
         courseCode,
         schoolId,
         teacherId,
+      },
+      include: {
+        subjectRef: true,
       },
     });
 
@@ -59,7 +86,15 @@ export class ClassesService {
       },
     });
 
-    return classroom;
+    await enrollClassAssistants(
+      this.prisma,
+      classroom.id,
+      schoolId,
+      teacherId,
+      assistantIds,
+    );
+
+    return classroom as ClassEntity;
   }
 
   // Creates a class on behalf of a teacher
@@ -87,25 +122,17 @@ export class ClassesService {
     queryClassDto: QueryClassDto,
   ): Promise<PaginatedClassesResult> {
     const user = await this.usersService.findOne(userId);
-    const { search, page, limit, isArchived } = queryClassDto;
+    const { search, page, limit, isArchived, subjectId } = queryClassDto;
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where: Prisma.ClassWhereInput = {
-      isPrivate: false,
-      schoolId: user.schoolId,
-      isArchived: isArchived !== undefined ? isArchived : false,
-    };
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { subject: { contains: search, mode: 'insensitive' } },
-        { semester: { contains: search, mode: 'insensitive' } },
-        { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
+    const where = buildClassListWhere(
+      user.schoolId,
+      search,
+      isArchived,
+      subjectId,
+    );
 
     const [result, total] = await Promise.all([
       this.prisma.class.findMany({
@@ -118,11 +145,7 @@ export class ClassesService {
       this.prisma.class.count({ where }),
     ]);
 
-    const data = result.map((cls) => ({
-      ...cls,
-      enrollment: cls.enrollments[0] || null,
-      totalStudents: cls._count?.enrollments ?? 0,
-    }));
+    const data = result.map(mapToClassListItem);
 
     return {
       data,
@@ -148,10 +171,7 @@ export class ClassesService {
       throw new NotFoundException('Class not found');
     }
 
-    return {
-      ...classroom,
-      totalStudents: classroom._count?.enrollments ?? 0,
-    };
+    return mapToClassDetailItem(classroom);
   }
 
   // Find single class by 6-character course code
@@ -167,10 +187,7 @@ export class ClassesService {
       throw new NotFoundException('Class not found');
     }
 
-    return {
-      ...classroom,
-      totalStudents: classroom._count?.enrollments ?? 0,
-    };
+    return mapToClassDetailItem(classroom);
   }
 
   // Find all classes created by currently authenticated teacher
@@ -178,23 +195,17 @@ export class ClassesService {
     userId: string,
     query: QueryClassDto,
   ): Promise<PaginatedClassesResult> {
-    const { search: keyword, page, limit, isArchived } = query;
+    const { search: keyword, page, limit, isArchived, subjectId } = query;
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where: Prisma.ClassWhereInput = {
-      teacherId: userId,
-      ...(isArchived !== undefined && { isArchived }),
-    };
-
-    if (keyword) {
-      where.OR = [
-        { title: { contains: keyword, mode: 'insensitive' } },
-        { subject: { contains: keyword, mode: 'insensitive' } },
-        { semester: { contains: keyword, mode: 'insensitive' } },
-      ];
-    }
+    const where = buildTeachingClassesWhere(
+      userId,
+      keyword,
+      isArchived,
+      subjectId,
+    );
 
     const [result, total] = await Promise.all([
       this.prisma.class.findMany({
@@ -207,11 +218,7 @@ export class ClassesService {
       this.prisma.class.count({ where }),
     ]);
 
-    const data = result.map((cls) => ({
-      ...cls,
-      enrollment: cls.enrollments[0] || null,
-      totalStudents: cls._count?.enrollments ?? 0,
-    }));
+    const data = result.map(mapToClassListItem);
 
     return {
       data,
@@ -230,11 +237,39 @@ export class ClassesService {
     classId: string,
     updateClassDto: UpdateClassDto,
   ): Promise<{ message: string }> {
-    await this.findClassWithPermission(user, classId, 'update');
+    const existing = await findClassWithPermission(
+      this.prisma,
+      user,
+      classId,
+      'update',
+    );
+
+    const { subjectId, ...updatePayload } = updateClassDto;
+    delete updatePayload.assistantIds;
+
+    const dataToUpdate: Prisma.ClassUpdateInput = {
+      ...updatePayload,
+    };
+
+    if (subjectId !== undefined) {
+      if (!subjectId) {
+        throw new BadRequestException('Subject is required');
+      }
+      const subjectRecord = await this.prisma.subject.findUnique({
+        where: { id: subjectId },
+        select: { id: true, name: true, schoolId: true },
+      });
+      if (!subjectRecord || subjectRecord.schoolId !== existing.schoolId) {
+        throw new BadRequestException(
+          'Subject not found or does not belong to this school',
+        );
+      }
+      dataToUpdate.subjectRef = { connect: { id: subjectId } };
+    }
 
     await this.prisma.class.update({
       where: { id: classId },
-      data: updateClassDto,
+      data: dataToUpdate,
     });
 
     return { message: 'Class updated successfully' };
@@ -245,7 +280,8 @@ export class ClassesService {
     user: AuthUser,
     classId: string,
   ): Promise<{ message: string }> {
-    const existing = await this.findClassWithPermission(
+    const existing = await findClassWithPermission(
+      this.prisma,
       user,
       classId,
       'archive',
@@ -260,7 +296,6 @@ export class ClassesService {
       data: { isArchived: true },
     });
 
-    // TODO (Notification): Notify enrolled students that class has been archived
     return { message: 'Class archived successfully' };
   }
 
@@ -269,7 +304,8 @@ export class ClassesService {
     user: AuthUser,
     classId: string,
   ): Promise<{ message: string }> {
-    const existing = await this.findClassWithPermission(
+    const existing = await findClassWithPermission(
+      this.prisma,
       user,
       classId,
       'unarchive',
@@ -284,13 +320,12 @@ export class ClassesService {
       data: { isArchived: false },
     });
 
-    // TODO (Notification): Notify enrolled students that class has been restored
     return { message: 'Class unarchived successfully' };
   }
 
   // Hard deletes class and cascades enrollment removals in a transaction
   async remove(user: AuthUser, classId: string): Promise<{ message: string }> {
-    await this.findClassWithPermission(user, classId, 'delete');
+    await findClassWithPermission(this.prisma, user, classId, 'delete');
 
     await this.prisma.$transaction([
       this.prisma.enrollment.deleteMany({ where: { classId } }),
@@ -298,28 +333,5 @@ export class ClassesService {
     ]);
 
     return { message: 'Class deleted successfully' };
-  }
-
-  // Helper verifying that the target class exists and user is owner or administrator
-  private async findClassWithPermission(
-    user: AuthUser,
-    classId: string,
-    action: string,
-  ) {
-    const existing = await this.prisma.class.findUnique({
-      where: { id: classId },
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Class not found');
-    }
-
-    if (user.role !== Role.admin && existing.teacherId !== user.id) {
-      throw new ForbiddenException(
-        `You are not allowed to ${action} this class`,
-      );
-    }
-
-    return existing;
   }
 }

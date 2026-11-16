@@ -8,6 +8,13 @@ import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { StorageService } from 'src/infrastructures/storage/storage.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { ClassMemberEntity } from './entities/class-member.entity';
+import { executeAddAssistant } from './utils/class-member-assistant.util';
+import {
+  ensureStudentCapacity,
+  findAndValidateMember,
+  getHeadTeacherId,
+} from './utils/class-member-validator.util';
+import { buildClassMemberEntity } from './utils/class-member-mapper.util';
 
 @Injectable()
 export class ClassMembersService {
@@ -50,21 +57,16 @@ export class ClassMembersService {
         ? await this.storage.getAvatarUrl(targetClass.teacher.avatarUrl)
         : null;
 
-      members.push({
-        id: 'owner',
-        userId: targetClass.teacher.id,
-        user: {
-          id: targetClass.teacher.id,
-          fullName: targetClass.teacher.fullName,
-          email: targetClass.teacher.email,
+      members.push(
+        buildClassMemberEntity(
+          'owner',
+          targetClass.teacher,
           avatarUrl,
-          identityCode: null,
-          role: targetClass.teacher.role,
-        },
-        role: Role.teacher,
-        status: EnrollmentStatus.approved,
-        joinedAt: targetClass.createdAt,
-      });
+          Role.teacher,
+          EnrollmentStatus.approved,
+          targetClass.createdAt,
+        ),
+      );
     }
 
     for (const e of enrollments) {
@@ -72,24 +74,35 @@ export class ClassMembersService {
         ? await this.storage.getAvatarUrl(e.user.avatarUrl)
         : null;
 
-      members.push({
-        id: e.id,
-        userId: e.userId,
-        user: {
-          id: e.user.id,
-          fullName: e.user.fullName,
-          email: e.user.email,
+      members.push(
+        buildClassMemberEntity(
+          e.id,
+          e.user,
           avatarUrl,
-          identityCode: null,
-          role: e.user.role,
-        },
-        role: e.roleIn,
-        status: e.status,
-        joinedAt: e.joinedAt,
-      });
+          e.roleIn,
+          e.status,
+          e.joinedAt,
+        ),
+      );
     }
 
     return members;
+  }
+
+  // Add an assistant teacher directly to the class (Method 2)
+  async addAssistant(
+    classId: string,
+    assistantUserId: string,
+    currentUserId: string,
+    currentUserRole: Role,
+  ): Promise<{ message: string; data: unknown }> {
+    return executeAddAssistant(
+      this.prisma,
+      classId,
+      assistantUserId,
+      currentUserId,
+      currentUserRole,
+    );
   }
 
   // Approve a pending student enrollment request
@@ -97,12 +110,21 @@ export class ClassMembersService {
     classId: string,
     memberId: string,
   ): Promise<{ message: string; data: unknown }> {
-    const enrollment = await this.findAndValidateMember(
+    const enrollment = await findAndValidateMember(
+      this.prisma,
       classId,
       memberId,
       EnrollmentStatus.pending,
       'Enrollment is not pending approval',
     );
+
+    if (enrollment.roleIn === Role.student) {
+      await ensureStudentCapacity(this.prisma, classId);
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { increment: 1 } },
+      });
+    }
 
     const updated = await this.prisma.enrollment.update({
       where: { id: enrollment.id },
@@ -124,7 +146,8 @@ export class ClassMembersService {
     classId: string,
     memberId: string,
   ): Promise<{ message: string; data: unknown }> {
-    const enrollment = await this.findAndValidateMember(
+    const enrollment = await findAndValidateMember(
+      this.prisma,
       classId,
       memberId,
       EnrollmentStatus.pending,
@@ -150,12 +173,21 @@ export class ClassMembersService {
     classId: string,
     memberId: string,
   ): Promise<{ message: string; data: unknown }> {
-    const enrollment = await this.findAndValidateMember(
+    const enrollment = await findAndValidateMember(
+      this.prisma,
       classId,
       memberId,
       EnrollmentStatus.rejected,
       'Enrollment is not currently rejected',
     );
+
+    if (enrollment.roleIn === Role.student) {
+      await ensureStudentCapacity(this.prisma, classId);
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { increment: 1 } },
+      });
+    }
 
     const updated = await this.prisma.enrollment.update({
       where: { id: enrollment.id },
@@ -177,8 +209,12 @@ export class ClassMembersService {
     classId: string,
     memberId: string,
   ): Promise<{ message: string; data: unknown }> {
-    const headTeacherId = await this.getHeadTeacherId(classId);
-    const enrollment = await this.findAndValidateMember(classId, memberId);
+    const headTeacherId = await getHeadTeacherId(this.prisma, classId);
+    const enrollment = await findAndValidateMember(
+      this.prisma,
+      classId,
+      memberId,
+    );
 
     if (enrollment.status === EnrollmentStatus.suspended) {
       throw new BadRequestException('Member is already suspended');
@@ -190,6 +226,13 @@ export class ClassMembersService {
 
     if (enrollment.roleIn === Role.teacher) {
       throw new ForbiddenException('Cannot ban a teacher or instructor');
+    }
+
+    if (enrollment.status === EnrollmentStatus.approved) {
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { decrement: 1 } },
+      });
     }
 
     const updated = await this.prisma.enrollment.update({
@@ -211,12 +254,19 @@ export class ClassMembersService {
     classId: string,
     memberId: string,
   ): Promise<{ message: string; data: unknown }> {
-    const enrollment = await this.findAndValidateMember(
+    const enrollment = await findAndValidateMember(
+      this.prisma,
       classId,
       memberId,
       EnrollmentStatus.suspended,
       'Member is not currently suspended',
     );
+
+    await ensureStudentCapacity(this.prisma, classId);
+    await this.prisma.class.update({
+      where: { id: classId },
+      data: { totalStudents: { increment: 1 } },
+    });
 
     const updated = await this.prisma.enrollment.update({
       where: { id: enrollment.id },
@@ -239,8 +289,12 @@ export class ClassMembersService {
     classId: string,
     memberId: string,
   ): Promise<{ message: string }> {
-    const headTeacherId = await this.getHeadTeacherId(classId);
-    const enrollment = await this.findAndValidateMember(classId, memberId);
+    const headTeacherId = await getHeadTeacherId(this.prisma, classId);
+    const enrollment = await findAndValidateMember(
+      this.prisma,
+      classId,
+      memberId,
+    );
 
     if (enrollment.userId === headTeacherId) {
       throw new ForbiddenException('Cannot remove the class head teacher');
@@ -248,6 +302,16 @@ export class ClassMembersService {
 
     if (enrollment.roleIn === Role.teacher && headTeacherId !== currentUserId) {
       throw new ForbiddenException('Only class owner can remove co-teachers');
+    }
+
+    if (
+      enrollment.roleIn === Role.student &&
+      enrollment.status === EnrollmentStatus.approved
+    ) {
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { decrement: 1 } },
+      });
     }
 
     await this.prisma.enrollment.delete({
@@ -264,11 +328,37 @@ export class ClassMembersService {
     memberId: string,
     role: Role,
   ): Promise<{ message: string; data: unknown }> {
-    const headTeacherId = await this.getHeadTeacherId(classId);
-    const enrollment = await this.findAndValidateMember(classId, memberId);
+    const headTeacherId = await getHeadTeacherId(this.prisma, classId);
+    const enrollment = await findAndValidateMember(
+      this.prisma,
+      classId,
+      memberId,
+    );
 
     if (enrollment.userId === headTeacherId && role !== Role.teacher) {
       throw new BadRequestException('Cannot change role of class head teacher');
+    }
+
+    if (enrollment.roleIn === role) {
+      return { message: 'Member already has this role', data: enrollment };
+    }
+
+    if (role === Role.student) {
+      await ensureStudentCapacity(this.prisma, classId);
+      if (enrollment.status === EnrollmentStatus.approved) {
+        await this.prisma.class.update({
+          where: { id: classId },
+          data: { totalStudents: { increment: 1 } },
+        });
+      }
+    } else if (
+      enrollment.roleIn === Role.student &&
+      enrollment.status === EnrollmentStatus.approved
+    ) {
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { decrement: 1 } },
+      });
     }
 
     const updated = await this.prisma.enrollment.update({
@@ -281,50 +371,5 @@ export class ClassMembersService {
       message: 'Update member role successful',
       data: updated,
     };
-  }
-
-  // Resolves an enrollment and validates existence and optional status
-  private async findAndValidateMember(
-    classId: string,
-    memberId: string,
-    expectedStatus?: EnrollmentStatus,
-    statusErrorMessage?: string,
-  ) {
-    const enrollment = await this.prisma.enrollment.findFirst({
-      where: {
-        classId,
-        OR: [{ id: memberId }, { userId: memberId }],
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!enrollment) {
-      throw new NotFoundException('Enrollment not found');
-    }
-
-    if (expectedStatus && enrollment.status !== expectedStatus) {
-      throw new BadRequestException(
-        statusErrorMessage ||
-          `Member is not in expected status: ${expectedStatus}`,
-      );
-    }
-
-    return enrollment;
-  }
-
-  // Fetches head teacher ID for a class
-  private async getHeadTeacherId(classId: string): Promise<string> {
-    const cls = await this.prisma.class.findUnique({
-      where: { id: classId },
-      select: { teacherId: true },
-    });
-
-    if (!cls) {
-      throw new NotFoundException('Class not found');
-    }
-
-    return cls.teacherId;
   }
 }

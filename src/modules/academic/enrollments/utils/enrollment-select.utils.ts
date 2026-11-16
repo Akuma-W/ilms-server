@@ -15,7 +15,15 @@ export const enrollmentSelect = {
       title: true,
       description: true,
       courseCode: true,
-      subject: true,
+      subjectId: true,
+      subjectRef: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          credits: true,
+        },
+      },
       semester: true,
       isPrivate: true,
       meetingUri: true,

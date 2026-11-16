@@ -10,7 +10,7 @@ interface EnrollmentWithClass {
     courseCode: string | null;
     title: string;
     description: string | null;
-    subject: string | null;
+    subjectRef?: { name: string } | null;
     semester: string | null;
     createdAt: Date | null;
     teacher: {
@@ -33,7 +33,7 @@ interface TeacherClassWithCounts {
   courseCode: string | null;
   title: string;
   description: string | null;
-  subject: string | null;
+  subjectRef?: { name: string } | null;
   semester: string | null;
   createdAt: Date | null;
   teacher: {
@@ -59,7 +59,7 @@ export function mapStudentEnrollmentsToProfileClasses(
     courseCode: e.class.courseCode,
     title: e.class.title,
     description: e.class.description,
-    subject: e.class.subject,
+    subject: e.class.subjectRef?.name ?? null,
     semester: e.class.semester,
     totalStudents: e.class._count.enrollments,
     totalTopics: e.class._count.topics,
@@ -85,7 +85,7 @@ export function mapTeacherClassesToProfileClasses(
     courseCode: c.courseCode,
     title: c.title,
     description: c.description,
-    subject: c.subject,
+    subject: c.subjectRef?.name ?? null,
     semester: c.semester,
     totalStudents: c._count.enrollments,
     totalTopics: c._count.topics,

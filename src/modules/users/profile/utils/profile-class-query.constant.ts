@@ -1,6 +1,11 @@
 import { EnrollmentStatus } from 'src/generated/prisma/enums';
 
 export const PROFILE_CLASS_INCLUDE = {
+  subjectRef: {
+    select: {
+      name: true,
+    },
+  },
   teacher: {
     select: {
       id: true,

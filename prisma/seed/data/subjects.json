@@ -1,0 +1,30 @@
+[
+  {
+    "code": "IT001",
+    "name": "Nhập môn lập trình",
+    "description": "Môn học cơ sở ngành về tư duy lập trình và giải thuật cơ bản",
+    "credits": 4,
+    "isActive": true
+  },
+  {
+    "code": "IT003",
+    "name": "Cấu trúc dữ liệu và giải thuật",
+    "description": "Môn học về cấu trúc dữ liệu tuyến tính, phi tuyến và thuật toán tối ưu",
+    "credits": 4,
+    "isActive": true
+  },
+  {
+    "code": "SE347",
+    "name": "Công nghệ web và ứng dụng",
+    "description": "Môn học chuyên ngành về phát triển ứng dụng web hiện đại",
+    "credits": 3,
+    "isActive": true
+  },
+  {
+    "code": "SS007",
+    "name": "Triết học Mác - Lênin",
+    "description": "Môn học lý luận chính trị bắt buộc trong chương trình đào tạo",
+    "credits": 2,
+    "isActive": true
+  }
+]

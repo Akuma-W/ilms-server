@@ -3,7 +3,7 @@ import schools from './data/hcmc_universities.json';
 
 export async function seedSchools(prisma: PrismaClient) {
   console.log('Seeding schools...');
-  
+
   const result = await prisma.school.createMany({
     data: schools,
     skipDuplicates: true,

@@ -1,22 +1,32 @@
-import { EnrollmentStatus, PrismaClient, Role } from "../../src/generated/prisma/client";
+import {
+  EnrollmentStatus,
+  PrismaClient,
+  Role,
+} from '../../src/generated/prisma/client';
 
 export async function seedEnrollments(prisma: PrismaClient) {
   console.log('Seeding enrollments...');
 
   const classes = await prisma.class.findMany();
   const students = await prisma.user.findMany({
-    where: { role: Role.student }
+    where: { role: Role.student },
   });
 
   if (!classes.length) {
-    throw new Error('No classes found. Seed classes first.')
+    throw new Error('No classes found. Seed classes first.');
   }
 
   if (!students.length) {
-    throw new Error('No students found. Seed users first.')
+    throw new Error('No students found. Seed users first.');
   }
 
-  const enrollments = []
+  const enrollments: {
+    roleIn: Role;
+    classId: string;
+    userId: string;
+    status: EnrollmentStatus;
+    joinedAt: Date;
+  }[] = [];
 
   for (const cls of classes) {
     // teacher enrollment
@@ -33,11 +43,14 @@ export async function seedEnrollments(prisma: PrismaClient) {
         roleIn: Role.student,
         classId: cls.id,
         userId: student.id,
-        status: student.identityCode === 'SV0001' ? EnrollmentStatus.approved : EnrollmentStatus.pending,
+        status:
+          student.identityCode === 'SV0001'
+            ? EnrollmentStatus.approved
+            : EnrollmentStatus.pending,
         joinedAt: new Date(),
       });
-    };
-  };
+    }
+  }
 
   const result = await prisma.enrollment.createMany({
     data: enrollments,

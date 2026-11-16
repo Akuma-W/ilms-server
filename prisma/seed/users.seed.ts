@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from "../../src/generated/prisma/client";
+import { PrismaClient, Role } from '../../src/generated/prisma/client';
 import users from './data/users.json';
 import bcrypt from 'bcrypt';
 
@@ -22,7 +22,7 @@ export async function seedUsers(prisma: PrismaClient) {
       fullName: user.fullName,
       role: Role[user.role as keyof typeof Role],
       schoolId: seedSchool.id,
-    }))
+    })),
   );
 
   const result = await prisma.user.createMany({

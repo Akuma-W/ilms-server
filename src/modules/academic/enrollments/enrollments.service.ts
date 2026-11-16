@@ -54,6 +54,17 @@ export class EnrollmentsService {
       );
     }
 
+    const targetRole = createEnrollmentDto.roleIn ?? Role.student;
+    if (
+      targetRole === Role.student &&
+      foundClass.maxStudents &&
+      foundClass.totalStudents >= foundClass.maxStudents
+    ) {
+      throw new BadRequestException(
+        'This class has reached its maximum student capacity',
+      );
+    }
+
     const existed = await this.prisma.enrollment.findUnique({
       where: { classId_userId: { classId, userId } },
     });
@@ -78,12 +89,22 @@ export class EnrollmentsService {
         ? EnrollmentStatus.pending
         : EnrollmentStatus.approved;
 
+      if (
+        reapplyStatus === EnrollmentStatus.approved &&
+        targetRole === Role.student
+      ) {
+        await this.prisma.class.update({
+          where: { id: classId },
+          data: { totalStudents: { increment: 1 } },
+        });
+      }
+
       const updated = await this.prisma.enrollment.update({
         where: { id: existed.id },
         select: enrollmentSelect,
         data: {
           status: reapplyStatus,
-          roleIn: createEnrollmentDto.roleIn ?? Role.student,
+          roleIn: targetRole,
           isStarred: createEnrollmentDto.isStarred ?? false,
           joinedAt:
             reapplyStatus === EnrollmentStatus.approved ? new Date() : null,
@@ -98,12 +119,22 @@ export class EnrollmentsService {
       ? EnrollmentStatus.pending
       : EnrollmentStatus.approved;
 
+    if (
+      initialStatus === EnrollmentStatus.approved &&
+      targetRole === Role.student
+    ) {
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { increment: 1 } },
+      });
+    }
+
     const created = await this.prisma.enrollment.create({
       select: enrollmentSelect,
       data: {
         classId,
         userId,
-        roleIn: createEnrollmentDto.roleIn ?? Role.student,
+        roleIn: targetRole,
         status: initialStatus,
         isStarred: createEnrollmentDto.isStarred ?? false,
         joinedAt:
@@ -135,7 +166,8 @@ export class EnrollmentsService {
       where.class = {
         OR: [
           { title: { contains: search, mode: 'insensitive' } },
-          { subject: { contains: search, mode: 'insensitive' } },
+          { subjectRef: { name: { contains: search, mode: 'insensitive' } } },
+          { subjectRef: { code: { contains: search, mode: 'insensitive' } } },
           { courseCode: { contains: search, mode: 'insensitive' } },
           { semester: { contains: search, mode: 'insensitive' } },
           { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
@@ -158,6 +190,7 @@ export class EnrollmentsService {
 
     const data = enrollments.map((e) => ({
       ...e.class,
+      subject: e.class?.subjectRef?.name ?? null,
       totalStudents: e.class?._count?.enrollments ?? 0,
       enrollment: {
         id: e.id,
@@ -210,6 +243,7 @@ export class EnrollmentsService {
 
     const data = enrollments.map((e) => ({
       ...e.class,
+      subject: e.class?.subjectRef?.name ?? null,
       totalStudents: e.class?._count?.enrollments ?? 0,
       enrollment: {
         id: e.id,
@@ -278,6 +312,16 @@ export class EnrollmentsService {
       if (teacherCount <= 1) {
         throw new BadRequestException('Class must have at least 1 teacher');
       }
+    }
+
+    if (
+      enrollment.roleIn === Role.student &&
+      enrollment.status === EnrollmentStatus.approved
+    ) {
+      await this.prisma.class.update({
+        where: { id: classId },
+        data: { totalStudents: { decrement: 1 } },
+      });
     }
 
     await this.prisma.enrollment.delete({

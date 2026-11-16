@@ -3,11 +3,13 @@ import { ClassMembersController } from './class-members.controller';
 import { ClassMembersService } from './class-members.service';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { Role } from 'src/generated/prisma/enums';
+import type { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 
 describe('ClassMembersController', () => {
   let controller: ClassMembersController;
   const serviceMock = {
     getMembers: jest.fn(),
+    addAssistant: jest.fn(),
     approveMember: jest.fn(),
     rejectMember: jest.fn(),
     reApproveMember: jest.fn(),
@@ -48,6 +50,31 @@ describe('ClassMembersController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('should add an assistant', async () => {
+    serviceMock.addAssistant.mockResolvedValue({
+      message: 'Assistant teacher added successfully',
+      data: { id: 'en-uuid' },
+    });
+    const mockAuthUser: AuthUser = {
+      id: 'teacher-uuid',
+      role: Role.teacher,
+      jti: 'jti-1',
+      exp: 999999999,
+    };
+    const result = await controller.addAssistant(
+      'class-uuid',
+      { userId: 'user-uuid' },
+      mockAuthUser,
+    );
+    expect(result.message).toBe('Assistant teacher added successfully');
+    expect(serviceMock.addAssistant).toHaveBeenCalledWith(
+      'class-uuid',
+      'user-uuid',
+      'teacher-uuid',
+      Role.teacher,
+    );
   });
 
   it('should return class members', async () => {

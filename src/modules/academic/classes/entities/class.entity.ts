@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SubjectEntity } from 'src/modules/academic/subjects/entities/subject.entity';
 
 export class ClassEntity {
   @ApiProperty({
@@ -14,13 +15,6 @@ export class ClassEntity {
     type: 'string',
   })
   title!: string;
-
-  @ApiProperty({
-    description: 'Subject of the class',
-    example: 'Software Engineering',
-    type: 'string',
-  })
-  subject!: string;
 
   @ApiPropertyOptional({
     description: 'Detailed description of the class syllabus',
@@ -86,12 +80,32 @@ export class ClassEntity {
   })
   teacherId!: string;
 
+  @ApiProperty({
+    description: 'Identifier of the subject curriculum this class belongs to',
+    example: '123e4567-e89b-12d3-a456-426614174003',
+    type: 'string',
+  })
+  subjectId!: string;
+
+  @ApiPropertyOptional({
+    description: 'Detailed subject information',
+    type: () => SubjectEntity,
+  })
+  subjectRef?: SubjectEntity;
+
   @ApiPropertyOptional({
     description: 'Total approved students enrolled in this class',
     example: 45,
     type: 'number',
   })
   totalStudents?: number;
+
+  @ApiPropertyOptional({
+    description: 'Maximum student capacity for this class',
+    example: 60,
+    type: 'number',
+  })
+  maxStudents?: number | null;
 
   @ApiPropertyOptional({
     description: 'Creation timestamp',

@@ -139,8 +139,9 @@ model School {
   createdAt DateTime?    @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime?    @updatedAt @map("updated_at") @db.Timestamptz()
 
-  users   User[]
-  classes Class[]
+  users    User[]
+  classes  Class[]
+  subjects Subject[]
 
   @@index([name])
   @@index([city])
@@ -148,10 +149,31 @@ model School {
   @@schema("academic")
 }
 
+model Subject {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @db.VarChar(50)
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  credits     Int       @default(3)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+
+  schoolId String @map("school_id") @db.Uuid
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  classes Class[]
+
+  @@unique([schoolId, code])
+  @@index([schoolId, isActive])
+  @@index([code])
+  @@map("subjects")
+  @@schema("academic")
+}
+
 model Class {
   id             String    @id @default(uuid()) @db.Uuid
   title          String
-  subject        String
   description    String?
   courseCode     String?   @unique @map("course_code")
   semester       String?
@@ -159,13 +181,17 @@ model Class {
   meetingUri     String?   @map("meeting_uri")
   meetingSpaceId String?   @map("meeting_space_id")
   isArchived     Boolean   @default(false) @map("is_archived")
+  totalStudents  Int       @default(0) @map("total_students")
+  maxStudents    Int?      @default(60) @map("max_students")
   createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz()
 
   schoolId  String @map("school_id") @db.Uuid
   teacherId String @map("teacher_id") @db.Uuid
+  subjectId String @map("subject_id") @db.Uuid
 
-  school  School @relation(fields: [schoolId], references: [id])
-  teacher User   @relation(name: "ClassTeacher", fields: [teacherId], references: [id])
+  school     School  @relation(fields: [schoolId], references: [id])
+  teacher    User    @relation(name: "ClassTeacher", fields: [teacherId], references: [id])
+  subjectRef Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
 
   gradeCategories    GradeCategory[]
   topics             Topic[]
@@ -179,6 +205,7 @@ model Class {
   @@index([teacherId])
   @@index([courseCode])
   @@index([title])
+  @@index([subjectId])
   @@map("classes")
   @@schema("academic")
 }

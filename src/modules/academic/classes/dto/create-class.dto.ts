@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateClassDto {
   @ApiProperty({
@@ -12,13 +22,12 @@ export class CreateClassDto {
   title!: string;
 
   @ApiProperty({
-    description: 'Subject class teaching',
+    description: 'Identifier of the academic subject offering this class',
     type: 'string',
-    example: 'SE347 - Ứng dụng web',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsString()
-  @MaxLength(255)
-  subject!: string;
+  @IsUUID('4')
+  subjectId!: string;
 
   @ApiProperty({
     description: 'Class status: public or private',
@@ -28,6 +37,29 @@ export class CreateClassDto {
   })
   @IsBoolean()
   isPrivate!: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Maximum student capacity for this class',
+    type: 'number',
+    example: 60,
+    default: 60,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  maxStudents?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'List of assistant teacher user IDs to assign upon class creation',
+    type: 'array',
+    example: ['123e4567-e89b-12d3-a456-426614174001'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  assistantIds?: string[];
 
   @ApiPropertyOptional({
     description: 'Description / Introducion of class',
