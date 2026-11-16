@@ -53,17 +53,6 @@ describe('QuizPublicationsService', () => {
   });
 
   describe('publishToClass', () => {
-    it('should throw ForbiddenException if user is not the teacher of class', async () => {
-      mockPrisma.class.findUnique.mockResolvedValue({
-        id: 'class-1',
-        teacherId: 'teacher-2',
-      });
-
-      await expect(
-        service.publishToClass('teacher-1', 'quiz-1', { classId: 'class-1' }),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
     it('should throw ConflictException if quiz is already published in class', async () => {
       mockPrisma.class.findUnique.mockResolvedValue({
         id: 'class-1',
@@ -106,20 +95,9 @@ describe('QuizPublicationsService', () => {
   });
 
   describe('getClassPublications', () => {
-    it('should throw ForbiddenException if user is neither teacher nor student', async () => {
-      mockPrisma.class.count.mockResolvedValue(0);
-      mockPrisma.enrollment.count.mockResolvedValue(0);
-
-      await expect(
-        service.getClassPublications('user-3', 'class-1'),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
     it('should return list of publications with latest attempt for member', async () => {
       mockPrisma.class.count.mockResolvedValue(0);
-      mockPrisma.enrollment.count
-        .mockResolvedValueOnce(1)
-        .mockResolvedValueOnce(32);
+      mockPrisma.enrollment.count.mockResolvedValue(32);
       mockPrisma.quizPublication.findMany.mockResolvedValue([
         {
           id: 'pub-1',

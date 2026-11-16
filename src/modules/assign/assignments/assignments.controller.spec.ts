@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AssignmentsController } from './assignments.controller';
 import { AssignmentsService } from './assignments.service';
+import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 
 describe('AssignmentsController', () => {
   let controller: AssignmentsController;
@@ -13,6 +14,11 @@ describe('AssignmentsController', () => {
     delete: jest.fn(),
   };
 
+  const prismaMock = {
+    class: { findUnique: jest.fn() },
+    enrollment: { findFirst: jest.fn() },
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -22,6 +28,10 @@ describe('AssignmentsController', () => {
         {
           provide: AssignmentsService,
           useValue: assignmentsServiceMock,
+        },
+        {
+          provide: PrismaService,
+          useValue: prismaMock,
         },
       ],
     }).compile();

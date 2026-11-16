@@ -19,7 +19,7 @@ export class CreateEnrollmentDto {
     example: 'b2c1d9e8-5678-4abc-9def-0987654321ab',
   })
   @IsUUID()
-  classId: string;
+  classId!: string;
 
   @ApiPropertyOptional({
     description: 'Role in class (defaults to student)',

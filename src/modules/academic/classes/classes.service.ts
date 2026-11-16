@@ -10,11 +10,20 @@ import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { QueryClassDto } from './dto/query-class.dto';
 import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
-import { generateRandomCode } from 'src/common/utils/random.util';
 import { UsersService } from 'src/modules/users/users.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { AdminCreateClassDto } from './dto/admin-create-class.dto';
 import { ClassEntity } from './entities/class.entity';
+import { PaginatedResult } from 'src/common/interfaces/paginated-result.interface';
+import { generateUniqueCourseCode } from './utils/course-code.util';
+import {
+  classDetailInclude,
+  getClassListInclude,
+} from './utils/class-include.util';
+
+type PaginatedClassesResult = PaginatedResult<
+  ClassEntity & { totalStudents: number; enrollment: unknown }
+>;
 
 @Injectable()
 export class ClassesService {
@@ -23,13 +32,13 @@ export class ClassesService {
     private readonly usersService: UsersService,
   ) {}
 
-  // Creates a new class and automatically enrolls the teacher
+  // Creates a new class and automatically enrolls the teacher as approved owner
   async create(
     schoolId: string,
     teacherId: string,
     createClassDto: CreateClassDto,
   ): Promise<ClassEntity> {
-    const courseCode = await this.generateUniqueCourseCode();
+    const courseCode = await generateUniqueCourseCode(this.prisma);
 
     const classroom = await this.prisma.class.create({
       data: {
@@ -40,13 +49,12 @@ export class ClassesService {
       },
     });
 
-    // Teacher auto enrolls to class (Enrollment)
     await this.prisma.enrollment.create({
       data: {
         classId: classroom.id,
         userId: teacherId,
-        roleIn: 'teacher',
-        status: 'approved',
+        roleIn: Role.teacher,
+        status: EnrollmentStatus.approved,
         joinedAt: new Date(),
       },
     });
@@ -73,11 +81,13 @@ export class ClassesService {
     return this.create(schoolId, teacherId, adminCreateClassDto);
   }
 
-  // User find all classes with query (public classes in user's school)
-  async findAll(userId: string, queryClassDto: QueryClassDto) {
+  // Find all public classes in user's school excluding archived ones by default
+  async findAll(
+    userId: string,
+    queryClassDto: QueryClassDto,
+  ): Promise<PaginatedClassesResult> {
     const user = await this.usersService.findOne(userId);
-
-    const { search, page, limit } = queryClassDto;
+    const { search, page, limit, isArchived } = queryClassDto;
 
     const skip = (page - 1) * limit;
     const take = limit;
@@ -85,9 +95,9 @@ export class ClassesService {
     const where: Prisma.ClassWhereInput = {
       isPrivate: false,
       schoolId: user.schoolId,
+      isArchived: isArchived !== undefined ? isArchived : false,
     };
 
-    // Find by keyword
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -102,39 +112,17 @@ export class ClassesService {
         where,
         skip,
         take,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          teacher: true,
-          school: true,
-          enrollments: {
-            where: { userId: userId },
-          },
-          _count: {
-            select: {
-              enrollments: {
-                where: {
-                  roleIn: Role.student,
-                  status: EnrollmentStatus.approved,
-                },
-              },
-            },
-          },
-        },
+        orderBy: { createdAt: 'desc' },
+        include: getClassListInclude(userId),
       }),
-      this.prisma.class.count({ where: where }),
+      this.prisma.class.count({ where }),
     ]);
 
-    const data = result.map((cls) => {
-      const enrollment = cls.enrollments[0] || null;
-
-      return {
-        ...cls,
-        enrollment,
-        totalStudents: cls._count?.enrollments ?? 0,
-      };
-    });
+    const data = result.map((cls) => ({
+      ...cls,
+      enrollment: cls.enrollments[0] || null,
+      totalStudents: cls._count?.enrollments ?? 0,
+    }));
 
     return {
       data,
@@ -142,29 +130,18 @@ export class ClassesService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
       },
     };
   }
 
-  // Find One Class by Id
-  async findOne(classId: string) {
+  // Find single class by unique identifier
+  async findOne(
+    classId: string,
+  ): Promise<ClassEntity & { totalStudents: number }> {
     const classroom = await this.prisma.class.findUnique({
       where: { id: classId },
-      include: {
-        teacher: true,
-        school: true,
-        _count: {
-          select: {
-            enrollments: {
-              where: {
-                roleIn: Role.student,
-                status: EnrollmentStatus.approved,
-              },
-            },
-          },
-        },
-      },
+      include: classDetailInclude,
     });
 
     if (!classroom) {
@@ -177,24 +154,13 @@ export class ClassesService {
     };
   }
 
-  // Find One Class By Course Code
-  async findByCourseCode(courseCode: string) {
+  // Find single class by 6-character course code
+  async findByCourseCode(
+    courseCode: string,
+  ): Promise<ClassEntity & { totalStudents: number }> {
     const classroom = await this.prisma.class.findUnique({
       where: { courseCode },
-      include: {
-        teacher: true,
-        school: true,
-        _count: {
-          select: {
-            enrollments: {
-              where: {
-                roleIn: Role.student,
-                status: EnrollmentStatus.approved,
-              },
-            },
-          },
-        },
-      },
+      include: classDetailInclude,
     });
 
     if (!classroom) {
@@ -207,15 +173,19 @@ export class ClassesService {
     };
   }
 
-  // Find Current user's Classes | Class I teaching
-  async findMyTeachingClasses(userId: string, query: QueryClassDto) {
-    const { search: keyword, page, limit } = query;
+  // Find all classes created by currently authenticated teacher
+  async findMyTeachingClasses(
+    userId: string,
+    query: QueryClassDto,
+  ): Promise<PaginatedClassesResult> {
+    const { search: keyword, page, limit, isArchived } = query;
 
     const skip = (page - 1) * limit;
     const take = limit;
 
     const where: Prisma.ClassWhereInput = {
       teacherId: userId,
+      ...(isArchived !== undefined && { isArchived }),
     };
 
     if (keyword) {
@@ -231,39 +201,17 @@ export class ClassesService {
         where,
         skip,
         take,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          teacher: true,
-          school: true,
-          enrollments: {
-            where: { userId: userId },
-          },
-          _count: {
-            select: {
-              enrollments: {
-                where: {
-                  roleIn: Role.student,
-                  status: EnrollmentStatus.approved,
-                },
-              },
-            },
-          },
-        },
+        orderBy: { createdAt: 'desc' },
+        include: getClassListInclude(userId),
       }),
-      this.prisma.class.count({ where: where }),
+      this.prisma.class.count({ where }),
     ]);
 
-    const data = result.map((cls) => {
-      const enrollment = cls.enrollments[0] || null;
-
-      return {
-        ...cls,
-        enrollment,
-        totalStudents: cls._count?.enrollments ?? 0,
-      };
-    });
+    const data = result.map((cls) => ({
+      ...cls,
+      enrollment: cls.enrollments[0] || null,
+      totalStudents: cls._count?.enrollments ?? 0,
+    }));
 
     return {
       data,
@@ -271,54 +219,79 @@ export class ClassesService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
       },
     };
   }
 
+  // Updates class attributes for owner or administrator
   async update(
     user: AuthUser,
     classId: string,
     updateClassDto: UpdateClassDto,
-  ) {
-    // Check class existed
-    const existing = await this.prisma.class.findUnique({
-      where: { id: classId },
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Class not found');
-    }
-
-    // Check if user is admin or user is teacher managing this class
-    if (user.role !== Role.admin && existing.teacherId !== user.id) {
-      throw new ForbiddenException('You are not allowed to update this class');
-    }
+  ): Promise<{ message: string }> {
+    await this.findClassWithPermission(user, classId, 'update');
 
     await this.prisma.class.update({
       where: { id: classId },
       data: updateClassDto,
     });
 
-    return { message: 'Cập nhật thành công' };
+    return { message: 'Class updated successfully' };
   }
 
-  async remove(user: AuthUser, classId: string) {
-    // Check class existed
-    const existing = await this.prisma.class.findUnique({
+  // Archives a class and sets it into read-only mode
+  async archiveClass(
+    user: AuthUser,
+    classId: string,
+  ): Promise<{ message: string }> {
+    const existing = await this.findClassWithPermission(
+      user,
+      classId,
+      'archive',
+    );
+
+    if (existing.isArchived) {
+      throw new BadRequestException('Class is already archived');
+    }
+
+    await this.prisma.class.update({
       where: { id: classId },
+      data: { isArchived: true },
     });
 
-    if (!existing) {
-      throw new NotFoundException('Class not found');
+    // TODO (Notification): Notify enrolled students that class has been archived
+    return { message: 'Class archived successfully' };
+  }
+
+  // Unarchives a class and restores mutation privileges
+  async unarchiveClass(
+    user: AuthUser,
+    classId: string,
+  ): Promise<{ message: string }> {
+    const existing = await this.findClassWithPermission(
+      user,
+      classId,
+      'unarchive',
+    );
+
+    if (!existing.isArchived) {
+      throw new BadRequestException('Class is not archived');
     }
 
-    // Check if user is admin or user is teacher managing this class
-    if (user.role !== Role.admin && existing.teacherId !== user.id) {
-      throw new ForbiddenException('You are not allowed to update this class');
-    }
+    await this.prisma.class.update({
+      where: { id: classId },
+      data: { isArchived: false },
+    });
 
-    // Hard delete: delete enrollments in this class
+    // TODO (Notification): Notify enrolled students that class has been restored
+    return { message: 'Class unarchived successfully' };
+  }
+
+  // Hard deletes class and cascades enrollment removals in a transaction
+  async remove(user: AuthUser, classId: string): Promise<{ message: string }> {
+    await this.findClassWithPermission(user, classId, 'delete');
+
     await this.prisma.$transaction([
       this.prisma.enrollment.deleteMany({ where: { classId } }),
       this.prisma.class.delete({ where: { id: classId } }),
@@ -327,54 +300,26 @@ export class ClassesService {
     return { message: 'Class deleted successfully' };
   }
 
-  /** HELPERS
-   * - select
-   * - generate course code
-   * - get school and teacher from request
-   */
-  private generateCode(): string {
-    return generateRandomCode(6);
-  }
-
-  private async generateUniqueCourseCode(): Promise<string> {
-    for (let i = 0; i < 5; i++) {
-      const code = this.generateCode();
-
-      const found = await this.prisma.class.findUnique({
-        where: { courseCode: code },
-      });
-
-      if (!found) return code;
-    }
-    throw new Error('Failed to generate unique course code');
-  }
-
-  private async getSchoolAndTeacher(
+  // Helper verifying that the target class exists and user is owner or administrator
+  private async findClassWithPermission(
     user: AuthUser,
-    schoolId: string | undefined,
-    teacherId: string | undefined,
-  ): Promise<{ schoolId: string; teacherId: string }> {
-    // If user is Teacher
-    if (user.role === Role.teacher) {
-      const teacher = await this.usersService.findOne(user.id);
+    classId: string,
+    action: string,
+  ) {
+    const existing = await this.prisma.class.findUnique({
+      where: { id: classId },
+    });
 
-      if (!teacher) {
-        throw new NotFoundException('Teacher not found');
-      }
-
-      return {
-        schoolId: teacher.schoolId,
-        teacherId: teacher.id,
-      };
-    }
-    if (user.role === Role.admin) {
-      if (!schoolId || !teacherId) {
-        throw new BadRequestException('School and Teacher are required');
-      }
-
-      return { schoolId, teacherId };
+    if (!existing) {
+      throw new NotFoundException('Class not found');
     }
 
-    throw new ForbiddenException('Invalid role');
+    if (user.role !== Role.admin && existing.teacherId !== user.id) {
+      throw new ForbiddenException(
+        `You are not allowed to ${action} this class`,
+      );
+    }
+
+    return existing;
   }
 }

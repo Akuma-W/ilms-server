@@ -1,36 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EnrollmentsController } from './enrollments.controller';
 import { EnrollmentsService } from './enrollments.service';
-import { Role } from 'src/generated/prisma/enums';
 
 describe('EnrollmentsController', () => {
   let controller: EnrollmentsController;
-  let serviceMock: {
-    create: jest.Mock;
-    findAll: jest.Mock;
-    findOne: jest.Mock;
-    getStarredClasses: jest.Mock;
-    toggleStar: jest.Mock;
-    update: jest.Mock;
-    approveEnrollment: jest.Mock;
-    rejectEnrollment: jest.Mock;
-    leaveClass: jest.Mock;
-    removeStudent: jest.Mock;
+  const serviceMock = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    getStarredClasses: jest.fn(),
+    toggleStar: jest.fn(),
+    leaveClass: jest.fn(),
   };
 
   beforeEach(async () => {
-    serviceMock = {
-      create: jest.fn(),
-      findAll: jest.fn(),
-      findOne: jest.fn(),
-      getStarredClasses: jest.fn(),
-      toggleStar: jest.fn(),
-      update: jest.fn(),
-      approveEnrollment: jest.fn(),
-      rejectEnrollment: jest.fn(),
-      leaveClass: jest.fn(),
-      removeStudent: jest.fn(),
-    };
+    jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EnrollmentsController],
@@ -129,58 +113,5 @@ describe('EnrollmentsController', () => {
 
     const result = await controller.leaveClass('user-uuid', 'class-uuid');
     expect(result.message).toBe('Leave class successful');
-  });
-
-  it('should update enrollment', async () => {
-    serviceMock.update.mockResolvedValue({
-      message: 'Update enrollment successful',
-    });
-
-    const result = await controller.updateEnrollment(
-      'teacher-uuid',
-      'class-uuid',
-      'student-uuid',
-      { roleIn: Role.student },
-    );
-    expect(result.message).toBe('Update enrollment successful');
-  });
-
-  it('should approve student', async () => {
-    serviceMock.approveEnrollment.mockResolvedValue({
-      message: 'Approve enrollment successful',
-    });
-
-    const result = await controller.approveEnrollment(
-      'teacher-uuid',
-      'class-uuid',
-      'student-uuid',
-    );
-    expect(result.message).toBe('Approve enrollment successful');
-  });
-
-  it('should reject student', async () => {
-    serviceMock.rejectEnrollment.mockResolvedValue({
-      message: 'Reject enrollment successful',
-    });
-
-    const result = await controller.rejectEnrollment(
-      'teacher-uuid',
-      'class-uuid',
-      'student-uuid',
-    );
-    expect(result.message).toBe('Reject enrollment successful');
-  });
-
-  it('should remove student', async () => {
-    serviceMock.removeStudent.mockResolvedValue({
-      message: 'Remove student successful',
-    });
-
-    const result = await controller.removeStudent(
-      'teacher-uuid',
-      'class-uuid',
-      'student-uuid',
-    );
-    expect(result.message).toBe('Remove student successful');
   });
 });

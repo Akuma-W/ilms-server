@@ -9,7 +9,7 @@ export class CreateClassDto {
   })
   @IsString()
   @MaxLength(255)
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'Subject class teaching',
@@ -18,7 +18,7 @@ export class CreateClassDto {
   })
   @IsString()
   @MaxLength(255)
-  subject: string;
+  subject!: string;
 
   @ApiProperty({
     description: 'Class status: public or private',
@@ -27,7 +27,7 @@ export class CreateClassDto {
     default: false,
   })
   @IsBoolean()
-  isPrivate: boolean;
+  isPrivate!: boolean;
 
   @ApiPropertyOptional({
     description: 'Description / Introducion of class',

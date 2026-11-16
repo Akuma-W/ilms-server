@@ -1,27 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 
-export class Enrollment {
+export class EnrollmentEntity {
   @ApiProperty({
     description: 'Id of enrollment',
     type: 'string',
     example: 'e1f2g3h4-1234-5678-9abc-def012345678',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'Id of user join class',
     type: 'string',
     example: 'a3f1c9b2-1234-4cde-9abc-1234567890ab',
   })
-  userId: string;
+  userId!: string;
 
   @ApiProperty({
     description: 'ID of class',
     type: 'string',
     example: 'b2c1d9e8-5678-4abc-9def-0987654321ab',
   })
-  classId: string;
+  classId!: string;
 
   @ApiProperty({
     description: 'Role in class',
@@ -30,7 +30,7 @@ export class Enrollment {
     default: Role.student,
     example: Role.student,
   })
-  roleIn: Role;
+  roleIn!: Role;
 
   @ApiProperty({
     description: 'Mark the class with a star',
@@ -38,7 +38,7 @@ export class Enrollment {
     example: false,
     default: false,
   })
-  isStarred: boolean;
+  isStarred!: boolean;
 
   @ApiProperty({
     description: 'Time join class',
@@ -46,7 +46,7 @@ export class Enrollment {
     example: '2026-03-19T10:00:00.000Z',
     nullable: true,
   })
-  joinedAt: Date;
+  joinedAt?: Date | null;
 
   @ApiProperty({
     description: 'Status of enrollment',
@@ -55,5 +55,5 @@ export class Enrollment {
     default: EnrollmentStatus.pending,
     example: EnrollmentStatus.pending,
   })
-  status: EnrollmentStatus;
+  status!: EnrollmentStatus;
 }

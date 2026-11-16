@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { TopicsService } from './topics.service';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 
@@ -66,26 +66,6 @@ describe('TopicsService', () => {
   });
 
   describe('create', () => {
-    it('should throw NotFoundException if class does not exist', async () => {
-      prismaMock.class.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.create('user-1', 'class-1', { title: 'Topic 1' }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ForbiddenException if user is not teacher', async () => {
-      prismaMock.class.findUnique.mockResolvedValue({
-        id: 'class-1',
-        teacherId: 'other-user',
-      });
-      prismaMock.enrollment.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.create('user-1', 'class-1', { title: 'Topic 1' }),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
     it('should create topic with incremented orderIndex', async () => {
       prismaMock.class.findUnique.mockResolvedValue({
         id: 'class-1',

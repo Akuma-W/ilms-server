@@ -5,22 +5,23 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
-import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { QueryEnrollmentDto } from './dto/query-enrollment.dto';
 import { Prisma } from 'src/generated/prisma/client';
-import { checkTeacherPermission } from 'src/modules/academic/utils/academic-permission.util';
+import { PaginatedResult } from 'src/common/interfaces/paginated-result.interface';
+import { enrollmentSelect } from './utils/enrollment-select.utils';
+import { EnrolledClassEntity } from './entities/enrolled-class.entity';
 
 @Injectable()
 export class EnrollmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Join or request enrollment into a class with school and privacy validations
+  // Join or request enrollment into a class with school, privacy and banned checks
   async create(
     createEnrollmentDto: CreateEnrollmentDto,
     currentUserId?: string,
-  ) {
+  ): Promise<unknown> {
     const classId = createEnrollmentDto.classId;
     const userId = currentUserId || createEnrollmentDto.userId;
 
@@ -41,6 +42,12 @@ export class EnrollmentsService {
       throw new NotFoundException('User not found');
     }
 
+    if (foundClass.isArchived) {
+      throw new BadRequestException(
+        'This class has been archived and cannot be joined',
+      );
+    }
+
     if (foundClass.schoolId !== foundUser.schoolId) {
       throw new BadRequestException(
         'User and class must belong to the same school',
@@ -52,6 +59,11 @@ export class EnrollmentsService {
     });
 
     if (existed) {
+      if (existed.status === EnrollmentStatus.suspended) {
+        throw new ForbiddenException(
+          'You have been banned from joining this class',
+        );
+      }
       if (existed.status === EnrollmentStatus.approved) {
         throw new BadRequestException('You are already enrolled in this class');
       }
@@ -61,13 +73,14 @@ export class EnrollmentsService {
         );
       }
 
+      // Re-applying after previous rejection resets status to pending
       const reapplyStatus = foundClass.isPrivate
         ? EnrollmentStatus.pending
         : EnrollmentStatus.approved;
 
-      return this.prisma.enrollment.update({
+      const updated = await this.prisma.enrollment.update({
         where: { id: existed.id },
-        select: this.enrollmentSelect,
+        select: enrollmentSelect,
         data: {
           status: reapplyStatus,
           roleIn: createEnrollmentDto.roleIn ?? Role.student,
@@ -76,14 +89,17 @@ export class EnrollmentsService {
             reapplyStatus === EnrollmentStatus.approved ? new Date() : null,
         },
       });
+
+      // TODO (Notification): Notify teacher that a previously rejected student has re-applied
+      return updated;
     }
 
     const initialStatus = foundClass.isPrivate
       ? EnrollmentStatus.pending
       : EnrollmentStatus.approved;
 
-    return this.prisma.enrollment.create({
-      select: this.enrollmentSelect,
+    const created = await this.prisma.enrollment.create({
+      select: enrollmentSelect,
       data: {
         classId,
         userId,
@@ -94,10 +110,16 @@ export class EnrollmentsService {
           initialStatus === EnrollmentStatus.approved ? new Date() : null,
       },
     });
+
+    // TODO (Notification): Notify teacher about new enrollment request
+    return created;
   }
 
-  // Get user enrollments with accurate total count and pagination
-  async findAll(userId: string, query: QueryEnrollmentDto) {
+  // Get user enrollments with pagination and status filters
+  async findAll(
+    userId: string,
+    query: QueryEnrollmentDto,
+  ): Promise<PaginatedResult<EnrolledClassEntity>> {
     const { status, isStarred, page, limit, search } = query;
 
     const skip = (page - 1) * limit;
@@ -129,7 +151,7 @@ export class EnrollmentsService {
         orderBy: {
           joinedAt: 'desc',
         },
-        select: this.enrollmentSelect,
+        select: enrollmentSelect,
       }),
       this.prisma.enrollment.count({ where }),
     ]);
@@ -144,7 +166,7 @@ export class EnrollmentsService {
         roleIn: e.roleIn,
         joinedAt: e.joinedAt,
       },
-    }));
+    })) as unknown as EnrolledClassEntity[];
 
     return {
       data,
@@ -157,8 +179,8 @@ export class EnrollmentsService {
     };
   }
 
-  // Get enrollment by user and class
-  async findOne(userId: string, classId: string) {
+  // Get enrollment relation record by user and class
+  async findOne(userId: string, classId: string): Promise<unknown> {
     return this.prisma.enrollment.findUnique({
       where: {
         classId_userId: {
@@ -166,19 +188,21 @@ export class EnrollmentsService {
           userId,
         },
       },
-      select: this.enrollmentSelect,
+      select: enrollmentSelect,
     });
   }
 
-  // Get all starred classes for user
-  async getStarredClasses(userId: string) {
+  // Get all starred classes for current user
+  async getStarredClasses(
+    userId: string,
+  ): Promise<{ classes: EnrolledClassEntity[]; total: number }> {
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
         userId,
         isStarred: true,
         status: EnrollmentStatus.approved,
       },
-      select: this.enrollmentSelect,
+      select: enrollmentSelect,
       orderBy: {
         joinedAt: 'desc',
       },
@@ -194,7 +218,7 @@ export class EnrollmentsService {
         roleIn: e.roleIn,
         joinedAt: e.joinedAt,
       },
-    }));
+    })) as unknown as EnrolledClassEntity[];
 
     return {
       classes: data,
@@ -202,42 +226,8 @@ export class EnrollmentsService {
     };
   }
 
-  // Update enrollment (teacher)
-  async update(
-    userId: string,
-    classId: string,
-    targetUserId: string,
-    updateEnrollmentDto: UpdateEnrollmentDto,
-  ) {
-    await this.checkTeacherPermission(userId, classId);
-
-    const enrollment = await this.findOne(targetUserId, classId);
-
-    if (!enrollment) {
-      throw new NotFoundException('Enrollment does not exist');
-    }
-
-    const updated = await this.prisma.enrollment.update({
-      where: {
-        classId_userId: {
-          classId,
-          userId: targetUserId,
-        },
-      },
-      select: this.enrollmentSelect,
-      data: {
-        ...updateEnrollmentDto,
-      },
-    });
-
-    return {
-      message: 'Update enrollment successful',
-      data: updated,
-    };
-  }
-
-  // Mark/remove star in a class had joined
-  async toggleStar(userId: string, enrollmentId: string) {
+  // Toggle star status of an active enrollment
+  async toggleStar(userId: string, enrollmentId: string): Promise<unknown> {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { id: enrollmentId },
     });
@@ -258,84 +248,19 @@ export class EnrollmentsService {
     });
   }
 
-  // Approve enrollment
-  async approveEnrollment(
-    currentUserId: string,
+  // Student voluntarily leaves a class
+  async leaveClass(
+    userId: string,
     classId: string,
-    studentId: string,
-  ) {
-    await this.checkTeacherPermission(currentUserId, classId);
-
-    const enrollment = await this.findOne(studentId, classId);
-
-    if (!enrollment) {
-      throw new NotFoundException('Enrollment does not exist');
-    }
-
-    if (enrollment.status !== EnrollmentStatus.pending) {
-      throw new BadRequestException('Enrollment must be pending');
-    }
-
-    const updated = await this.prisma.enrollment.update({
+  ): Promise<{ message: string }> {
+    const enrollment = await this.prisma.enrollment.findUnique({
       where: {
         classId_userId: {
           classId,
-          userId: studentId,
+          userId,
         },
       },
-      select: this.enrollmentSelect,
-      data: {
-        status: EnrollmentStatus.approved,
-        joinedAt: new Date(),
-      },
     });
-
-    return {
-      message: 'Approve enrollment successful',
-      data: updated,
-    };
-  }
-
-  // Reject enrollment
-  async rejectEnrollment(
-    currentUserId: string,
-    classId: string,
-    studentId: string,
-  ) {
-    await this.checkTeacherPermission(currentUserId, classId);
-
-    const enrollment = await this.findOne(studentId, classId);
-
-    if (!enrollment) {
-      throw new NotFoundException('Enrollment does not exist');
-    }
-
-    if (enrollment.status !== EnrollmentStatus.pending) {
-      throw new BadRequestException('Enrollment must be pending');
-    }
-
-    const updated = await this.prisma.enrollment.update({
-      where: {
-        classId_userId: {
-          classId,
-          userId: studentId,
-        },
-      },
-      select: this.enrollmentSelect,
-      data: {
-        status: EnrollmentStatus.rejected,
-      },
-    });
-
-    return {
-      message: 'Reject enrollment successful',
-      data: updated,
-    };
-  }
-
-  // Leave class
-  async leaveClass(userId: string, classId: string) {
-    const enrollment = await this.findOne(userId, classId);
 
     if (!enrollment) {
       throw new NotFoundException('Enrollment does not exist');
@@ -366,99 +291,4 @@ export class EnrollmentsService {
 
     return { message: 'Leave class successful' };
   }
-
-  // Teacher remove student
-  async removeStudent(
-    currentUserId: string,
-    classId: string,
-    studentId: string,
-  ) {
-    await this.checkTeacherPermission(currentUserId, classId);
-
-    const enrollment = await this.findOne(studentId, classId);
-
-    if (!enrollment) {
-      throw new NotFoundException('Enrollment does not exist');
-    }
-
-    if (enrollment.roleIn === Role.teacher) {
-      throw new ForbiddenException("Can't remove other teacher");
-    }
-
-    await this.prisma.enrollment.delete({
-      where: {
-        classId_userId: {
-          classId,
-          userId: studentId,
-        },
-      },
-    });
-
-    return { message: 'Remove student successful' };
-  }
-
-  // Check teacher permission for this class
-  private async checkTeacherPermission(userId: string, classId: string) {
-    return checkTeacherPermission(
-      this.prisma,
-      userId,
-      classId,
-      undefined,
-      'You are not teacher of this class',
-    );
-  }
-
-  // Select fields definition for enrollments query
-  private enrollmentSelect = {
-    id: true,
-    userId: true,
-    classId: true,
-    roleIn: true,
-    isStarred: true,
-    status: true,
-    joinedAt: true,
-
-    class: {
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        courseCode: true,
-        subject: true,
-        semester: true,
-        isPrivate: true,
-        meetingUri: true,
-        meetingSpaceId: true,
-        isArchived: true,
-        createdAt: true,
-        schoolId: true,
-        teacherId: true,
-        school: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        teacher: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            avatarUrl: true,
-            role: true,
-          },
-        },
-        _count: {
-          select: {
-            enrollments: {
-              where: {
-                roleIn: Role.student,
-                status: EnrollmentStatus.approved,
-              },
-            },
-          },
-        },
-      },
-    },
-  };
 }

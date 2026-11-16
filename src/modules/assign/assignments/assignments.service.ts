@@ -22,8 +22,6 @@ export class AssignmentsService {
       throw new NotFoundException('Class does not exist');
     }
 
-    await this.checkTeacher(userId, classId);
-
     if (dto.topicId) {
       const topic = await this.prisma.topic.findUnique({
         where: { id: dto.topicId },

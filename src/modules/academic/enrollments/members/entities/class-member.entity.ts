@@ -7,21 +7,21 @@ class MemberUserInfo {
     type: 'string',
     example: 'a3f1c9b2-1234-4cde-9abc-1234567890ab',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'User full name',
     type: 'string',
     example: 'Nguyen Van A',
   })
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty({
     description: 'User email address',
     type: 'string',
     example: 'vana@example.com',
   })
-  email: string;
+  email!: string;
 
   @ApiPropertyOptional({
     description: 'Avatar image URL',
@@ -45,29 +45,29 @@ class MemberUserInfo {
     enum: Role,
     example: Role.student,
   })
-  role: Role;
+  role!: Role;
 }
 
-export class ClassMember {
+export class ClassMemberEntity {
   @ApiProperty({
     description: 'Enrollment identifier',
     type: 'string',
     example: 'e1f2g3h4-1234-5678-9abc-def012345678',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'User identifier',
     type: 'string',
     example: 'a3f1c9b2-1234-4cde-9abc-1234567890ab',
   })
-  userId: string;
+  userId!: string;
 
   @ApiProperty({
     description: 'User profile details',
     type: () => MemberUserInfo,
   })
-  user: MemberUserInfo;
+  user!: MemberUserInfo;
 
   @ApiProperty({
     description: 'Role of the member inside this class',
@@ -75,7 +75,7 @@ export class ClassMember {
     enum: Role,
     example: Role.student,
   })
-  role: Role;
+  role!: Role;
 
   @ApiProperty({
     description: 'Enrollment status in this class',
@@ -83,14 +83,15 @@ export class ClassMember {
     enum: EnrollmentStatus,
     example: EnrollmentStatus.approved,
   })
-  status: EnrollmentStatus;
+  status!: EnrollmentStatus;
 
   @ApiProperty({
     description: 'Timestamp when the user joined the class',
     type: 'string',
+    nullable: true,
     example: '2026-03-19T10:00:00.000Z',
   })
-  joinedAt: Date | string;
+  joinedAt!: Date | string | null;
 
   @ApiPropertyOptional({
     description: 'Student identification code',

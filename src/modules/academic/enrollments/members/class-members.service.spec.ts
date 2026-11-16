@@ -105,9 +105,9 @@ describe('ClassMembersService', () => {
     it('should throw NotFoundException when class does not exist', async () => {
       prismaMock.class.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.getMembers('teacher-uuid', 'non-existent-class'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getMembers('non-existent-class')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return class members including head teacher and students', async () => {
@@ -124,11 +124,10 @@ describe('ClassMembersService', () => {
         },
       ]);
 
-      const result = await service.getMembers('teacher-uuid', 'class-uuid');
+      const result = await service.getMembers('class-uuid');
       expect(result).toHaveLength(2);
       expect(result[0].role).toBe(Role.teacher);
       expect(result[1].role).toBe(Role.student);
-      expect(result[1].studentCode).toBe('SV001');
     });
 
     it('should resolve avatarUrl for members and owner teacher', async () => {
@@ -148,7 +147,7 @@ describe('ClassMembersService', () => {
         },
       ]);
 
-      const result = await service.getMembers('teacher-uuid', 'class-uuid');
+      const result = await service.getMembers('class-uuid');
       expect(result).toHaveLength(2);
       expect(result[0].user.avatarUrl).toBe(
         'http://localhost:9000/avatars/teacher.png',
@@ -174,13 +173,11 @@ describe('ClassMembersService', () => {
         status: EnrollmentStatus.approved,
       });
 
-      const res = await service.approveMember(
-        'teacher-uuid',
-        'class-uuid',
-        'en-pending',
-      );
+      const res = await service.approveMember('class-uuid', 'en-pending');
       expect(res.message).toBe('Approve enrollment successful');
-      expect(res.data.status).toBe(EnrollmentStatus.approved);
+      expect(res.data).toEqual(
+        expect.objectContaining({ status: EnrollmentStatus.approved }),
+      );
     });
 
     it('should throw BadRequestException when member is not pending', async () => {
@@ -194,7 +191,7 @@ describe('ClassMembersService', () => {
       });
 
       await expect(
-        service.approveMember('teacher-uuid', 'class-uuid', 'en-approved'),
+        service.approveMember('class-uuid', 'en-approved'),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -214,13 +211,101 @@ describe('ClassMembersService', () => {
         status: EnrollmentStatus.rejected,
       });
 
-      const res = await service.rejectMember(
-        'teacher-uuid',
-        'class-uuid',
-        'en-pending',
-      );
+      const res = await service.rejectMember('class-uuid', 'en-pending');
       expect(res.message).toBe('Reject enrollment successful');
-      expect(res.data.status).toBe(EnrollmentStatus.rejected);
+      expect(res.data).toEqual(
+        expect.objectContaining({ status: EnrollmentStatus.rejected }),
+      );
+    });
+  });
+
+  describe('reApproveMember', () => {
+    it('should re-approve a rejected member', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+      prismaMock.enrollment.findFirst.mockResolvedValue({
+        id: 'en-rejected',
+        userId: 'student-uuid',
+        classId: 'class-uuid',
+        status: EnrollmentStatus.rejected,
+        user: mockStudent,
+      });
+      prismaMock.enrollment.update.mockResolvedValue({
+        id: 'en-rejected',
+        status: EnrollmentStatus.approved,
+      });
+
+      const res = await service.reApproveMember('class-uuid', 'en-rejected');
+      expect(res.message).toBe('Member re-approved successfully');
+    });
+
+    it('should throw BadRequestException if member is not currently rejected', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+      prismaMock.enrollment.findFirst.mockResolvedValue({
+        id: 'en-approved',
+        userId: 'student-uuid',
+        classId: 'class-uuid',
+        status: EnrollmentStatus.approved,
+        user: mockStudent,
+      });
+
+      await expect(
+        service.reApproveMember('class-uuid', 'en-approved'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('banMember & unbanMember', () => {
+    it('should ban a student and switch status to suspended', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+      prismaMock.enrollment.findFirst.mockResolvedValue({
+        id: 'en-student',
+        userId: 'student-uuid',
+        classId: 'class-uuid',
+        roleIn: Role.student,
+        status: EnrollmentStatus.approved,
+        user: mockStudent,
+      });
+      prismaMock.enrollment.update.mockResolvedValue({
+        id: 'en-student',
+        status: EnrollmentStatus.suspended,
+      });
+
+      const res = await service.banMember('class-uuid', 'en-student');
+      expect(res.message).toBe('Member suspended successfully');
+    });
+
+    it('should throw ForbiddenException when attempting to ban head teacher', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+      prismaMock.enrollment.findFirst.mockResolvedValue({
+        id: 'en-owner',
+        userId: 'teacher-uuid',
+        classId: 'class-uuid',
+        roleIn: Role.teacher,
+        user: mockTeacher,
+      });
+
+      await expect(service.banMember('class-uuid', 'en-owner')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should unban a suspended member and switch status back to approved', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockClass);
+      prismaMock.enrollment.findFirst.mockResolvedValue({
+        id: 'en-suspended',
+        userId: 'student-uuid',
+        classId: 'class-uuid',
+        roleIn: Role.student,
+        status: EnrollmentStatus.suspended,
+        user: mockStudent,
+      });
+      prismaMock.enrollment.update.mockResolvedValue({
+        id: 'en-suspended',
+        status: EnrollmentStatus.approved,
+      });
+
+      const res = await service.unbanMember('class-uuid', 'en-suspended');
+      expect(res.message).toBe('Member suspension lifted successfully');
     });
   });
 
@@ -272,12 +357,7 @@ describe('ClassMembersService', () => {
       });
 
       await expect(
-        service.updateMemberRole(
-          'teacher-uuid',
-          'class-uuid',
-          'en-owner',
-          Role.student,
-        ),
+        service.updateMemberRole('class-uuid', 'en-owner', Role.student),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -296,13 +376,11 @@ describe('ClassMembersService', () => {
       });
 
       const res = await service.updateMemberRole(
-        'teacher-uuid',
         'class-uuid',
         'en-student',
         Role.teacher,
       );
       expect(res.message).toBe('Update member role successful');
-      expect(res.data.roleIn).toBe(Role.teacher);
     });
   });
 });

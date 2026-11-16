@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
-import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiJoinClass } from './swagger/join-class.swagger';
 import { ApiGetUserEnrollments } from './swagger/get-user-enrollments.swagger';
@@ -20,14 +19,10 @@ import { ApiGetMyEnrollments } from './swagger/get-my-enrollments.swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/generated/prisma/enums';
-import { ApiUpdateEnrollment } from './swagger/update-enrollment.swagger';
-import { ApiApproveEnrollment } from './swagger/approve-enrollment.swagger';
-import { ApiRejectEnrollment } from './swagger/reject-enrollment.swagger';
 import { ApiLeaveClass } from './swagger/leave-class.swagger';
 import { ApiGetStarredClasses } from './swagger/get-starred-classes.swagger';
 import { ApiGetClassRelation } from './swagger/get-class-relation.swagger';
 import { ApiToggleStar } from './swagger/toggle-star.swagger';
-import { ApiRemoveStudent } from './swagger/remove-student.swagger';
 
 @ApiTags('Enrollments')
 @Controller('enrollments')
@@ -132,58 +127,5 @@ export class EnrollmentsController {
     @Param('classId', new ParseUUIDPipe()) classId: string,
   ) {
     return this.enrollmentsService.leaveClass(userId, classId);
-  }
-
-  // Teacher updates an enrollment
-  @Patch(':classId/users/:userId')
-  @Roles(Role.teacher, Role.admin)
-  @ApiUpdateEnrollment()
-  async updateEnrollment(
-    @CurrentUser('id') userId: string,
-    @Param('classId', new ParseUUIDPipe()) classId: string,
-    @Param('userId', new ParseUUIDPipe()) targetUserId: string,
-    @Body() dto: UpdateEnrollmentDto,
-  ) {
-    return this.enrollmentsService.update(userId, classId, targetUserId, dto);
-  }
-
-  // Teacher approves student enrollment
-  @Patch(':classId/users/:userId/approve')
-  @Roles(Role.teacher, Role.admin)
-  @ApiApproveEnrollment()
-  async approveEnrollment(
-    @CurrentUser('id') userId: string,
-    @Param('classId', new ParseUUIDPipe()) classId: string,
-    @Param('userId', new ParseUUIDPipe()) studentId: string,
-  ) {
-    return this.enrollmentsService.approveEnrollment(
-      userId,
-      classId,
-      studentId,
-    );
-  }
-
-  // Teacher rejects student enrollment
-  @Patch(':classId/users/:userId/reject')
-  @Roles(Role.teacher, Role.admin)
-  @ApiRejectEnrollment()
-  async rejectEnrollment(
-    @CurrentUser('id') userId: string,
-    @Param('classId', new ParseUUIDPipe()) classId: string,
-    @Param('userId', new ParseUUIDPipe()) studentId: string,
-  ) {
-    return this.enrollmentsService.rejectEnrollment(userId, classId, studentId);
-  }
-
-  // Teacher removes student from class
-  @Delete(':classId/users/:userId')
-  @Roles(Role.teacher, Role.admin)
-  @ApiRemoveStudent()
-  async removeStudent(
-    @CurrentUser('id') userId: string,
-    @Param('classId', new ParseUUIDPipe()) classId: string,
-    @Param('userId', new ParseUUIDPipe()) studentId: string,
-  ) {
-    return this.enrollmentsService.removeStudent(userId, classId, studentId);
   }
 }

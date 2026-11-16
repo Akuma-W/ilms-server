@@ -10,5 +10,5 @@ export class UpdateMemberRoleDto {
     example: Role.teacher,
   })
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 }

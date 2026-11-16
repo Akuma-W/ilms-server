@@ -5,10 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
-import {
-  checkClassTeacherPermission,
-  findQuizOrThrow,
-} from '../utils/quiz-permission.util';
+import { findQuizOrThrow } from '../utils/quiz-permission.util';
 import { PublishQuizDto, UpdatePublicationDto } from './dto';
 import { QuizPublicationEntity } from './entities/quiz-publication.entity';
 
@@ -22,8 +19,6 @@ export class QuizPublicationsService {
     quizId: string,
     dto: PublishQuizDto,
   ): Promise<QuizPublicationEntity> {
-    await checkClassTeacherPermission(this.prisma, dto.classId, userId);
-
     const quiz = await findQuizOrThrow(this.prisma, quizId);
     if (quiz.visibility === 'private' && quiz.createdBy !== userId) {
       throw new ForbiddenException('Cannot publish another user private quiz');
@@ -39,7 +34,7 @@ export class QuizPublicationsService {
     });
     if (existing) {
       throw new ConflictException(
-        'Đề thi này đã được xuất bản vào lớp học. Vui lòng chỉnh sửa đợt thi thay vì xuất bản lại.',
+        'This quiz has already been published to the class. Please edit the exam session instead of publishing it again.',
       );
     }
 
@@ -89,17 +84,9 @@ export class QuizPublicationsService {
     userId: string,
     classId: string,
   ): Promise<QuizPublicationEntity[]> {
-    const [isTeacher, enrolledCount, totalStudents] = await Promise.all([
-      this.prisma.class.count({ where: { id: classId, teacherId: userId } }),
-      this.prisma.enrollment.count({
-        where: { classId, userId, status: 'approved' },
-      }),
-      this.prisma.enrollment.count({ where: { classId, status: 'approved' } }),
-    ]);
-
-    if (!isTeacher && !enrolledCount) {
-      throw new ForbiddenException('You are not a member of this class');
-    }
+    const totalStudents = await this.prisma.enrollment.count({
+      where: { classId, status: 'approved' },
+    });
 
     const publications = await this.prisma.quizPublication.findMany({
       where: { classId },

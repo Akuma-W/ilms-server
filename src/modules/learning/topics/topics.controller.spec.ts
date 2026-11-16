@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TopicsController } from './topics.controller';
 import { TopicsService } from './topics.service';
+import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 
 describe('TopicsController', () => {
   let controller: TopicsController;
@@ -13,6 +14,11 @@ describe('TopicsController', () => {
     delete: jest.fn(),
   };
 
+  const prismaMock = {
+    class: { findUnique: jest.fn() },
+    enrollment: { findFirst: jest.fn() },
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -22,6 +28,10 @@ describe('TopicsController', () => {
         {
           provide: TopicsService,
           useValue: topicsServiceMock,
+        },
+        {
+          provide: PrismaService,
+          useValue: prismaMock,
         },
       ],
     }).compile();

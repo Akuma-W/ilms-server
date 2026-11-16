@@ -6,21 +6,21 @@ export class ClassEntity {
     example: '123e4567-e89b-12d3-a456-426614174000',
     type: 'string',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'Title of the class',
     example: 'Web Application Development',
     type: 'string',
   })
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'Subject of the class',
     example: 'Software Engineering',
     type: 'string',
   })
-  subject: string;
+  subject!: string;
 
   @ApiPropertyOptional({
     description: 'Detailed description of the class syllabus',
@@ -49,7 +49,7 @@ export class ClassEntity {
     example: false,
     type: 'boolean',
   })
-  isPrivate: boolean;
+  isPrivate!: boolean;
 
   @ApiPropertyOptional({
     description: 'Online meeting room URI',
@@ -70,21 +70,21 @@ export class ClassEntity {
     example: false,
     type: 'boolean',
   })
-  isArchived: boolean;
+  isArchived!: boolean;
 
   @ApiProperty({
     description: 'Identifier of the school organizing this class',
     example: '123e4567-e89b-12d3-a456-426614174001',
     type: 'string',
   })
-  schoolId: string;
+  schoolId!: string;
 
   @ApiProperty({
     description: 'Identifier of the primary teacher managing this class',
     example: '123e4567-e89b-12d3-a456-426614174002',
     type: 'string',
   })
-  teacherId: string;
+  teacherId!: string;
 
   @ApiPropertyOptional({
     description: 'Total approved students enrolled in this class',
@@ -100,5 +100,3 @@ export class ClassEntity {
   })
   createdAt?: Date | string | null;
 }
-
-export class Class extends ClassEntity {}

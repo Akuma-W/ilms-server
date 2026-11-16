@@ -42,6 +42,7 @@ describe('EnrollmentsService', () => {
     title: 'Public Class',
     schoolId: 'school-uuid',
     isPrivate: false,
+    isArchived: false,
     teacherId: 'teacher-uuid',
   };
 
@@ -50,6 +51,7 @@ describe('EnrollmentsService', () => {
     title: 'Private Class',
     schoolId: 'school-uuid',
     isPrivate: true,
+    isArchived: false,
     teacherId: 'teacher-uuid',
   };
 
@@ -109,6 +111,18 @@ describe('EnrollmentsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
+    it('should throw BadRequestException if class is archived', async () => {
+      prismaMock.class.findUnique.mockResolvedValue({
+        ...mockPublicClass,
+        isArchived: true,
+      });
+      prismaMock.user.findUnique.mockResolvedValue(mockUser);
+
+      await expect(
+        service.create({ classId: 'class-uuid' }, 'user-uuid'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should throw BadRequestException if user and class belong to different schools', async () => {
       prismaMock.class.findUnique.mockResolvedValue(mockPublicClass);
       prismaMock.user.findUnique.mockResolvedValue({
@@ -119,6 +133,19 @@ describe('EnrollmentsService', () => {
       await expect(
         service.create({ classId: 'class-uuid' }, 'user-uuid'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ForbiddenException if user has been suspended/banned', async () => {
+      prismaMock.class.findUnique.mockResolvedValue(mockPublicClass);
+      prismaMock.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.enrollment.findUnique.mockResolvedValue({
+        id: 'suspended-en-id',
+        status: EnrollmentStatus.suspended,
+      });
+
+      await expect(
+        service.create({ classId: 'class-uuid' }, 'user-uuid'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw BadRequestException if already enrolled and approved', async () => {
@@ -145,10 +172,10 @@ describe('EnrollmentsService', () => {
         status: EnrollmentStatus.approved,
       });
 
-      const result = await service.create(
+      const result = (await service.create(
         { classId: 'class-uuid' },
         'user-uuid',
-      );
+      )) as { status: EnrollmentStatus };
       expect(result.status).toBe(EnrollmentStatus.approved);
       expect(prismaMock.enrollment.create).toHaveBeenCalled();
     });
@@ -164,10 +191,10 @@ describe('EnrollmentsService', () => {
         status: EnrollmentStatus.pending,
       });
 
-      const result = await service.create(
+      const result = (await service.create(
         { classId: 'private-class-uuid' },
         'user-uuid',
-      );
+      )) as { status: EnrollmentStatus };
       expect(result.status).toBe(EnrollmentStatus.pending);
     });
 
@@ -183,10 +210,10 @@ describe('EnrollmentsService', () => {
         status: EnrollmentStatus.approved,
       });
 
-      const result = await service.create(
+      const result = (await service.create(
         { classId: 'class-uuid' },
         'user-uuid',
-      );
+      )) as { status: EnrollmentStatus };
       expect(result.status).toBe(EnrollmentStatus.approved);
       expect(prismaMock.enrollment.update).toHaveBeenCalled();
     });
@@ -256,7 +283,9 @@ describe('EnrollmentsService', () => {
         isStarred: true,
       });
 
-      const result = await service.toggleStar('user-uuid', 'en-1');
+      const result = (await service.toggleStar('user-uuid', 'en-1')) as {
+        isStarred: boolean;
+      };
       expect(result.isStarred).toBe(true);
     });
   });

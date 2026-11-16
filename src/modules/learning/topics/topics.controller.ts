@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { TopicsService } from './topics.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
@@ -19,16 +20,19 @@ import { ApiDeleteTopic } from './swagger/delete-topic.swagger';
 import { ApiGetTopics } from './swagger/get-topics.swagger';
 import { ApiSearchTopic } from './swagger/search-topic.swagger';
 import { ApiUpdateTopic } from './swagger/update-topic.swagger';
+import {
+  ClassTeacherGuard,
+  ClassMemberGuard,
+  ClassNotArchivedGuard,
+} from 'src/common/guards';
 
-/**
- * Controller handling classroom topic management and search.
- */
 @ApiTags('Topics')
 @Controller('topics')
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) {}
 
   @Post('classes/:classId')
+  @UseGuards(ClassTeacherGuard, ClassNotArchivedGuard)
   @ApiCreateTopic()
   async create(
     @CurrentUser('id') userId: string,
@@ -39,6 +43,7 @@ export class TopicsController {
   }
 
   @Get('classes/:classId')
+  @UseGuards(ClassMemberGuard)
   @ApiGetTopics()
   async findAll(@Param('classId') classId: string) {
     const data = await this.topicsService.findAll(classId);
@@ -47,6 +52,7 @@ export class TopicsController {
   }
 
   @Get('classes/:classId/search')
+  @UseGuards(ClassMemberGuard)
   @ApiSearchTopic()
   async search(
     @Param('classId') classId: string,

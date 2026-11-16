@@ -75,18 +75,6 @@ describe('AssignmentsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if user is not teacher', async () => {
-      prismaMock.class.findUnique.mockResolvedValue({
-        id: 'class-1',
-        teacherId: 'teacher-owner',
-      });
-      prismaMock.enrollment.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.create('user-1', 'class-1', { title: 'Assignment 1' }),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
     it('should throw BadRequestException if topic belongs to another class', async () => {
       prismaMock.class.findUnique.mockResolvedValue({
         id: 'class-1',

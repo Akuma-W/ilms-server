@@ -14,8 +14,6 @@ export class TopicsService {
     classId: string,
     createTopicDto: CreateTopicDto,
   ) {
-    await this.checkTeacher(userId, classId);
-
     const lastTopic = await this.prisma.topic.findFirst({
       where: { classId },
       orderBy: { orderIndex: 'desc' },
@@ -109,9 +107,7 @@ export class TopicsService {
     ]);
   }
 
-  /**
-   * Validates if the user is authorized as an instructor or class owner.
-   */
+  // Validates if the user is authorized as an instructor or class owner.
   private async checkTeacher(userId: string, classId: string) {
     return checkTeacherPermission(
       this.prisma,

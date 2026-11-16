@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ClassesService } from './classes.service';
 import { CreateClassDto } from './dto/create-class.dto';
@@ -23,14 +25,20 @@ import { ApiGetClass } from './swagger/get-class.swagger';
 import { ApiUpdateClass } from './swagger/update-class.swagger';
 import { ApiDeleteClass } from './swagger/delete-class.swagger';
 import { ApiGetMyTeachingClasses } from './swagger/get-my-classes.swagger';
+import { ApiArchiveClass } from './swagger/archive-class.swagger';
+import { ApiUnarchiveClass } from './swagger/unarchive-class.swagger';
+import { ClassTeacherGuard } from 'src/common/guards/class-teacher.guard';
+import { ApiAdminCreateClass } from './swagger/admin-create-class.swagger';
+import { AdminCreateClassDto } from './dto/admin-create-class.dto';
 
 @ApiTags('Classes')
 @Controller('classes')
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 
+  // Creates a new classroom by authenticated teacher
   @Post()
-  @Roles(Role.teacher, Role.admin)
+  @Roles(Role.teacher)
   @ApiCreateClass()
   async create(
     @CurrentUser('id') userId: string,
@@ -47,6 +55,19 @@ export class ClassesController {
     };
   }
 
+  // Creates a class with specified schoolId and teacherId on behalf of administrator
+  @Post('admin')
+  @Roles(Role.admin)
+  @ApiAdminCreateClass()
+  async createByAdmin(@Body() dto: AdminCreateClassDto) {
+    const data = await this.classesService.createByAdmin(dto);
+    return {
+      message: 'Class created by administrator successfully',
+      data,
+    };
+  }
+
+  // Lists public classes in the current school
   @Get()
   @ApiGetClasses()
   async findAll(@CurrentUser('id') id: string, @Query() query: QueryClassDto) {
@@ -58,18 +79,21 @@ export class ClassesController {
     };
   }
 
+  // Retrieves classroom details by unique identifier
   @Get(':id')
   @ApiGetClass()
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.classesService.findOne(id);
   }
 
+  // Retrieves classroom details by alphanumeric course code
   @Get('code/:courseCode')
   @ApiGetClass()
   getClassByCourseCode(@Param('courseCode') courseCode: string) {
     return this.classesService.findByCourseCode(courseCode);
   }
 
+  // Lists classes managed by currently authenticated instructor
   @Get('me/created')
   @ApiGetMyTeachingClasses()
   async getMyTeachingClasses(
@@ -86,21 +110,52 @@ export class ClassesController {
     };
   }
 
+  // Updates classroom settings and metadata
   @Patch(':id')
   @Roles(Role.teacher, Role.admin)
+  @UseGuards(ClassTeacherGuard)
   @ApiUpdateClass()
   async update(
     @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateClassDto,
   ) {
     return this.classesService.update(user, id, dto);
   }
 
+  // Archives class to read-only status
+  @Patch(':id/archive')
+  @Roles(Role.teacher, Role.admin)
+  @UseGuards(ClassTeacherGuard)
+  @ApiArchiveClass()
+  async archiveClass(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.classesService.archiveClass(user, id);
+  }
+
+  // Unarchives class and restores write operations
+  @Patch(':id/unarchive')
+  @Roles(Role.teacher, Role.admin)
+  @UseGuards(ClassTeacherGuard)
+  @ApiUnarchiveClass()
+  async unarchiveClass(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.classesService.unarchiveClass(user, id);
+  }
+
+  // Permanently deletes classroom and cascades associated enrollments
   @Delete(':id')
   @Roles(Role.teacher, Role.admin)
+  @UseGuards(ClassTeacherGuard)
   @ApiDeleteClass()
-  async remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  async remove(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
     return this.classesService.remove(user, id);
   }
 }

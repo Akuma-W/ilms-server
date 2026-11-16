@@ -9,7 +9,7 @@ export class AdminCreateClassDto extends CreateClassDto {
     example: '133c7575-1b40-4ba3-9a24-9484964b9a24',
   })
   @IsUUID()
-  schoolId: string;
+  schoolId!: string;
 
   @ApiProperty({
     description: 'Id of class administrator teacher',
@@ -17,5 +17,5 @@ export class AdminCreateClassDto extends CreateClassDto {
     example: '133c7575-1b40-4ba3-9a24-9484964b9a24',
   })
   @IsUUID()
-  teacherId: string;
+  teacherId!: string;
 }

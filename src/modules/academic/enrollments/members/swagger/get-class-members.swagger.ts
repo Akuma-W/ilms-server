@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ApiAuth } from 'src/common/swagger/api-auth.decorator';
-import { ClassMember } from '../entities/class-member.entity';
+import { ClassMemberEntity } from '../entities/class-member.entity';
 
 export function ApiGetClassMembers() {
   return applyDecorators(
@@ -17,7 +17,7 @@ export function ApiGetClassMembers() {
     }),
     ApiOkResponse({
       description: 'List of members in the class',
-      type: [ClassMember],
+      type: [ClassMemberEntity],
       schema: {
         example: {
           success: true,

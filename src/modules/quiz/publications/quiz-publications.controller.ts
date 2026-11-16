@@ -17,6 +17,11 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/modules/auth/session/guards/jwt-auth.guard';
+import {
+  ClassTeacherGuard,
+  ClassMemberGuard,
+  ClassNotArchivedGuard,
+} from 'src/common/guards';
 import { PublishQuizDto, UpdatePublicationDto } from './dto';
 import { QuizPublicationEntity } from './entities/quiz-publication.entity';
 import { QuizPublicationsService } from './quiz-publications.service';
@@ -30,6 +35,7 @@ export class QuizPublicationsController {
 
   // Publish a quiz into a class
   @Post('quizzes/:quizId/publications')
+  @UseGuards(ClassTeacherGuard, ClassNotArchivedGuard)
   @ApiOperation({ summary: 'Publish a quiz into a class' })
   @ApiResponse({
     status: 201,
@@ -46,6 +52,7 @@ export class QuizPublicationsController {
 
   // Get all quiz publications in a class
   @Get('classes/:classId/quizzes')
+  @UseGuards(ClassMemberGuard)
   @ApiOperation({ summary: 'Get all quizzes published in a class' })
   @ApiResponse({
     status: 200,

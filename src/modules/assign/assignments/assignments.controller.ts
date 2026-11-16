@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
@@ -18,16 +19,19 @@ import { ApiGetClassAssignments } from './swagger/get-class-assignments.swagger'
 import { ApiGetAssignment } from './swagger/get-assignment.swagger';
 import { ApiUpdateAssignment } from './swagger/update-assignment.swagger';
 import { ApiDeleteAssignment } from './swagger/delete-assignment.swagger';
+import {
+  ClassTeacherGuard,
+  ClassMemberGuard,
+  ClassNotArchivedGuard,
+} from 'src/common/guards';
 
-/**
- * Controller handling classroom assignments and their resource materials.
- */
 @ApiTags('Assignments')
 @Controller('assignments')
 export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
   @Post('classes/:classId')
+  @UseGuards(ClassTeacherGuard, ClassNotArchivedGuard)
   @ApiCreateAssignment()
   async create(
     @CurrentUser('id') userId: string,
@@ -38,6 +42,7 @@ export class AssignmentsController {
   }
 
   @Get('classes/:classId')
+  @UseGuards(ClassMemberGuard)
   @ApiGetClassAssignments()
   async findAllByClass(
     @CurrentUser('id') userId: string,
