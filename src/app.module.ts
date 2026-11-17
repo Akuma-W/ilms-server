@@ -4,24 +4,25 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { RolesGuard } from './common/guards/roles.guard';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { HealthModule } from './health/health.module';
+import { RolesGuard } from './common/guards/roles.guard';
+import { CustomThrottlerGuard } from './common/guards/throttler.guard';
+import { JwtAuthGuard } from './modules/auth/session/guards/jwt-auth.guard';
 import { PrismaModule } from './infrastructures/prisma/prisma.module';
+import { RedisModule } from './infrastructures/redis/redis.module';
+import { StorageModule } from './infrastructures/storage/storage.module';
+import { NotificationModule } from './infrastructures/notification/notification.module';
+import { HealthModule } from './health/health.module';
+import { LoggerModule } from './logger/logger.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { JwtAuthGuard } from './modules/auth/session/guards/jwt-auth.guard';
-import { RedisModule } from './infrastructures/redis/redis.module';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { LoggerModule } from './logger/logger.module';
-import { StorageModule } from './infrastructures/storage/storage.module';
 import { AcademicModule } from './modules/academic/academic.module';
-import { AssignModule } from './modules/assign/assign.module';
 import { LearningModule } from './modules/learning/learning.module';
+import { AssignModule } from './modules/assign/assign.module';
 import { ForumModule } from './modules/forum/forum.module';
 import { QuizModule } from './modules/quiz/quiz.module';
-import { CustomThrottlerGuard } from './common/guards/throttler.guard';
-import { NotificationModule } from './infrastructures/notification/notification.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -41,19 +42,20 @@ import { NotificationModule } from './infrastructures/notification/notification.
         limit: 100,
       },
     ]),
-    HealthModule,
     PrismaModule,
     RedisModule,
-    LoggerModule,
     StorageModule,
     NotificationModule,
+    HealthModule,
+    LoggerModule,
     UsersModule,
     AuthModule,
     AcademicModule,
-    AssignModule,
     LearningModule,
+    AssignModule,
     ForumModule,
     QuizModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [
