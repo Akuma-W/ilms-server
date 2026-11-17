@@ -65,7 +65,7 @@ describe('ClassesController', () => {
   it('should create a class by teacher', async () => {
     const dto = {
       title: 'Web Dev',
-      subject: 'IT101',
+      subjectId: 'subject-uuid-1',
       isPrivate: false,
     };
     const expected = { id: 'class-uuid-1', ...dto };
@@ -86,7 +86,7 @@ describe('ClassesController', () => {
   it('should create a class on behalf of administrator', async () => {
     const dto: AdminCreateClassDto = {
       title: 'Admin Math',
-      subject: 'Math',
+      subjectId: 'subject-uuid-1',
       semester: '2026-1',
       isPrivate: false,
       schoolId: 'school-uuid-1',

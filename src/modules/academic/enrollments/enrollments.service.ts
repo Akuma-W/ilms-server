@@ -126,7 +126,7 @@ export class EnrollmentsService {
     userId: string,
     query: QueryEnrollmentDto,
   ): Promise<PaginatedResult<EnrolledClassEntity>> {
-    const { status, isStarred, page, limit, search } = query;
+    const { status, isStarred, isArchived, page, limit, search } = query;
 
     const skip = (page - 1) * limit;
     const take = limit;
@@ -137,17 +137,22 @@ export class EnrollmentsService {
       ...(isStarred !== undefined && { isStarred }),
     };
 
+    const classWhere: Prisma.ClassWhereInput = {};
+    if (isArchived !== undefined) {
+      classWhere.isArchived = isArchived;
+    }
     if (search) {
-      where.class = {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { subjectRef: { name: { contains: search, mode: 'insensitive' } } },
-          { subjectRef: { code: { contains: search, mode: 'insensitive' } } },
-          { courseCode: { contains: search, mode: 'insensitive' } },
-          { semester: { contains: search, mode: 'insensitive' } },
-          { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
-        ],
-      };
+      classWhere.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { subjectRef: { name: { contains: search, mode: 'insensitive' } } },
+        { subjectRef: { code: { contains: search, mode: 'insensitive' } } },
+        { courseCode: { contains: search, mode: 'insensitive' } },
+        { semester: { contains: search, mode: 'insensitive' } },
+        { teacher: { fullName: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+    if (Object.keys(classWhere).length > 0) {
+      where.class = classWhere;
     }
 
     const [enrollments, total] = await Promise.all([
@@ -257,11 +262,22 @@ export class EnrollmentsService {
     });
   }
 
-  // Student voluntarily leaves a class
+  // Student or assistant teacher voluntarily leaves a class
   async leaveClass(
     userId: string,
     classId: string,
   ): Promise<{ message: string }> {
+    const classRecord = await this.prisma.class.findUnique({
+      where: { id: classId },
+      select: { teacherId: true },
+    });
+
+    if (classRecord?.teacherId === userId) {
+      throw new BadRequestException(
+        'Giảng viên chủ nhiệm không thể rời lớp học. Bạn chỉ có thể lưu trữ hoặc xóa lớp học.',
+      );
+    }
+
     const enrollment = await this.prisma.enrollment.findUnique({
       where: {
         classId_userId: {
