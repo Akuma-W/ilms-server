@@ -48,7 +48,11 @@ export class SubjectsController {
     @CurrentUser() user: AuthUser,
     @Query() query: QuerySubjectDto,
   ) {
-    return this.subjectsService.findAll(user, query);
+    const result = await this.subjectsService.findAll(user, query);
+    return {
+      message: 'Get subjects successful',
+      data: result,
+    };
   }
 
   // Gets subject details by UUID

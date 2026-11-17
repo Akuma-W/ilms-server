@@ -22,6 +22,7 @@ import {
 import {
   mapToClassDetailItem,
   mapToClassListItem,
+  resolveClassTeacherAvatar,
 } from './utils/class-mapper.util';
 import {
   buildClassListWhere,
@@ -29,6 +30,8 @@ import {
 } from './utils/class-query.util';
 import { enrollClassAssistants } from './utils/class-assistant.util';
 import { findClassWithPermission } from './utils/class-permission.util';
+import { executeClassCascadeDelete } from './utils/class-delete.util';
+import { StorageService } from 'src/infrastructures/storage/storage.service';
 
 type PaginatedClassesResult = PaginatedResult<
   ClassEntity & { totalStudents: number; enrollment: unknown }
@@ -39,6 +42,7 @@ export class ClassesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
+    private readonly storage: StorageService,
   ) {}
 
   // Creates a new class and automatically enrolls the teacher as approved owner
@@ -145,7 +149,10 @@ export class ClassesService {
       this.prisma.class.count({ where }),
     ]);
 
-    const data = result.map(mapToClassListItem);
+    const resolved = await Promise.all(
+      result.map((item) => resolveClassTeacherAvatar(this.storage, item)),
+    );
+    const data = resolved.map(mapToClassListItem);
 
     return {
       data,
@@ -171,7 +178,8 @@ export class ClassesService {
       throw new NotFoundException('Class not found');
     }
 
-    return mapToClassDetailItem(classroom);
+    const resolved = await resolveClassTeacherAvatar(this.storage, classroom);
+    return mapToClassDetailItem(resolved);
   }
 
   // Find single class by 6-character course code
@@ -187,7 +195,8 @@ export class ClassesService {
       throw new NotFoundException('Class not found');
     }
 
-    return mapToClassDetailItem(classroom);
+    const resolved = await resolveClassTeacherAvatar(this.storage, classroom);
+    return mapToClassDetailItem(resolved);
   }
 
   // Find all classes created by currently authenticated teacher
@@ -218,7 +227,10 @@ export class ClassesService {
       this.prisma.class.count({ where }),
     ]);
 
-    const data = result.map(mapToClassListItem);
+    const resolved = await Promise.all(
+      result.map((item) => resolveClassTeacherAvatar(this.storage, item)),
+    );
+    const data = resolved.map(mapToClassListItem);
 
     return {
       data,
@@ -323,14 +335,11 @@ export class ClassesService {
     return { message: 'Class unarchived successfully' };
   }
 
-  // Hard deletes class and cascades enrollment removals in a transaction
+  // Hard deletes class and cascades all dependent relations in a transaction
   async remove(user: AuthUser, classId: string): Promise<{ message: string }> {
     await findClassWithPermission(this.prisma, user, classId, 'delete');
 
-    await this.prisma.$transaction([
-      this.prisma.enrollment.deleteMany({ where: { classId } }),
-      this.prisma.class.delete({ where: { id: classId } }),
-    ]);
+    await executeClassCascadeDelete(this.prisma, classId);
 
     return { message: 'Class deleted successfully' };
   }

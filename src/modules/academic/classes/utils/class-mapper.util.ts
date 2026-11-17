@@ -1,18 +1,42 @@
 import { ClassEntity } from '../entities/class.entity';
+import { StorageService } from 'src/infrastructures/storage/storage.service';
+
+// Resolves teacher public avatar URL for a class record
+export async function resolveClassTeacherAvatar<
+  T extends {
+    teacher?: {
+      id: string;
+      fullName: string;
+      email: string;
+      avatarUrl?: string | null;
+      avatar?: string | null;
+    } | null;
+  },
+>(storage: StorageService, item: T): Promise<T> {
+  if (!item.teacher) return item;
+  const avatar = await storage.getAvatarUrl(item.teacher.avatarUrl ?? null);
+  return {
+    ...item,
+    teacher: {
+      ...item.teacher,
+      avatar,
+    },
+  };
+}
 
 // Maps raw database class records into paginated list items
 export function mapToClassListItem<
   T extends {
     subjectRef?: { name?: string } | null;
     enrollments?: unknown[];
-    _count?: { enrollments?: number };
+    totalStudents?: number;
   },
 >(cls: T): ClassEntity & { totalStudents: number; enrollment: unknown } {
   return {
     ...cls,
     subject: cls.subjectRef?.name ?? '',
     enrollment: cls.enrollments?.[0] || null,
-    totalStudents: cls._count?.enrollments ?? 0,
+    totalStudents: cls.totalStudents ?? 0,
   } as unknown as ClassEntity & { totalStudents: number; enrollment: unknown };
 }
 
@@ -20,12 +44,12 @@ export function mapToClassListItem<
 export function mapToClassDetailItem<
   T extends {
     subjectRef?: { name?: string } | null;
-    _count?: { enrollments?: number };
+    totalStudents?: number;
   },
 >(classroom: T): ClassEntity & { totalStudents: number } {
   return {
     ...classroom,
     subject: classroom.subjectRef?.name ?? '',
-    totalStudents: classroom._count?.enrollments ?? 0,
+    totalStudents: classroom.totalStudents ?? 0,
   } as unknown as ClassEntity & { totalStudents: number };
 }

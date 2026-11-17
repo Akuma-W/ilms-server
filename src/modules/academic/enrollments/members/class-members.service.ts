@@ -249,10 +249,11 @@ export class ClassMembersService {
     };
   }
 
-  // Lift suspension / unban a class member
+  // Lift suspension / unban a class member (either approve directly or reset to allow re-applying)
   async unbanMember(
     classId: string,
     memberId: string,
+    resetOnly: boolean = false,
   ): Promise<{ message: string; data: unknown }> {
     const enrollment = await findAndValidateMember(
       this.prisma,
@@ -261,6 +262,20 @@ export class ClassMembersService {
       EnrollmentStatus.suspended,
       'Member is not currently suspended',
     );
+
+    if (resetOnly) {
+      const updated = await this.prisma.enrollment.update({
+        where: { id: enrollment.id },
+        data: {
+          status: EnrollmentStatus.rejected,
+        },
+      });
+
+      return {
+        message: 'Member suspension lifted. Student can now re-apply',
+        data: updated,
+      };
+    }
 
     await ensureStudentCapacity(this.prisma, classId);
     await this.prisma.class.update({

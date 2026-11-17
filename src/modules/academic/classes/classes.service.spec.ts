@@ -10,6 +10,7 @@ import { UsersService } from 'src/modules/users/users.service';
 import { Role } from 'src/generated/prisma/enums';
 import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
 import { generateCourseCode } from './utils/course-code.util';
+import { StorageService } from 'src/infrastructures/storage/storage.service';
 
 describe('ClassesService', () => {
   let service: ClassesService;
@@ -33,6 +34,28 @@ describe('ClassesService', () => {
       create: jest.fn(),
       deleteMany: jest.fn(),
     },
+    assignment: {
+      findMany: jest.fn().mockResolvedValue([]),
+      deleteMany: jest.fn(),
+    },
+    submission: { deleteMany: jest.fn() },
+    forum: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+    comment: { deleteMany: jest.fn() },
+    conversation: {
+      findMany: jest.fn().mockResolvedValue([]),
+      deleteMany: jest.fn(),
+    },
+    message: { deleteMany: jest.fn() },
+    quizPublication: { deleteMany: jest.fn() },
+    topic: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+    material: { deleteMany: jest.fn() },
+    reference: { deleteMany: jest.fn() },
+    gradeCategory: {
+      findMany: jest.fn().mockResolvedValue([]),
+      deleteMany: jest.fn(),
+    },
+    grade: { deleteMany: jest.fn() },
+    meetingAttendance: { deleteMany: jest.fn() },
     $transaction: jest
       .fn()
       .mockImplementation(
@@ -47,6 +70,14 @@ describe('ClassesService', () => {
 
   const usersMock = {
     findOne: jest.fn(),
+  };
+
+  const storageMock = {
+    getAvatarUrl: jest
+      .fn()
+      .mockImplementation((path: string | null) =>
+        Promise.resolve(path ? `https://example.com/${path}` : null),
+      ),
   };
 
   const mockTeacher: AuthUser = {
@@ -76,6 +107,10 @@ describe('ClassesService', () => {
         {
           provide: UsersService,
           useValue: usersMock,
+        },
+        {
+          provide: StorageService,
+          useValue: storageMock,
         },
       ],
     }).compile();
@@ -202,7 +237,7 @@ describe('ClassesService', () => {
         id: 'class-uuid-1',
         title: 'Math 101',
         enrollments: [],
-        _count: { enrollments: 18 },
+        totalStudents: 18,
       },
     ]);
     prismaMock.class.count.mockResolvedValue(1);
@@ -218,7 +253,7 @@ describe('ClassesService', () => {
     prismaMock.class.findUnique.mockResolvedValue({
       id: 'class-uuid-1',
       title: 'Math 101',
-      _count: { enrollments: 34 },
+      totalStudents: 34,
     });
 
     const result = await service.findOne('class-uuid-1');
@@ -234,7 +269,7 @@ describe('ClassesService', () => {
     prismaMock.class.findUnique.mockResolvedValue({
       id: 'class-uuid-1',
       courseCode: 'ABC123',
-      _count: { enrollments: 5 },
+      totalStudents: 5,
     });
 
     const result = await service.findByCourseCode('ABC123');
@@ -252,7 +287,7 @@ describe('ClassesService', () => {
         id: 'class-uuid-1',
         title: 'Algorithms',
         enrollments: [],
-        _count: { enrollments: 20 },
+        totalStudents: 20,
       },
     ]);
     prismaMock.class.count.mockResolvedValue(1);

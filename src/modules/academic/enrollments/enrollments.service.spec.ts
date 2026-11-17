@@ -183,7 +183,7 @@ describe('EnrollmentsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should auto-approve when joining a public class', async () => {
+    it('should set status to pending when joining a public class', async () => {
       prismaMock.class.findUnique.mockResolvedValue(mockPublicClass);
       prismaMock.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.enrollment.findUnique.mockResolvedValue(null);
@@ -191,14 +191,14 @@ describe('EnrollmentsService', () => {
         id: 'new-en-uuid',
         classId: 'class-uuid',
         userId: 'user-uuid',
-        status: EnrollmentStatus.approved,
+        status: EnrollmentStatus.pending,
       });
 
       const result = (await service.create(
         { classId: 'class-uuid' },
         'user-uuid',
       )) as { status: EnrollmentStatus };
-      expect(result.status).toBe(EnrollmentStatus.approved);
+      expect(result.status).toBe(EnrollmentStatus.pending);
       expect(prismaMock.enrollment.create).toHaveBeenCalled();
     });
 
@@ -220,7 +220,7 @@ describe('EnrollmentsService', () => {
       expect(result.status).toBe(EnrollmentStatus.pending);
     });
 
-    it('should allow re-applying if previously rejected', async () => {
+    it('should allow re-applying if previously rejected and set status to pending', async () => {
       prismaMock.class.findUnique.mockResolvedValue(mockPublicClass);
       prismaMock.user.findUnique.mockResolvedValue(mockUser);
       prismaMock.enrollment.findUnique.mockResolvedValue({
@@ -229,14 +229,14 @@ describe('EnrollmentsService', () => {
       });
       prismaMock.enrollment.update.mockResolvedValue({
         id: 'existing-rejected-id',
-        status: EnrollmentStatus.approved,
+        status: EnrollmentStatus.pending,
       });
 
       const result = (await service.create(
         { classId: 'class-uuid' },
         'user-uuid',
       )) as { status: EnrollmentStatus };
-      expect(result.status).toBe(EnrollmentStatus.approved);
+      expect(result.status).toBe(EnrollmentStatus.pending);
       expect(prismaMock.enrollment.update).toHaveBeenCalled();
     });
   });

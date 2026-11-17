@@ -119,8 +119,9 @@ export class ClassMembersController {
   async unbanMember(
     @Param('classId', new ParseUUIDPipe()) classId: string,
     @Param('memberId') memberId: string,
+    @Body() body?: { resetOnly?: boolean },
   ) {
-    return this.membersService.unbanMember(classId, memberId);
+    return this.membersService.unbanMember(classId, memberId, body?.resetOnly);
   }
 
   // Remove a member from class

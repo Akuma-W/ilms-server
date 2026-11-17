@@ -1,5 +1,3 @@
-import { Role, EnrollmentStatus } from 'src/generated/prisma/enums';
-
 export const enrollmentSelect = {
   id: true,
   userId: true,
@@ -16,6 +14,7 @@ export const enrollmentSelect = {
       description: true,
       courseCode: true,
       subjectId: true,
+      totalStudents: true,
       subjectRef: {
         select: {
           id: true,
@@ -45,16 +44,6 @@ export const enrollmentSelect = {
           email: true,
           avatarUrl: true,
           role: true,
-        },
-      },
-      _count: {
-        select: {
-          enrollments: {
-            where: {
-              roleIn: Role.student,
-              status: EnrollmentStatus.approved,
-            },
-          },
         },
       },
     },

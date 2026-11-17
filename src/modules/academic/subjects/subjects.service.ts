@@ -261,7 +261,7 @@ export class SubjectsService {
       courseCode: c.courseCode,
       semester: c.semester,
       isPrivate: c.isPrivate,
-      totalStudents: c.totalStudents,
+      totalStudents: c.totalStudents ?? 0,
       maxStudents: c.maxStudents,
       createdAt: c.createdAt,
       teacher: c.teacher,

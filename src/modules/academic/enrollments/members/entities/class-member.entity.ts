@@ -32,6 +32,14 @@ class MemberUserInfo {
   avatarUrl?: string | null;
 
   @ApiPropertyOptional({
+    description: 'Public accessible avatar image URL',
+    type: 'string',
+    example: 'https://example.com/avatar.jpg',
+    nullable: true,
+  })
+  avatar?: string | null;
+
+  @ApiPropertyOptional({
     description: 'Student or teacher code',
     type: 'string',
     example: 'SV0001',
@@ -100,4 +108,12 @@ export class ClassMemberEntity {
     nullable: true,
   })
   studentCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Staff or student identity code',
+    type: 'string',
+    example: 'SV0001',
+    nullable: true,
+  })
+  identityCode?: string | null;
 }

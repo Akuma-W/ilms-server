@@ -84,20 +84,8 @@ export class EnrollmentsService {
         );
       }
 
-      // Re-applying after previous rejection resets status to pending
-      const reapplyStatus = foundClass.isPrivate
-        ? EnrollmentStatus.pending
-        : EnrollmentStatus.approved;
-
-      if (
-        reapplyStatus === EnrollmentStatus.approved &&
-        targetRole === Role.student
-      ) {
-        await this.prisma.class.update({
-          where: { id: classId },
-          data: { totalStudents: { increment: 1 } },
-        });
-      }
+      // Re-applying after previous rejection always requires teacher approval
+      const reapplyStatus = EnrollmentStatus.pending;
 
       const updated = await this.prisma.enrollment.update({
         where: { id: existed.id },
@@ -106,28 +94,16 @@ export class EnrollmentsService {
           status: reapplyStatus,
           roleIn: targetRole,
           isStarred: createEnrollmentDto.isStarred ?? false,
-          joinedAt:
-            reapplyStatus === EnrollmentStatus.approved ? new Date() : null,
+          joinedAt: null,
         },
       });
 
-      // TODO (Notification): Notify teacher that a previously rejected student has re-applied
+      // TODO (Notification): Notify teacher that a student has requested enrollment
       return updated;
     }
 
-    const initialStatus = foundClass.isPrivate
-      ? EnrollmentStatus.pending
-      : EnrollmentStatus.approved;
-
-    if (
-      initialStatus === EnrollmentStatus.approved &&
-      targetRole === Role.student
-    ) {
-      await this.prisma.class.update({
-        where: { id: classId },
-        data: { totalStudents: { increment: 1 } },
-      });
-    }
+    // Joining a class always starts with pending status requiring teacher approval
+    const initialStatus = EnrollmentStatus.pending;
 
     const created = await this.prisma.enrollment.create({
       select: enrollmentSelect,
@@ -137,8 +113,7 @@ export class EnrollmentsService {
         roleIn: targetRole,
         status: initialStatus,
         isStarred: createEnrollmentDto.isStarred ?? false,
-        joinedAt:
-          initialStatus === EnrollmentStatus.approved ? new Date() : null,
+        joinedAt: null,
       },
     });
 
@@ -191,7 +166,7 @@ export class EnrollmentsService {
     const data = enrollments.map((e) => ({
       ...e.class,
       subject: e.class?.subjectRef?.name ?? null,
-      totalStudents: e.class?._count?.enrollments ?? 0,
+      totalStudents: e.class?.totalStudents ?? 0,
       enrollment: {
         id: e.id,
         status: e.status,
@@ -244,7 +219,7 @@ export class EnrollmentsService {
     const data = enrollments.map((e) => ({
       ...e.class,
       subject: e.class?.subjectRef?.name ?? null,
-      totalStudents: e.class?._count?.enrollments ?? 0,
+      totalStudents: e.class?.totalStudents ?? 0,
       enrollment: {
         id: e.id,
         status: e.status,
