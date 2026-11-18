@@ -1,0 +1,104 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AdminClassesController } from './admin-classes.controller';
+import { AdminClassesService } from './admin-classes.service';
+
+describe('AdminClassesController', () => {
+  let controller: AdminClassesController;
+
+  const mockClassesService = {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    toggleArchive: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockClass = {
+    id: 'class-1',
+    title: 'Intro to Programming',
+    courseCode: 'CS101',
+    isArchived: false,
+    isPrivate: false,
+    totalStudents: 30,
+    maxStudents: 50,
+    teacher: {
+      id: 'teacher-1',
+      fullName: 'Dr. Smith',
+      email: 'smith@edu.vn',
+      avatarUrl: null,
+    },
+    subjectRef: { id: 'sub-1', code: 'CS101', name: 'Intro CS', credits: 3 },
+    school: { id: 'sch-1', name: 'UOT', shortname: 'UOT' },
+    createdAt: new Date(),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [AdminClassesController],
+      providers: [
+        { provide: AdminClassesService, useValue: mockClassesService },
+      ],
+    }).compile();
+
+    controller = module.get<AdminClassesController>(AdminClassesController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  it('findAll should delegate to service', async () => {
+    const paginatedResult = {
+      data: [mockClass],
+      meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    };
+    mockClassesService.findAll.mockResolvedValue(paginatedResult);
+
+    const result = await controller.findAll({ page: 1, limit: 10 });
+    expect(result.data.data).toHaveLength(1);
+    expect(mockClassesService.findAll).toHaveBeenCalledWith({
+      page: 1,
+      limit: 10,
+    });
+  });
+
+  it('archive should delegate to service', async () => {
+    mockClassesService.toggleArchive.mockResolvedValue({
+      ...mockClass,
+      isArchived: true,
+    });
+
+    const result = await controller.archive('class-1');
+    expect(result.data.isArchived).toBe(true);
+    expect(mockClassesService.toggleArchive).toHaveBeenCalledWith(
+      'class-1',
+      true,
+    );
+  });
+
+  it('unarchive should delegate to service', async () => {
+    mockClassesService.toggleArchive.mockResolvedValue({
+      ...mockClass,
+      isArchived: false,
+    });
+
+    const result = await controller.unarchive('class-1');
+    expect(result.data.isArchived).toBe(false);
+    expect(mockClassesService.toggleArchive).toHaveBeenCalledWith(
+      'class-1',
+      false,
+    );
+  });
+
+  it('remove should delegate to service', async () => {
+    mockClassesService.remove.mockResolvedValue({
+      success: true,
+      message: 'Classroom deleted successfully',
+    });
+
+    const result = await controller.remove('class-1');
+    expect(result.message).toBe('Classroom deleted successfully');
+    expect(mockClassesService.remove).toHaveBeenCalledWith('class-1');
+  });
+});

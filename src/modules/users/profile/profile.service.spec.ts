@@ -99,7 +99,7 @@ describe('ProfileService', () => {
           where: { id: 'user-uuid-1' },
         }),
       );
-      expect(result.avatar).toBe(avatarMockUrl);
+      expect(result.avatarUrl).toBe(avatarMockUrl);
       expect(result.id).toBe('user-uuid-1');
     });
 

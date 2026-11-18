@@ -81,7 +81,7 @@ describe('UsersService', () => {
       const result = await service.createRegisteredUser(dto);
 
       expect(mockPrismaUser.create).toHaveBeenCalledTimes(1);
-      expect(result.avatar).toBe(avatarMockUrl);
+      expect(result.avatarUrl).toBe(avatarMockUrl);
       expect(result.id).toBe('user-uuid-1');
     });
   });
@@ -147,7 +147,7 @@ describe('UsersService', () => {
 
       expect(result).not.toBeNull();
       expect(result?.password).toBe('hashed-password');
-      expect(result?.avatar).toBe(avatarMockUrl);
+      expect(result?.avatarUrl).toBe(avatarMockUrl);
     });
 
     it('should return null when user not found by email', async () => {
@@ -209,7 +209,7 @@ describe('UsersService', () => {
       });
 
       expect(result.fullName).toBe('Updated Reg User');
-      expect(result.avatar).toBe(avatarMockUrl);
+      expect(result.avatarUrl).toBe(avatarMockUrl);
     });
   });
 });

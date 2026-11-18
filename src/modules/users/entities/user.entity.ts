@@ -40,20 +40,12 @@ export class UserEntity {
   schoolId!: string;
 
   @ApiProperty({
-    description: 'Stored avatar reference for the user.',
-    example: 'avatars/jane-doe.png',
-    type: String,
-    nullable: true,
-  })
-  avatarUrl!: string | null;
-
-  @ApiProperty({
-    description: 'URL of the user avatar.',
+    description: 'Public accessible URL of the user avatar.',
     example: 'https://example.com/avatars/jane-doe.png',
     type: String,
     nullable: true,
   })
-  avatar!: string | null;
+  avatarUrl!: string | null;
 
   @ApiProperty({
     description: 'Identity code assigned to the user.',

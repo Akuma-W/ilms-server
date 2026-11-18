@@ -27,9 +27,9 @@ export class UsersService {
       select: USER_SELECT,
     });
 
-    const avatar = await this.storage.getAvatarUrl(user.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(user.avatarUrl);
 
-    return { ...user, avatar };
+    return { ...user, avatarUrl };
   }
 
   // Creates user authenticated via Google OAuth
@@ -39,9 +39,9 @@ export class UsersService {
       select: USER_SELECT,
     });
 
-    const avatar = await this.storage.getAvatarUrl(user.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(user.avatarUrl);
 
-    return { ...user, avatar };
+    return { ...user, avatarUrl };
   }
 
   // Retrieves user by primary key id
@@ -55,9 +55,9 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const avatar = await this.storage.getAvatarUrl(user.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(user.avatarUrl);
 
-    return { ...user, avatar };
+    return { ...user, avatarUrl };
   }
 
   // Retrieves user by email with authentication credentials
@@ -75,9 +75,9 @@ export class UsersService {
       return null;
     }
 
-    const avatar = await this.storage.getAvatarUrl(user.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(user.avatarUrl);
 
-    return { ...user, avatar };
+    return { ...user, avatarUrl };
   }
 
   // Updates user password hash directly for authentication services
@@ -118,8 +118,8 @@ export class UsersService {
       select: USER_SELECT,
     });
 
-    const avatar = await this.storage.getAvatarUrl(updatedUser.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(updatedUser.avatarUrl);
 
-    return { ...updatedUser, avatar };
+    return { ...updatedUser, avatarUrl };
   }
 }

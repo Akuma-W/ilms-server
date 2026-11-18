@@ -6,11 +6,8 @@ describe('SchoolsService', () => {
   let service: SchoolsService;
   const prismaMock = {
     school: {
-      create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),

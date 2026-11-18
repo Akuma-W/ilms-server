@@ -7,14 +7,14 @@ export class SchoolEntity {
     example: '123e4567-e89b-12d3-a456-426614174000',
     type: 'string',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'Full name of the school institution',
     example: 'University of Information Technology',
     type: 'string',
   })
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     description: 'Short name or acronym of the school',
@@ -35,7 +35,7 @@ export class SchoolEntity {
     example: 'Ho Chi Minh City',
     type: 'string',
   })
-  city: string;
+  city!: string;
 
   @ApiProperty({
     description: 'Operational status of the school',
@@ -43,7 +43,7 @@ export class SchoolEntity {
     enum: SchoolStatus,
     type: 'string',
   })
-  status: SchoolStatus;
+  status!: SchoolStatus;
 
   @ApiPropertyOptional({
     description: 'Creation timestamp',
@@ -59,5 +59,3 @@ export class SchoolEntity {
   })
   updatedAt?: Date | string | null;
 }
-
-export class School extends SchoolEntity {}

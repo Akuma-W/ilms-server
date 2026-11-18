@@ -36,9 +36,9 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    const avatar = await this.storage.getAvatarUrl(user.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(user.avatarUrl);
 
-    return { ...user, avatar };
+    return { ...user, avatarUrl };
   }
 
   // Retrieves enrolled or taught classes for profile learning progress
@@ -98,11 +98,11 @@ export class ProfileService {
       select: USER_SELECT,
     });
 
-    const avatar = await this.storage.getAvatarUrl(updatedUser.avatarUrl);
+    const avatarUrl = await this.storage.getAvatarUrl(updatedUser.avatarUrl);
 
     return {
       message: 'Profile updated successfully',
-      data: { ...updatedUser, avatar },
+      data: { ...updatedUser, avatarUrl },
     };
   }
 

@@ -7,11 +7,8 @@ import type { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.int
 describe('SchoolsController', () => {
   let controller: SchoolsController;
   const schoolsServiceMock = {
-    create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
     findSchoolTeachers: jest.fn(),
   };
 

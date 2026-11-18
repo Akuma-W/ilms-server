@@ -29,7 +29,6 @@ export function buildClassMemberEntity(
       fullName: user.fullName,
       email: user.email,
       avatarUrl,
-      avatar: avatarUrl,
       identityCode: code,
       role: user.role,
     },

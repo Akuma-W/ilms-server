@@ -11,7 +11,6 @@ import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interfac
 import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
 import { UsersService } from 'src/modules/users/users.service';
 import { Prisma } from 'src/generated/prisma/client';
-import { AdminCreateClassDto } from './dto/admin-create-class.dto';
 import { ClassEntity } from './entities/class.entity';
 import { PaginatedResult } from 'src/common/interfaces/paginated-result.interface';
 import { generateUniqueCourseCode } from './utils/course-code.util';
@@ -109,15 +108,6 @@ export class ClassesService {
     const { schoolId } = await this.usersService.findOne(userId);
 
     return this.create(schoolId, userId, createClassDto);
-  }
-
-  // Creates a class on behalf of an administrator
-  async createByAdmin(
-    adminCreateClassDto: AdminCreateClassDto,
-  ): Promise<ClassEntity> {
-    const { schoolId, teacherId } = adminCreateClassDto;
-
-    return this.create(schoolId, teacherId, adminCreateClassDto);
   }
 
   // Find all public classes in user's school excluding archived ones by default

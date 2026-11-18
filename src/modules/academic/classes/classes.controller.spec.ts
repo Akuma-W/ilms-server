@@ -4,14 +4,12 @@ import { ClassesService } from './classes.service';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { Role } from 'src/generated/prisma/enums';
 import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
-import { AdminCreateClassDto } from './dto/admin-create-class.dto';
 
 describe('ClassesController', () => {
   let controller: ClassesController;
 
   const classesServiceMock = {
     createByTeacher: jest.fn(),
-    createByAdmin: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
     findByCourseCode: jest.fn(),
@@ -81,32 +79,6 @@ describe('ClassesController', () => {
       message: 'Create class successful',
       data: expected,
     });
-  });
-
-  it('should create a class on behalf of administrator', async () => {
-    const dto: AdminCreateClassDto = {
-      title: 'Admin Math',
-      subjectId: 'subject-uuid-1',
-      semester: '2026-1',
-      isPrivate: false,
-      schoolId: 'school-uuid-1',
-      teacherId: 'teacher-uuid-1',
-    };
-
-    const mockCreated = {
-      id: 'class-uuid-1',
-      title: 'Admin Math',
-      schoolId: 'school-uuid-1',
-      teacherId: 'teacher-uuid-1',
-    };
-
-    classesServiceMock.createByAdmin.mockResolvedValue(mockCreated);
-
-    const result = await controller.createByAdmin(dto);
-
-    expect(result.message).toBe('Class created by administrator successfully');
-    expect(result.data).toEqual(mockCreated);
-    expect(classesServiceMock.createByAdmin).toHaveBeenCalledWith(dto);
   });
 
   it('should find all classes', async () => {

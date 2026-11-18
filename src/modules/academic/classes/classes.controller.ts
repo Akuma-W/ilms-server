@@ -28,8 +28,6 @@ import { ApiGetMyTeachingClasses } from './swagger/get-my-classes.swagger';
 import { ApiArchiveClass } from './swagger/archive-class.swagger';
 import { ApiUnarchiveClass } from './swagger/unarchive-class.swagger';
 import { ClassTeacherGuard } from 'src/common/guards/class-teacher.guard';
-import { ApiAdminCreateClass } from './swagger/admin-create-class.swagger';
-import { AdminCreateClassDto } from './dto/admin-create-class.dto';
 
 @ApiTags('Classes')
 @Controller('classes')
@@ -52,18 +50,6 @@ export class ClassesController {
     return {
       message: 'Create class successful',
       data: result,
-    };
-  }
-
-  // Creates a class with specified schoolId and teacherId on behalf of administrator
-  @Post('admin')
-  @Roles(Role.admin)
-  @ApiAdminCreateClass()
-  async createByAdmin(@Body() dto: AdminCreateClassDto) {
-    const data = await this.classesService.createByAdmin(dto);
-    return {
-      message: 'Class created by administrator successfully',
-      data,
     };
   }
 

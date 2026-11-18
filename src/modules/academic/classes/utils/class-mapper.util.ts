@@ -9,17 +9,16 @@ export async function resolveClassTeacherAvatar<
       fullName: string;
       email: string;
       avatarUrl?: string | null;
-      avatar?: string | null;
     } | null;
   },
 >(storage: StorageService, item: T): Promise<T> {
   if (!item.teacher) return item;
-  const avatar = await storage.getAvatarUrl(item.teacher.avatarUrl ?? null);
+  const avatarUrl = await storage.getAvatarUrl(item.teacher.avatarUrl ?? null);
   return {
     ...item,
     teacher: {
       ...item.teacher,
-      avatar,
+      avatarUrl,
     },
   };
 }

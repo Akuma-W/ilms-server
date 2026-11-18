@@ -1,17 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SchoolsService } from './schools.service';
-import { CreateSchoolDto } from './dto/create-school.dto';
-import { UpdateSchoolDto } from './dto/update-school.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/generated/prisma/enums';
@@ -23,13 +12,6 @@ import { ApiAuth } from 'src/common/swagger/api-auth.decorator';
 @Controller('schools')
 export class SchoolsController {
   constructor(private readonly schoolsService: SchoolsService) {}
-
-  // Creates a school
-  @Post()
-  @Roles(Role.admin)
-  create(@Body() createSchoolDto: CreateSchoolDto) {
-    return this.schoolsService.create(createSchoolDto);
-  }
 
   // Lists all schools
   @Public()
@@ -67,22 +49,9 @@ export class SchoolsController {
   }
 
   // Finds school by id
+  @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.schoolsService.findOne(id);
-  }
-
-  // Updates school attributes
-  @Patch(':id')
-  @Roles(Role.admin)
-  update(@Param('id') id: string, @Body() updateSchoolDto: UpdateSchoolDto) {
-    return this.schoolsService.update(id, updateSchoolDto);
-  }
-
-  // Deletes school by id
-  @Delete(':id')
-  @Roles(Role.admin)
-  remove(@Param('id') id: string) {
-    return this.schoolsService.remove(id);
   }
 }
