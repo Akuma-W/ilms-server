@@ -45,20 +45,6 @@ export class ClassEntity {
   })
   isPrivate!: boolean;
 
-  @ApiPropertyOptional({
-    description: 'Online meeting room URI',
-    example: 'https://meet.google.com/abc-defg-hij',
-    type: 'string',
-  })
-  meetingUri?: string | null;
-
-  @ApiPropertyOptional({
-    description: 'External meeting space identifier',
-    example: 'space-12345',
-    type: 'string',
-  })
-  meetingSpaceId?: string | null;
-
   @ApiProperty({
     description: 'Whether the class is archived',
     example: false,
