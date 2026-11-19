@@ -19,9 +19,6 @@ import { ApiGetReference } from './swagger/get-reference.swagger';
 import { ApiUpdateReference } from './swagger/update-reference.swagger';
 import { ApiDeleteReference } from './swagger/delete-reference.swagger';
 
-/**
- * Controller handling reference resources and documentation links.
- */
 @ApiTags('References')
 @Controller('references')
 export class ReferencesController {

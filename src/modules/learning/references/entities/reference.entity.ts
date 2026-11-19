@@ -6,21 +6,21 @@ export class ReferenceEntity {
     example: '123e4567-e89b-12d3-a456-426614174000',
     type: 'string',
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({
     description: 'Title of the reference document or link',
     example: 'Clean Code: A Handbook of Agile Software Craftsmanship',
     type: 'string',
   })
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'Target URL of the reference',
     example: 'https://example.com/books/clean-code.pdf',
     type: 'string',
   })
-  url: string;
+  url!: string;
 
   @ApiPropertyOptional({
     description: 'Brief overview or note about the reference',
@@ -34,5 +34,5 @@ export class ReferenceEntity {
     example: '123e4567-e89b-12d3-a456-426614174001',
     type: 'string',
   })
-  topicId: string;
+  topicId!: string;
 }

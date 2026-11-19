@@ -24,6 +24,10 @@ describe('MaterialsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    materialProgress: {
+      upsert: jest.fn(),
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -190,6 +194,46 @@ describe('MaterialsService', () => {
 
       const result = await service.delete('user-1', 'mat-1');
       expect(result.message).toBe('Delete material successful');
+    });
+  });
+
+  describe('trackProgress', () => {
+    it('should throw NotFoundException if material does not exist', async () => {
+      prismaMock.material.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.trackProgress('student-1', 'mat-1', true),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should upsert material progress record successfully', async () => {
+      prismaMock.material.findUnique.mockResolvedValue({ id: 'mat-1' });
+      prismaMock.materialProgress.upsert.mockResolvedValue({
+        id: 'prog-1',
+        materialId: 'mat-1',
+        studentId: 'student-1',
+        isCompleted: true,
+      });
+
+      const result = await service.trackProgress('student-1', 'mat-1', true);
+      expect(result.id).toBe('prog-1');
+      expect(prismaMock.materialProgress.upsert).toHaveBeenCalled();
+    });
+  });
+
+  describe('getMyClassProgress', () => {
+    it('should return student progress list in class', async () => {
+      prismaMock.materialProgress.findMany.mockResolvedValue([
+        {
+          materialId: 'mat-1',
+          isCompleted: true,
+          lastViewedAt: new Date(),
+        },
+      ]);
+
+      const result = await service.getMyClassProgress('student-1', 'class-1');
+      expect(result).toHaveLength(1);
+      expect(result[0].materialId).toBe('mat-1');
     });
   });
 });

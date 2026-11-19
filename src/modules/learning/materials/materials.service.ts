@@ -131,6 +131,58 @@ export class MaterialsService {
     };
   }
 
+  // Tracks student reading progress and completion status for a material
+  async trackProgress(
+    studentId: string,
+    materialId: string,
+    isCompleted: boolean = true,
+  ) {
+    const material = await this.prisma.material.findUnique({
+      where: { id: materialId },
+    });
+
+    if (!material) {
+      throw new NotFoundException('Material does not exist');
+    }
+
+    const progress = await this.prisma.materialProgress.upsert({
+      where: {
+        materialId_studentId: { materialId, studentId },
+      },
+      create: {
+        materialId,
+        studentId,
+        isCompleted,
+        lastViewedAt: new Date(),
+      },
+      update: {
+        isCompleted,
+        lastViewedAt: new Date(),
+      },
+    });
+
+    return progress;
+  }
+
+  // Retrieves all material completion records of student for a classroom
+  async getMyClassProgress(studentId: string, classId: string) {
+    return this.prisma.materialProgress.findMany({
+      where: {
+        studentId,
+        material: {
+          topic: {
+            classId,
+          },
+        },
+      },
+      select: {
+        materialId: true,
+        isCompleted: true,
+        lastViewedAt: true,
+      },
+    });
+  }
+
   // Validates if the user is an authorized instructor for the class.
   private async checkTeacher(userId: string, classId: string) {
     return checkTeacherPermission(
