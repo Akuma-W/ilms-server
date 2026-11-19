@@ -33,6 +33,15 @@ export class UpdateAdminUserDto {
   status?: UserStatus;
 
   @ApiPropertyOptional({
+    description: 'Reason for status update or moderation',
+    example: 'Tài khoản vi phạm quy chế thi cử',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  statusReason?: string;
+
+  @ApiPropertyOptional({
     description: 'Student or teacher identity code',
     example: 'GV2026001',
     type: 'string',

@@ -89,6 +89,7 @@ describe('AdminUsersService', () => {
 
       expect(result.id).toBe('u-new');
       expect(result.email).toBe('user@edu.vn');
+      expect(result.temporaryPassword).toBeDefined();
       expect(mockPrismaService.user.create).toHaveBeenCalled();
     });
   });
@@ -160,6 +161,49 @@ describe('AdminUsersService', () => {
       );
 
       expect(result.fullName).toBe('User 2 Đã đổi tên');
+    });
+
+    it('should reset statusReason to null when user is activated', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'user-2',
+        email: 'user2@edu.vn',
+        fullName: 'User 2',
+        role: Role.student,
+        status: UserStatus.locked,
+        statusReason: 'Lý do cũ',
+        avatarUrl: null,
+        schoolId: 'sch-1',
+        school: { id: 'sch-1', name: 'ĐH A', shortname: 'DHA' },
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: 'user-2',
+        email: 'user2@edu.vn',
+        fullName: 'User 2',
+        role: Role.student,
+        status: UserStatus.active,
+        statusReason: null,
+        avatarUrl: null,
+        schoolId: 'sch-1',
+        school: { id: 'sch-1', name: 'ĐH A', shortname: 'DHA' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.update(
+        'user-2',
+        { status: UserStatus.active },
+        'admin-1',
+      );
+
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-2' },
+          data: expect.objectContaining({
+            status: UserStatus.active,
+            statusReason: null,
+          }),
+        }),
+      );
     });
   });
 

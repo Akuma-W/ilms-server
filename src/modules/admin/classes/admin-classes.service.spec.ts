@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
+import { Role } from 'src/generated/prisma/enums';
 import { AdminClassesService } from './admin-classes.service';
 
 describe('AdminClassesService', () => {
@@ -11,8 +12,18 @@ describe('AdminClassesService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
+      create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+    },
+    school: {
+      findUnique: jest.fn(),
+    },
+    subject: {
+      findUnique: jest.fn(),
+    },
+    user: {
+      findUnique: jest.fn(),
     },
   };
 
@@ -102,6 +113,84 @@ describe('AdminClassesService', () => {
       await expect(service.toggleArchive('c-999', true)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('create', () => {
+    it('should create classroom successfully', async () => {
+      mockPrismaService.school.findUnique.mockResolvedValue({ id: 'sch-1' });
+      mockPrismaService.subject.findUnique.mockResolvedValue({ id: 'sub-1' });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 't-1',
+        role: Role.teacher,
+      });
+      mockPrismaService.class.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({
+          id: 'c-new',
+          title: 'Class New',
+          teacher: {
+            id: 't-1',
+            fullName: 'Teacher 1',
+            email: 't@edu.vn',
+            avatarUrl: null,
+          },
+          subjectRef: { id: 'sub-1', code: 'CS1', name: 'CS', credits: 3 },
+          school: { id: 'sch-1', name: 'Sch', shortname: 'S' },
+        });
+      mockPrismaService.class.create.mockResolvedValue({ id: 'c-new' });
+
+      const result = await service.create({
+        title: 'Class New',
+        schoolId: 'sch-1',
+        subjectId: 'sub-1',
+        teacherId: 't-1',
+        courseCode: 'CS101-A',
+      });
+
+      expect(result.id).toBe('c-new');
+      expect(mockPrismaService.class.create).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if instructor is not teacher', async () => {
+      mockPrismaService.school.findUnique.mockResolvedValue({ id: 'sch-1' });
+      mockPrismaService.subject.findUnique.mockResolvedValue({ id: 'sub-1' });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u-1',
+        role: Role.student,
+      });
+
+      await expect(
+        service.create({
+          title: 'Class New',
+          schoolId: 'sch-1',
+          subjectId: 'sub-1',
+          teacherId: 'u-1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('update', () => {
+    it('should update classroom successfully', async () => {
+      mockPrismaService.class.findUnique.mockResolvedValue({
+        id: 'c-1',
+        title: 'Class Updated',
+        teacher: {
+          id: 't-1',
+          fullName: 'Teacher 1',
+          email: 't@edu.vn',
+          avatarUrl: null,
+        },
+        subjectRef: { id: 'sub-1', code: 'CS1', name: 'CS', credits: 3 },
+        school: { id: 'sch-1', name: 'Sch', shortname: 'S' },
+      });
+      mockPrismaService.class.update.mockResolvedValue({ id: 'c-1' });
+
+      const result = await service.update('c-1', { title: 'Class Updated' });
+
+      expect(result.id).toBe('c-1');
+      expect(mockPrismaService.class.update).toHaveBeenCalled();
     });
   });
 

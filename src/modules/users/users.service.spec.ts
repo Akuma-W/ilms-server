@@ -168,7 +168,10 @@ describe('UsersService', () => {
 
       expect(mockPrismaUser.update).toHaveBeenCalledWith({
         where: { id: 'user-uuid-1' },
-        data: { password: 'new-hashed-password' },
+        data: {
+          password: 'new-hashed-password',
+          mustChangePassword: false,
+        },
       });
     });
 

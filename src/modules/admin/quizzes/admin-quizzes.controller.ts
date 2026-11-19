@@ -72,7 +72,12 @@ export class AdminQuizzesController {
   // Permanently force deletes copyright-infringing quiz from system
   @Delete(':id')
   @ApiForceDeleteAdminQuiz()
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.quizzesService.forceDelete(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('reason') reason?: string,
+  ) {
+    return reason !== undefined
+      ? this.quizzesService.forceDelete(id, reason)
+      : this.quizzesService.forceDelete(id);
   }
 }

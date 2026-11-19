@@ -1,10 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
+import { Role } from 'src/generated/prisma/enums';
 import { PaginatedResult } from 'src/common/interfaces/paginated-result.interface';
 import { AdminClassEntity } from './entities/admin-class.entity';
 import { QueryAdminClassesDto } from './dto/query-admin-classes.dto';
+import { CreateAdminClassDto } from './dto/create-admin-class.dto';
+import { UpdateAdminClassDto } from './dto/update-admin-class.dto';
 import { AdminActionResult } from '../interfaces/admin-action-result.interface';
+import { generateUniqueCourseCode } from 'src/modules/academic/classes/utils/course-code.util';
 
 @Injectable()
 export class AdminClassesService {
@@ -115,6 +123,79 @@ export class AdminClassesService {
     }
 
     return classroom as AdminClassEntity;
+  }
+
+  // Creates classroom directly as administrator
+  async create(dto: CreateAdminClassDto): Promise<AdminClassEntity> {
+    const [school, subject, teacher] = await Promise.all([
+      this.prisma.school.findUnique({ where: { id: dto.schoolId } }),
+      this.prisma.subject.findUnique({ where: { id: dto.subjectId } }),
+      this.prisma.user.findUnique({ where: { id: dto.teacherId } }),
+    ]);
+
+    if (!school) throw new NotFoundException('School not found');
+    if (!subject) throw new NotFoundException('Subject not found');
+    if (!teacher || teacher.role !== Role.teacher) {
+      throw new BadRequestException(
+        'Assigned instructor must be a valid teacher account',
+      );
+    }
+
+    let courseCode = dto.courseCode?.trim().toUpperCase();
+    if (courseCode) {
+      const existing = await this.prisma.class.findUnique({
+        where: { courseCode },
+      });
+      if (existing) throw new BadRequestException('Course code already exists');
+    } else {
+      courseCode = await generateUniqueCourseCode(this.prisma);
+    }
+
+    const created = await this.prisma.class.create({
+      data: {
+        title: dto.title.trim(),
+        schoolId: dto.schoolId,
+        subjectId: dto.subjectId,
+        teacherId: dto.teacherId,
+        courseCode,
+        maxStudents: dto.maxStudents ?? 60,
+        isPrivate: dto.isPrivate ?? false,
+        totalStudents: 0,
+      },
+    });
+
+    return this.findOne(created.id);
+  }
+
+  // Updates classroom settings as administrator
+  async update(
+    id: string,
+    dto: UpdateAdminClassDto,
+  ): Promise<AdminClassEntity> {
+    await this.findOne(id);
+
+    if (dto.teacherId) {
+      const teacher = await this.prisma.user.findUnique({
+        where: { id: dto.teacherId },
+      });
+      if (!teacher || teacher.role !== Role.teacher) {
+        throw new BadRequestException(
+          'Assigned instructor must be a valid teacher account',
+        );
+      }
+    }
+
+    await this.prisma.class.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title.trim() }),
+        ...(dto.teacherId !== undefined && { teacherId: dto.teacherId }),
+        ...(dto.maxStudents !== undefined && { maxStudents: dto.maxStudents }),
+        ...(dto.isPrivate !== undefined && { isPrivate: dto.isPrivate }),
+      },
+    });
+
+    return this.findOne(id);
   }
 
   // Toggles read-only archive status of classroom

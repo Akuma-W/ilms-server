@@ -63,6 +63,21 @@ export class UserEntity {
   })
   status!: UserStatus;
 
+  @ApiPropertyOptional({
+    description: 'Reason for current user status (lock/ban).',
+    example: 'Account suspended for policy violation',
+    type: String,
+    nullable: true,
+  })
+  statusReason?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Whether user is required to change password on next sign-in.',
+    example: false,
+    type: Boolean,
+  })
+  mustChangePassword?: boolean;
+
   @ApiProperty({
     description: 'Date and time when the user was created.',
     example: '2024-01-15T10:30:00.000Z',

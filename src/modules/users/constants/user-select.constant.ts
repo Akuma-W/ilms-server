@@ -7,6 +7,8 @@ export const USER_SELECT = {
   avatarUrl: true,
   schoolId: true,
   status: true,
+  statusReason: true,
+  mustChangePassword: true,
   createdAt: true,
   school: true,
 } as const;
