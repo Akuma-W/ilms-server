@@ -64,6 +64,10 @@ export class AdminSchoolsService {
       where.status = query.status;
     }
 
+    if (query.city?.trim()) {
+      where.city = { contains: query.city.trim(), mode: 'insensitive' };
+    }
+
     if (query.search?.trim()) {
       const keyword = query.search.trim();
       where.OR = [
@@ -226,9 +230,13 @@ export class AdminSchoolsService {
       throw new NotFoundException('School not found');
     }
 
-    if (school._count.classes > 0 || school._count.users > 0) {
+    if (
+      school._count.classes > 0 ||
+      school._count.users > 0 ||
+      school._count.subjects > 0
+    ) {
       throw new BadRequestException(
-        'Cannot delete a school that still has linked members or classes. Please deactivate it instead.',
+        'Cannot delete a school that still has linked subjects, members or classes. Please deactivate it instead.',
       );
     }
 

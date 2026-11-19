@@ -71,11 +71,14 @@ export class AdminUsersService {
       identityCode: user.identityCode,
       role: user.role,
       status: user.status,
+      statusReason: user.statusReason,
+      mustChangePassword: user.mustChangePassword,
       avatarUrl,
       schoolId: user.schoolId,
       school: user.school,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      temporaryPassword: clearPassword,
     };
   }
 
@@ -135,6 +138,8 @@ export class AdminUsersService {
           identityCode: u.identityCode,
           role: u.role,
           status: u.status,
+          statusReason: u.statusReason,
+          mustChangePassword: u.mustChangePassword,
           avatarUrl,
           schoolId: u.schoolId,
           school: u.school,
@@ -179,6 +184,8 @@ export class AdminUsersService {
       identityCode: user.identityCode,
       role: user.role,
       status: user.status,
+      statusReason: user.statusReason,
+      mustChangePassword: user.mustChangePassword,
       avatarUrl,
       schoolId: user.schoolId,
       school: user.school,
@@ -213,7 +220,16 @@ export class AdminUsersService {
       data: {
         ...(dto.fullName !== undefined && { fullName: dto.fullName.trim() }),
         ...(dto.role !== undefined && { role: dto.role }),
-        ...(dto.status !== undefined && { status: dto.status }),
+        ...(dto.status !== undefined && {
+          status: dto.status,
+          ...(dto.status === UserStatus.active && { statusReason: null }),
+        }),
+        ...(dto.statusReason !== undefined && {
+          statusReason:
+            dto.status === UserStatus.active || !dto.statusReason.trim()
+              ? null
+              : dto.statusReason.trim(),
+        }),
         ...(dto.identityCode !== undefined && {
           identityCode: dto.identityCode.trim(),
         }),
@@ -235,6 +251,8 @@ export class AdminUsersService {
       identityCode: updatedUser.identityCode,
       role: updatedUser.role,
       status: updatedUser.status,
+      statusReason: updatedUser.statusReason,
+      mustChangePassword: updatedUser.mustChangePassword,
       avatarUrl,
       schoolId: updatedUser.schoolId,
       school: updatedUser.school,
@@ -255,7 +273,10 @@ export class AdminUsersService {
 
     await this.prisma.user.update({
       where: { id },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        mustChangePassword: true,
+      },
     });
 
     const emailTemplate = createAdminResetPasswordTemplate(clearPassword, 'vi');

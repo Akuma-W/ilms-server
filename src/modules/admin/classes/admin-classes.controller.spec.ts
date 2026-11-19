@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ValidationPipe } from '@nestjs/common';
 import { AdminClassesController } from './admin-classes.controller';
 import { AdminClassesService } from './admin-classes.service';
+import { QueryAdminClassesDto } from './dto/query-admin-classes.dto';
 
 describe('AdminClassesController', () => {
   let controller: AdminClassesController;
@@ -8,6 +10,8 @@ describe('AdminClassesController', () => {
   const mockClassesService = {
     findAll: jest.fn(),
     findOne: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
     toggleArchive: jest.fn(),
     remove: jest.fn(),
   };
@@ -48,6 +52,25 @@ describe('AdminClassesController', () => {
     expect(controller).toBeDefined();
   });
 
+  it('should validate and transform query params with ValidationPipe', async () => {
+    const pipe = new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      transformOptions: { enableImplicitConversion: true },
+    });
+    const transformed = (await pipe.transform(
+      { isArchived: 'false', page: '1', limit: '10' },
+      { type: 'query', metatype: QueryAdminClassesDto },
+    )) as QueryAdminClassesDto;
+    expect(transformed.isArchived).toBe(false);
+
+    const transformedTrue = (await pipe.transform(
+      { isArchived: 'true', page: '1', limit: '10' },
+      { type: 'query', metatype: QueryAdminClassesDto },
+    )) as QueryAdminClassesDto;
+    expect(transformedTrue.isArchived).toBe(true);
+  });
+
   it('findAll should delegate to service', async () => {
     const paginatedResult = {
       data: [mockClass],
@@ -61,6 +84,32 @@ describe('AdminClassesController', () => {
       page: 1,
       limit: 10,
     });
+  });
+
+  it('create should delegate to service', async () => {
+    mockClassesService.create.mockResolvedValue(mockClass);
+
+    const dto = {
+      title: 'Intro to Programming',
+      schoolId: 'sch-1',
+      subjectId: 'sub-1',
+      teacherId: 'teacher-1',
+    };
+    const result = await controller.create(dto);
+    expect(result.data.id).toBe('class-1');
+    expect(mockClassesService.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('update should delegate to service', async () => {
+    mockClassesService.update.mockResolvedValue({
+      ...mockClass,
+      title: 'Advanced Programming',
+    });
+
+    const dto = { title: 'Advanced Programming' };
+    const result = await controller.update('class-1', dto);
+    expect(result.data.title).toBe('Advanced Programming');
+    expect(mockClassesService.update).toHaveBeenCalledWith('class-1', dto);
   });
 
   it('archive should delegate to service', async () => {

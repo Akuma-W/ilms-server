@@ -7,13 +7,59 @@ import { AdminQuizzesService } from './admin-quizzes.service';
 describe('AdminQuizzesService', () => {
   let service: AdminQuizzesService;
 
-  const mockPrismaService = {
+  interface MockPrisma {
+    $transaction: jest.Mock;
+    quiz: {
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+      count: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+    };
+    question: {
+      findMany: jest.Mock;
+      deleteMany: jest.Mock;
+    };
+    option: {
+      deleteMany: jest.Mock;
+    };
+    quizAnswer: {
+      deleteMany: jest.Mock;
+    };
+    quizAttempt: {
+      deleteMany: jest.Mock;
+    };
+    quizPublication: {
+      deleteMany: jest.Mock;
+    };
+  }
+
+  const mockPrismaService: MockPrisma = {
+    $transaction: jest.fn((callback: (tx: MockPrisma) => Promise<unknown>) =>
+      callback(mockPrismaService),
+    ),
     quiz: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+    },
+    question: {
+      findMany: jest.fn().mockResolvedValue([]),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    option: {
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    quizAnswer: {
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    quizAttempt: {
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+    quizPublication: {
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
   };
 

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { QueryDto } from 'src/common/dto/query.dto';
 import { SchoolStatus } from 'src/generated/prisma/enums';
 
@@ -13,4 +13,13 @@ export class QueryAdminSchoolsDto extends QueryDto {
   @IsOptional()
   @IsEnum(SchoolStatus)
   status?: SchoolStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter schools by city or province',
+    example: 'Hồ Chí Minh',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  city?: string;
 }

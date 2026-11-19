@@ -182,7 +182,8 @@ export class AdminQuizzesService {
   }
 
   // Force removes quiz examination bypassing personal creator ownership
-  async forceDelete(id: string): Promise<AdminActionResult> {
+  async forceDelete(id: string, reason?: string): Promise<AdminActionResult> {
+    void reason;
     const quiz = await this.prisma.quiz.findUnique({
       where: { id },
       select: { id: true },
@@ -192,11 +193,36 @@ export class AdminQuizzesService {
       throw new NotFoundException('Quiz not found');
     }
 
-    // TODO: Send in-app notification to quiz creator when in-app notification subsystem is implemented.
-    // In-app payload should include: quizId: quiz.id, action: 'force_delete', reason: 'Administrative moderation enforcement'.
+    await this.prisma.$transaction(async (tx) => {
+      const questions = await tx.question.findMany({
+        where: { quizId: id },
+        select: { id: true },
+      });
+      const questionIds = questions.map((q) => q.id);
 
-    await this.prisma.quiz.delete({
-      where: { id },
+      if (questionIds.length > 0) {
+        await tx.quizAnswer.deleteMany({
+          where: { questionId: { in: questionIds } },
+        });
+        await tx.option.deleteMany({
+          where: { questionId: { in: questionIds } },
+        });
+        await tx.question.deleteMany({
+          where: { quizId: id },
+        });
+      }
+
+      await tx.quizAttempt.deleteMany({
+        where: { quizId: id },
+      });
+
+      await tx.quizPublication.deleteMany({
+        where: { quizId: id },
+      });
+
+      await tx.quiz.delete({
+        where: { id },
+      });
     });
 
     return {

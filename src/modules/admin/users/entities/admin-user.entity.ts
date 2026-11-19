@@ -1,9 +1,17 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role, UserStatus } from 'src/generated/prisma/enums';
 import { GeneralSchoolEntity } from '../../entities/general-school.entity';
 import { GeneralUserEntity } from '../../entities/general-user.entity';
 
 export class AdminUserEntity extends GeneralUserEntity {
+  @ApiPropertyOptional({
+    description:
+      'Initial clear password generated or specified during creation',
+    example: 'SecurePass@2026',
+    type: 'string',
+  })
+  temporaryPassword?: string;
+
   @ApiProperty({
     description: 'Student or teacher identity code',
     example: 'SV2026001',
@@ -27,6 +35,21 @@ export class AdminUserEntity extends GeneralUserEntity {
     type: 'string',
   })
   status!: UserStatus;
+
+  @ApiProperty({
+    description: 'Reason for current account status moderation',
+    example: 'Tài khoản vi phạm quy chế học vụ',
+    type: 'string',
+    nullable: true,
+  })
+  statusReason!: string | null;
+
+  @ApiProperty({
+    description: 'Whether user must change password upon next login',
+    example: false,
+    type: 'boolean',
+  })
+  mustChangePassword!: boolean;
 
   @ApiProperty({
     description: 'Affiliated educational institution UUID',

@@ -28,11 +28,14 @@ export class QueryAdminClassesDto extends QueryDto {
     type: 'boolean',
   })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
+  @Transform(
+    ({ value, obj }: { value: unknown; obj?: Record<string, unknown> }) => {
+      const rawVal = obj?.isArchived ?? value;
+      if (rawVal === 'true' || rawVal === true) return true;
+      if (rawVal === 'false' || rawVal === false) return false;
+      return undefined;
+    },
+  )
   @IsBoolean()
   isArchived?: boolean;
 }
