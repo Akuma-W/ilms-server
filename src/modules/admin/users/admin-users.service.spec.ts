@@ -189,21 +189,20 @@ describe('AdminUsersService', () => {
         updatedAt: new Date(),
       });
 
-      await service.update(
-        'user-2',
-        { status: UserStatus.active },
-        'admin-1',
-      );
+      await service.update('user-2', { status: UserStatus.active }, 'admin-1');
 
-      expect(mockPrismaService.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'user-2' },
-          data: expect.objectContaining({
-            status: UserStatus.active,
-            statusReason: null,
-          }),
-        }),
-      );
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-2' },
+        data: {
+          status: UserStatus.active,
+          statusReason: null,
+        },
+        include: {
+          school: {
+            select: { id: true, name: true, shortname: true },
+          },
+        },
+      });
     });
   });
 

@@ -8,7 +8,7 @@ export class CreateTopicDto {
     example: 'Chapter 1: Introduction',
   })
   @IsString()
-  title: string;
+  title!: string;
 
   @ApiPropertyOptional({
     description: 'Description / Introduction of topic',

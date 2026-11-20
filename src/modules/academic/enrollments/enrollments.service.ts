@@ -274,7 +274,7 @@ export class EnrollmentsService {
 
     if (classRecord?.teacherId === userId) {
       throw new BadRequestException(
-        'Giảng viên chủ nhiệm không thể rời lớp học. Bạn chỉ có thể lưu trữ hoặc xóa lớp học.',
+        'Primary teacher cannot leave the class. You can only archive or delete the classroom.',
       );
     }
 

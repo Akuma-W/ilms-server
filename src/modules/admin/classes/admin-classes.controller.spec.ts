@@ -58,16 +58,16 @@ describe('AdminClassesController', () => {
       whitelist: true,
       transformOptions: { enableImplicitConversion: true },
     });
-    const transformed = await pipe.transform(
+    const transformed = (await pipe.transform(
       { isArchived: 'false', page: '1', limit: '10' },
       { type: 'query', metatype: QueryAdminClassesDto },
-    );
+    )) as QueryAdminClassesDto;
     expect(transformed.isArchived).toBe(false);
 
-    const transformedTrue = await pipe.transform(
+    const transformedTrue = (await pipe.transform(
       { isArchived: 'true', page: '1', limit: '10' },
       { type: 'query', metatype: QueryAdminClassesDto },
-    );
+    )) as QueryAdminClassesDto;
     expect(transformedTrue.isArchived).toBe(true);
   });
 

@@ -25,8 +25,6 @@ export const enrollmentSelect = {
       },
       semester: true,
       isPrivate: true,
-      meetingUri: true,
-      meetingSpaceId: true,
       isArchived: true,
       createdAt: true,
       schoolId: true,

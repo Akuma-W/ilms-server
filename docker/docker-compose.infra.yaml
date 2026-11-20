@@ -71,6 +71,20 @@ services:
     networks:
       - ilms-network
 
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: ilms-livekit
+    restart: unless-stopped
+    command: --dev
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret}"
+    ports:
+      - '7880:7880'
+      - '7881:7881'
+      - '7882:7882/udp'
+    networks:
+      - ilms-network
+
 volumes:
   pgdata:
   redis_data:

@@ -102,6 +102,8 @@ describe('TopicsService', () => {
           title: 'Topic 1',
           materials: [],
           references: [],
+          assignments: [],
+          quizPublications: [],
         },
       ]);
 
@@ -115,6 +117,15 @@ describe('TopicsService', () => {
           },
           references: {
             orderBy: { title: 'asc' },
+          },
+          assignments: {
+            orderBy: { createdAt: 'asc' },
+          },
+          quizPublications: {
+            include: {
+              quiz: true,
+            },
+            orderBy: { publishedAt: 'asc' },
           },
         },
         orderBy: { orderIndex: 'asc' },

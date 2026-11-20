@@ -5,7 +5,8 @@ import { GeneralUserEntity } from '../../entities/general-user.entity';
 
 export class AdminUserEntity extends GeneralUserEntity {
   @ApiPropertyOptional({
-    description: 'Initial clear password generated or specified during creation',
+    description:
+      'Initial clear password generated or specified during creation',
     example: 'SecurePass@2026',
     type: 'string',
   })

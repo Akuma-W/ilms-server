@@ -20,6 +20,12 @@ export function ApiGetMyEnrollments() {
       description: 'Filter by starred favorite state',
     }),
     ApiQuery({
+      name: 'isArchived',
+      required: false,
+      type: Boolean,
+      description: 'Filter classes by archived status',
+    }),
+    ApiQuery({
       name: 'search',
       required: false,
       type: String,

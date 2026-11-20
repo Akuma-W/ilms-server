@@ -85,4 +85,10 @@ export default registerAs('', () => ({
       from: process.env.TWILIO_FROM_PHONE,
     },
   },
+  // LiveKit WebRTC Configuration
+  livekit: {
+    url: process.env.LIVEKIT_URL || 'ws://localhost:7880',
+    apiKey: process.env.LIVEKIT_API_KEY || 'devkey',
+    apiSecret: process.env.LIVEKIT_API_SECRET || 'secret',
+  },
 }));

@@ -37,8 +37,8 @@ export class MaterialsService {
     };
   }
 
-  // Retrieves all materials belonging to a topic.
-  async findAllByTopic(topicId: string) {
+  // Retrieves all materials belonging to a topic with student completion status if authenticated.
+  async findAllByTopic(topicId: string, userId?: string) {
     const topic = await this.prisma.topic.findUnique({
       where: { id: topicId },
     });
@@ -47,9 +47,34 @@ export class MaterialsService {
       throw new NotFoundException('Topic does not exist');
     }
 
-    return this.prisma.material.findMany({
+    const materials = await this.prisma.material.findMany({
       where: { topicId },
+      include: userId
+        ? {
+            materialProgresses: {
+              where: { studentId: userId },
+              select: { isCompleted: true },
+            },
+          }
+        : undefined,
       orderBy: { createdAt: 'asc' },
+    });
+
+    return materials.map((m) => {
+      const progresses = (
+        m as typeof m & { materialProgresses?: Array<{ isCompleted: boolean }> }
+      ).materialProgresses;
+      const isCompleted = progresses?.[0]?.isCompleted ?? false;
+      return {
+        id: m.id,
+        title: m.title,
+        materialType: m.materialType,
+        fileUrl: m.fileUrl,
+        externalUrl: m.externalUrl,
+        topicId: m.topicId,
+        createdAt: m.createdAt,
+        isCompleted,
+      };
     });
   }
 
@@ -129,6 +154,58 @@ export class MaterialsService {
     return {
       message: 'Delete material successful',
     };
+  }
+
+  // Tracks student reading progress and completion status for a material
+  async trackProgress(
+    studentId: string,
+    materialId: string,
+    isCompleted: boolean = true,
+  ) {
+    const material = await this.prisma.material.findUnique({
+      where: { id: materialId },
+    });
+
+    if (!material) {
+      throw new NotFoundException('Material does not exist');
+    }
+
+    const progress = await this.prisma.materialProgress.upsert({
+      where: {
+        materialId_studentId: { materialId, studentId },
+      },
+      create: {
+        materialId,
+        studentId,
+        isCompleted,
+        lastViewedAt: new Date(),
+      },
+      update: {
+        isCompleted,
+        lastViewedAt: new Date(),
+      },
+    });
+
+    return progress;
+  }
+
+  // Retrieves all material completion records of student for a classroom
+  async getMyClassProgress(studentId: string, classId: string) {
+    return this.prisma.materialProgress.findMany({
+      where: {
+        studentId,
+        material: {
+          topic: {
+            classId,
+          },
+        },
+      },
+      select: {
+        materialId: true,
+        isCompleted: true,
+        lastViewedAt: true,
+      },
+    });
   }
 
   // Validates if the user is an authorized instructor for the class.

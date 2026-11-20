@@ -9,7 +9,7 @@ export class CreateReferenceDto {
   })
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'URL of the reference link or stored file',
@@ -18,7 +18,7 @@ export class CreateReferenceDto {
   })
   @IsString()
   @IsNotEmpty()
-  url: string;
+  url!: string;
 
   @ApiPropertyOptional({
     description: 'Brief overview or note about the reference',

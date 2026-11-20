@@ -66,7 +66,10 @@ describe('TopicsController', () => {
 
     const result = await controller.findAll('class-1');
     expect(result).toHaveLength(1);
-    expect(topicsServiceMock.findAll).toHaveBeenCalledWith('class-1');
+    expect(topicsServiceMock.findAll).toHaveBeenCalledWith(
+      'class-1',
+      undefined,
+    );
   });
 
   it('should search topics in a class', async () => {

@@ -43,6 +43,15 @@ enum SchoolStatus {
   @@schema("academic")
 }
 
+enum GradeSourceType {
+  manual
+  assignment
+  quiz
+  attendance
+
+  @@schema("academic")
+}
+
 enum FileType {
   video
   pdf
@@ -178,8 +187,6 @@ model Class {
   courseCode     String?   @unique @map("course_code")
   semester       String?
   isPrivate      Boolean   @default(false) @map("is_private")
-  meetingUri     String?   @map("meeting_uri")
-  meetingSpaceId String?   @map("meeting_space_id")
   isArchived     Boolean   @default(false) @map("is_archived")
   totalStudents  Int       @default(0) @map("total_students")
   maxStudents    Int?      @default(60) @map("max_students")
@@ -201,6 +208,7 @@ model Class {
   forums             Forum[]
   conversations      Conversation[]
   meetingAttendances MeetingAttendance[]
+  meetingSessions    MeetingSession[]
 
   @@index([teacherId])
   @@index([courseCode])
@@ -229,28 +237,60 @@ model Enrollment {
   @@schema("academic")
 }
 
+model MeetingSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  title        String
+  description  String?
+  roomName     String    @map("room_name")
+  startTime    DateTime  @map("start_time") @db.Timestamptz()
+  endTime      DateTime? @map("end_time") @db.Timestamptz()
+  isLive       Boolean   @default(true) @map("is_live")
+  isGraded     Boolean   @default(true) @map("is_graded")
+  recordingUrl String?   @map("recording_url")
+
+  classId      String    @map("class_id") @db.Uuid
+  class        Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  attendances  MeetingAttendance[]
+
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([classId, isLive])
+  @@index([classId, startTime])
+  @@map("meeting_sessions")
+  @@schema("academic")
+}
+
 model MeetingAttendance {
   id              String   @id @default(uuid()) @db.Uuid
   joinedAt        DateTime @default(now()) @map("joined_at") @db.Timestamptz()
   durationMinutes Int?     @map("duration_minutes")
 
+  sessionId String @map("session_id") @db.Uuid
   classId   String @map("class_id") @db.Uuid
   studentId String @map("student_id") @db.Uuid
 
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session MeetingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  class   Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  @@unique([sessionId, studentId])
   @@index([classId, studentId])
+  @@index([joinedAt])
   @@map("meeting_attendances")
   @@schema("academic")
 }
 
 model GradeCategory {
-  id         String @id @default(uuid()) @db.Uuid
+  id         String          @id @default(uuid()) @db.Uuid
   name       String
   weight     Float
-  orderIndex Int    @default(0) @map("order_index")
-  classId    String @map("class_id") @db.Uuid
+  orderIndex Int             @default(0) @map("order_index")
+  sourceType GradeSourceType @default(manual) @map("source_type")
+  sourceId   String?         @map("source_id") @db.Uuid
+  config     Json?
+  classId    String          @map("class_id") @db.Uuid
 
   class  Class   @relation(fields: [classId], references: [id])
   grades Grade[]
@@ -261,15 +301,25 @@ model GradeCategory {
 }
 
 model Grade {
-  id         String @id @default(uuid()) @db.Uuid
-  score      Float
-  categoryId String @map("category_id") @db.Uuid
-  studentId  String @map("student_id") @db.Uuid
+  id             String    @id @default(uuid()) @db.Uuid
+  score          Float
+  rawScore       Float?    @map("raw_score")
+  overrideScore  Float?    @map("override_score")
+  isOverridden   Boolean   @default(false) @map("is_overridden")
+  overrideReason String?   @map("override_reason")
 
-  category GradeCategory @relation(fields: [categoryId], references: [id])
-  student  User          @relation(fields: [studentId], references: [id])
+  categoryId     String    @map("category_id") @db.Uuid
+  studentId      String    @map("student_id") @db.Uuid
 
+  category       GradeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  student        User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([studentId, categoryId])
   @@index([categoryId, studentId])
+  @@index([studentId])
   @@map("grades")
   @@schema("academic")
 }

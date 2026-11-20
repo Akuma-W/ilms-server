@@ -30,6 +30,10 @@ import {
 import { enrollClassAssistants } from './utils/class-assistant.util';
 import { findClassWithPermission } from './utils/class-permission.util';
 import { executeClassCascadeDelete } from './utils/class-delete.util';
+import {
+  executeClassArchive,
+  executeClassUnarchive,
+} from './utils/class-archive.util';
 import { StorageService } from 'src/infrastructures/storage/storage.service';
 
 type PaginatedClassesResult = PaginatedResult<
@@ -282,23 +286,7 @@ export class ClassesService {
     user: AuthUser,
     classId: string,
   ): Promise<{ message: string }> {
-    const existing = await findClassWithPermission(
-      this.prisma,
-      user,
-      classId,
-      'archive',
-    );
-
-    if (existing.isArchived) {
-      throw new BadRequestException('Class is already archived');
-    }
-
-    await this.prisma.class.update({
-      where: { id: classId },
-      data: { isArchived: true },
-    });
-
-    return { message: 'Class archived successfully' };
+    return executeClassArchive(this.prisma, user, classId);
   }
 
   // Unarchives a class and restores mutation privileges
@@ -306,23 +294,7 @@ export class ClassesService {
     user: AuthUser,
     classId: string,
   ): Promise<{ message: string }> {
-    const existing = await findClassWithPermission(
-      this.prisma,
-      user,
-      classId,
-      'unarchive',
-    );
-
-    if (!existing.isArchived) {
-      throw new BadRequestException('Class is not archived');
-    }
-
-    await this.prisma.class.update({
-      where: { id: classId },
-      data: { isArchived: false },
-    });
-
-    return { message: 'Class unarchived successfully' };
+    return executeClassUnarchive(this.prisma, user, classId);
   }
 
   // Hard deletes class and cascades all dependent relations in a transaction

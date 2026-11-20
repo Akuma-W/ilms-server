@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
@@ -8,6 +8,7 @@ import {
   IsUUID,
   Min,
 } from 'class-validator';
+import { ToBoolean } from 'src/common/decorators/to-boolean.decorator';
 
 export class QuerySubjectDto {
   @ApiPropertyOptional({
@@ -33,13 +34,9 @@ export class QuerySubjectDto {
     example: true,
     type: 'boolean',
   })
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  @IsBoolean()
   @IsOptional()
+  @ToBoolean()
+  @IsBoolean()
   isActive?: boolean;
 
   @ApiPropertyOptional({

@@ -65,20 +65,6 @@ export class ClassesController {
     };
   }
 
-  // Retrieves classroom details by unique identifier
-  @Get(':id')
-  @ApiGetClass()
-  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.classesService.findOne(id);
-  }
-
-  // Retrieves classroom details by alphanumeric course code
-  @Get('code/:courseCode')
-  @ApiGetClass()
-  getClassByCourseCode(@Param('courseCode') courseCode: string) {
-    return this.classesService.findByCourseCode(courseCode);
-  }
-
   // Lists classes managed by currently authenticated instructor
   @Get('me/created')
   @ApiGetMyTeachingClasses()
@@ -96,17 +82,18 @@ export class ClassesController {
     };
   }
 
-  // Updates classroom settings and metadata
-  @Patch(':id')
-  @Roles(Role.teacher, Role.admin)
-  @UseGuards(ClassTeacherGuard)
-  @ApiUpdateClass()
-  async update(
-    @CurrentUser() user: AuthUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: UpdateClassDto,
-  ) {
-    return this.classesService.update(user, id, dto);
+  // Retrieves classroom details by alphanumeric course code
+  @Get('code/:courseCode')
+  @ApiGetClass()
+  getClassByCourseCode(@Param('courseCode') courseCode: string) {
+    return this.classesService.findByCourseCode(courseCode);
+  }
+
+  // Retrieves classroom details by unique identifier
+  @Get(':id')
+  @ApiGetClass()
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.classesService.findOne(id);
   }
 
   // Archives class to read-only status
@@ -131,6 +118,19 @@ export class ClassesController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
     return this.classesService.unarchiveClass(user, id);
+  }
+
+  // Updates classroom settings and metadata
+  @Patch(':id')
+  @Roles(Role.teacher, Role.admin)
+  @UseGuards(ClassTeacherGuard)
+  @ApiUpdateClass()
+  async update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateClassDto,
+  ) {
+    return this.classesService.update(user, id, dto);
   }
 
   // Permanently deletes classroom and cascades associated enrollments
