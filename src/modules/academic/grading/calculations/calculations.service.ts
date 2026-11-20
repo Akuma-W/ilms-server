@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
+import { GradeSourceType } from 'src/generated/prisma/enums';
 import { BatchUpdateGradesDto } from './dto/batch-update-grades.dto';
 import { CalculateAttendanceDto } from './dto/calculate-attendance.dto';
 import { SyncGradesDto } from './dto/sync-grades.dto';
@@ -20,12 +21,12 @@ export class CalculationsService {
     // Step 1: Fetch and validate category IDs belonging to this classroom
     const validCategories = await this.prisma.gradeCategory.findMany({
       where: { classId },
-      select: { id: true },
+      select: { id: true, sourceType: true },
     });
-    const validCategorySet = new Set(validCategories.map((c) => c.id));
+    const categoryMap = new Map(validCategories.map((c) => [c.id, c]));
 
     const validUpdates = dto.updates.filter((item) =>
-      validCategorySet.has(item.categoryId),
+      categoryMap.has(item.categoryId),
     );
 
     if (validUpdates.length === 0) {
@@ -39,6 +40,9 @@ export class CalculationsService {
     // Step 2: Upsert each valid score inside an atomic Prisma transaction
     await this.prisma.$transaction(async (tx) => {
       for (const item of validUpdates) {
+        const cat = categoryMap.get(item.categoryId);
+        const isNonManual = cat?.sourceType !== GradeSourceType.manual;
+
         const existing = await tx.grade.findFirst({
           where: {
             studentId: item.studentId,
@@ -47,9 +51,34 @@ export class CalculationsService {
         });
 
         if (existing) {
+          const isScoreChanged = Math.abs(existing.score - item.score) >= 0.001;
+          if (!isScoreChanged) {
+            continue;
+          }
+
+          const rawScore =
+            existing.rawScore !== null && existing.rawScore !== undefined
+              ? existing.rawScore
+              : existing.score;
+
+          const isBackToRaw =
+            existing.rawScore !== null &&
+            existing.rawScore !== undefined &&
+            Math.abs(existing.rawScore - item.score) < 0.001;
+          const willBeOverridden = isNonManual && !isBackToRaw;
+
           await tx.grade.update({
             where: { id: existing.id },
-            data: { score: item.score },
+            data: {
+              score: item.score,
+              rawScore: isNonManual ? rawScore : item.score,
+              isOverridden: willBeOverridden,
+              overrideScore: willBeOverridden ? item.score : null,
+              overrideReason: willBeOverridden
+                ? (existing.overrideReason ??
+                  'Giảng viên cập nhật điểm trực tiếp')
+                : null,
+            },
           });
         } else {
           await tx.grade.create({
@@ -57,6 +86,12 @@ export class CalculationsService {
               studentId: item.studentId,
               categoryId: item.categoryId,
               score: item.score,
+              rawScore: isNonManual ? null : item.score,
+              isOverridden: isNonManual,
+              overrideScore: isNonManual ? item.score : null,
+              overrideReason: isNonManual
+                ? 'Giảng viên cập nhật điểm trực tiếp'
+                : null,
             },
           });
         }

@@ -45,8 +45,11 @@ export class TopicsController {
   @Get('classes/:classId')
   @UseGuards(ClassMemberGuard)
   @ApiGetTopics()
-  async findAll(@Param('classId') classId: string) {
-    const data = await this.topicsService.findAll(classId);
+  async findAll(
+    @Param('classId') classId: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    const data = await this.topicsService.findAll(classId, userId);
 
     return data;
   }

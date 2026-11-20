@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 
 export class CloseMeetingDto {
   @ApiPropertyOptional({
@@ -13,4 +19,14 @@ export class CloseMeetingDto {
   @IsUrl()
   @MaxLength(500)
   recordingUrl?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Whether to forcibly terminate and delete the LiveKit WebRTC room for all attendees',
+    example: true,
+    type: 'boolean',
+  })
+  @IsOptional()
+  @IsBoolean()
+  forceCloseRoom?: boolean = true;
 }

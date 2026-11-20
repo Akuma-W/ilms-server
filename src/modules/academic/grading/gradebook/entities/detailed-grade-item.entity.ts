@@ -31,6 +31,22 @@ export class DetailedGradeItemEntity {
   maxScore!: number;
 
   @ApiPropertyOptional({
+    description: 'Raw score before normalization',
+    example: 85,
+    type: 'number',
+    nullable: true,
+  })
+  rawScore?: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Original maximum scale of the assignment or quiz',
+    example: 100,
+    type: 'number',
+    nullable: true,
+  })
+  originalMaxScore?: number | null;
+
+  @ApiPropertyOptional({
     description: 'Score earned by student',
     example: 8.5,
     type: 'number',

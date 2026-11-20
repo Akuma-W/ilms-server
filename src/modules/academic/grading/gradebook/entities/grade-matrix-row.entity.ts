@@ -46,6 +46,27 @@ export class ClassGradeMatrixRowEntity {
   scores!: Record<string, number | null>;
 
   @ApiPropertyOptional({
+    description: 'Map of category ID to override status and adjustments',
+    example: {
+      'cat-1': {
+        isOverridden: true,
+        overrideScore: 9.0,
+        reason: 'Adjusted by teacher',
+      },
+    },
+    type: 'object',
+    additionalProperties: true,
+  })
+  overrides?: Record<
+    string,
+    {
+      isOverridden: boolean;
+      overrideScore?: number | null;
+      reason?: string | null;
+    }
+  >;
+
+  @ApiPropertyOptional({
     description:
       'Calculated weighted final score on 10-point scale (null if no scores recorded)',
     example: 8.7,

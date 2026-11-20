@@ -12,11 +12,63 @@ export async function executeCalculateAttendanceGrades(
   const summary = await computeClassAttendanceSummary(prisma, classId, dto);
   const category = await prisma.gradeCategory.findUnique({
     where: { id: summary.categoryId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, config: true },
   });
 
   if (!category) {
     throw new NotFoundException('Category not found');
+  }
+
+  // Persists configured weights and thresholds into category config for automatic recalibration
+  if (dto) {
+    const prevConfig =
+      typeof category.config === 'object' && category.config !== null
+        ? (category.config as Record<string, unknown>)
+        : {};
+    const prevPillars = prevConfig.pillars as
+      | Record<string, { weight?: number; minRate?: number }>
+      | undefined;
+    const meetingMinRate =
+      dto.meetingThreshold ??
+      dto.meetingMinRate ??
+      prevPillars?.meetings?.minRate ??
+      0;
+    const materialMinRate =
+      dto.materialThreshold ??
+      dto.materialMinRate ??
+      prevPillars?.materials?.minRate ??
+      0;
+    const assignmentMinRate =
+      dto.assignmentThreshold ?? prevPillars?.assignments?.minRate ?? 0;
+    const quizMinRate = dto.quizThreshold ?? prevPillars?.quizzes?.minRate ?? 0;
+
+    await prisma.gradeCategory.update({
+      where: { id: category.id },
+      data: {
+        config: {
+          ...prevConfig,
+          sourceType: 'attendance',
+          pillars: {
+            meetings: {
+              weight: summary.meetingWeight,
+              minRate: meetingMinRate,
+            },
+            materials: {
+              weight: summary.materialWeight,
+              minRate: materialMinRate,
+            },
+            assignments: {
+              weight: summary.assignmentWeight,
+              minRate: assignmentMinRate,
+            },
+            quizzes: {
+              weight: summary.quizWeight,
+              minRate: quizMinRate,
+            },
+          },
+        },
+      },
+    });
   }
 
   // Atomic batch update of calculated attendance scores into Grade table
@@ -30,9 +82,27 @@ export async function executeCalculateAttendanceGrades(
       });
 
       if (existing) {
+        const isRealOverride =
+          existing.isOverridden &&
+          existing.overrideScore !== null &&
+          existing.overrideScore !== undefined;
+
+        if (dto?.preserveOverrides !== false && isRealOverride) {
+          await tx.grade.update({
+            where: { id: existing.id },
+            data: { rawScore: item.calculatedScore },
+          });
+          continue;
+        }
         await tx.grade.update({
           where: { id: existing.id },
-          data: { score: item.calculatedScore },
+          data: {
+            score: item.calculatedScore,
+            rawScore: item.calculatedScore,
+            isOverridden: false,
+            overrideScore: null,
+            overrideReason: null,
+          },
         });
       } else {
         await tx.grade.create({
@@ -40,6 +110,7 @@ export async function executeCalculateAttendanceGrades(
             studentId: item.studentId,
             categoryId: category.id,
             score: item.calculatedScore,
+            rawScore: item.calculatedScore,
           },
         });
       }

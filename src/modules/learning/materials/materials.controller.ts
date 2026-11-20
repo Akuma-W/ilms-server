@@ -39,8 +39,13 @@ export class MaterialsController {
 
   @Get('topics/:topicId')
   @ApiGetTopicMaterials()
-  async findAllByTopic(@Param('topicId', new ParseUUIDPipe()) topicId: string) {
-    return this.materialsService.findAllByTopic(topicId);
+  async findAllByTopic(
+    @Param('topicId', new ParseUUIDPipe()) topicId: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    return userId
+      ? this.materialsService.findAllByTopic(topicId, userId)
+      : this.materialsService.findAllByTopic(topicId);
   }
 
   // Retrieves student's material progress for all materials in a class

@@ -33,7 +33,12 @@ describe('GradebookService', () => {
       findMany: jest.fn(),
       count: jest.fn(),
     },
+    quizPublication: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
     meetingSession: {
+      findMany: jest.fn(),
       count: jest.fn(),
     },
     meetingAttendance: {
@@ -48,12 +53,11 @@ describe('GradebookService', () => {
       count: jest.fn(),
     },
     submission: {
-      count: jest.fn(),
-    },
-    quizPublication: {
+      findMany: jest.fn(),
       count: jest.fn(),
     },
     quizAttempt: {
+      findMany: jest.fn(),
       count: jest.fn(),
     },
   };
@@ -67,6 +71,16 @@ describe('GradebookService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    prismaMock.meetingSession.findMany.mockResolvedValue([]);
+    prismaMock.submission.findMany.mockResolvedValue([]);
+    prismaMock.quizAttempt.findMany.mockResolvedValue([]);
+    prismaMock.materialProgress.findMany.mockResolvedValue([]);
+    prismaMock.meetingAttendance.findMany.mockResolvedValue([]);
+    prismaMock.material.count.mockResolvedValue(0);
+    prismaMock.assignment.count.mockResolvedValue(0);
+    prismaMock.quizPublication.count.mockResolvedValue(0);
+    prismaMock.enrollment.findMany.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -139,6 +153,7 @@ describe('GradebookService', () => {
           ],
         },
       ]);
+      prismaMock.quizPublication.findMany.mockResolvedValue([]);
 
       const result = await service.getMyGradeRecord(
         mockStudentId,

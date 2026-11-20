@@ -41,6 +41,7 @@ export interface GradeCategoryConfig {
     quiz?: ThresholdCriterionConfig;
   };
   directItem?: DirectItemWeightConfig;
+  thresholdCount?: number;
   items?: CompositeItemConfig[];
   materialWeight?: number;
   meetingWeight?: number;

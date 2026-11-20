@@ -29,6 +29,7 @@ describe('MeetingsService', () => {
     meetingAttendance: {
       findFirst: jest.Mock;
       create: jest.Mock;
+      upsert: jest.Mock;
       findMany: jest.Mock;
     };
     user: { findUnique: jest.Mock };
@@ -56,6 +57,7 @@ describe('MeetingsService', () => {
       meetingAttendance: {
         findFirst: jest.fn(),
         create: jest.fn(),
+        upsert: jest.fn(),
         findMany: jest.fn(),
       },
       user: { findUnique: jest.fn() },
@@ -118,7 +120,7 @@ describe('MeetingsService', () => {
         roomName: 'room-1',
         startTime: new Date('2026-11-20T19:30:00.000Z'),
         endTime: null,
-        isLive: true,
+        isLive: false,
         recordingUrl: null,
         classId,
         createdAt: new Date(),
@@ -136,7 +138,7 @@ describe('MeetingsService', () => {
 
       expect(res.id).toBe(meetingId);
       expect(res.title).toBe('Session 1');
-      expect(res.isLive).toBe(true);
+      expect(res.isLive).toBe(false);
     });
   });
 
@@ -183,8 +185,7 @@ describe('MeetingsService', () => {
         email: 'student@example.com',
       });
 
-      mockPrisma.meetingAttendance.findFirst.mockResolvedValue(null);
-      mockPrisma.meetingAttendance.create.mockResolvedValue({ id: 'att-1' });
+      mockPrisma.meetingAttendance.upsert.mockResolvedValue({ id: 'att-1' });
 
       mockMeetingFacade.generateJoinToken.mockResolvedValue({
         token: 'signed-jwt',
@@ -201,13 +202,55 @@ describe('MeetingsService', () => {
         participantName: 'Student A',
         isTeacher: false,
       });
-      expect(mockPrisma.meetingAttendance.create).toHaveBeenCalledWith({
-        data: {
+      expect(mockPrisma.meetingAttendance.upsert).toHaveBeenCalledWith({
+        where: {
+          sessionId_studentId: {
+            sessionId: meetingId,
+            studentId,
+          },
+        },
+        update: {},
+        create: {
           sessionId: meetingId,
           classId,
           studentId,
         },
       });
+    });
+
+    it('should ignore P2002 error on attendance upsert and return token', async () => {
+      mockPrisma.meetingSession.findUnique.mockResolvedValue({
+        id: meetingId,
+        classId,
+        roomName: 'room-1',
+        isLive: true,
+      });
+
+      mockPrisma.class.findUnique.mockResolvedValue({
+        id: classId,
+        teacherId,
+      });
+
+      mockPrisma.enrollment.findUnique.mockResolvedValue({
+        status: EnrollmentStatus.approved,
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        fullName: 'Student A',
+        email: 'student@example.com',
+      });
+
+      mockPrisma.meetingAttendance.upsert.mockRejectedValue({ code: 'P2002' });
+
+      mockMeetingFacade.generateJoinToken.mockResolvedValue({
+        token: 'signed-jwt',
+        serverUrl: 'wss://livekit.cloud',
+        roomName: 'room-1',
+      });
+
+      const res = await service.joinMeeting(meetingId, studentId, Role.student);
+
+      expect(res.token).toBe('signed-jwt');
     });
   });
 
@@ -291,9 +334,14 @@ describe('MeetingsService', () => {
         updatedAt: new Date(),
       });
 
-      const res = await service.closeMeeting(meetingId, teacherId, {
-        recordingUrl: 'https://youtube.com/watch?v=sample',
-      });
+      const res = await service.closeMeeting(
+        meetingId,
+        teacherId,
+        Role.teacher,
+        {
+          recordingUrl: 'https://youtube.com/watch?v=sample',
+        },
+      );
 
       expect(res.isLive).toBe(false);
       expect(res.recordingUrl).toBe('https://youtube.com/watch?v=sample');

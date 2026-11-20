@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StudentCategoryGradeEntity } from './student-category-grade.entity';
 import { DetailedGradeItemEntity } from './detailed-grade-item.entity';
+import { AttendanceStudentItemEntity } from './attendance-student-item.entity';
 
 export class GradeRecordEntity {
   @ApiProperty({
@@ -92,4 +93,11 @@ export class GradeRecordEntity {
     type: 'number',
   })
   completionRate!: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Student attendance tracking and participation metrics across 4 pillars',
+    type: () => AttendanceStudentItemEntity,
+  })
+  attendanceSummary?: AttendanceStudentItemEntity | null;
 }

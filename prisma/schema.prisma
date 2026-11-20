@@ -245,6 +245,7 @@ model MeetingSession {
   startTime    DateTime  @map("start_time") @db.Timestamptz()
   endTime      DateTime? @map("end_time") @db.Timestamptz()
   isLive       Boolean   @default(true) @map("is_live")
+  isGraded     Boolean   @default(true) @map("is_graded")
   recordingUrl String?   @map("recording_url")
 
   classId      String    @map("class_id") @db.Uuid
@@ -274,7 +275,7 @@ model MeetingAttendance {
   class   Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
   student User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  @@index([sessionId, studentId])
+  @@unique([sessionId, studentId])
   @@index([classId, studentId])
   @@index([joinedAt])
   @@map("meeting_attendances")

@@ -17,18 +17,46 @@ export class AttendanceSummaryEntity {
   totalSessions!: number;
 
   @ApiProperty({
+    description: 'Total number of assignments published in the class',
+    example: 4,
+    type: 'number',
+  })
+  totalAssignments!: number;
+
+  @ApiProperty({
+    description: 'Total number of quizzes published in the class',
+    example: 2,
+    type: 'number',
+  })
+  totalQuizzes!: number;
+
+  @ApiProperty({
     description: 'Configured weight for learning materials component',
-    example: 0.5,
+    example: 0.25,
     type: 'number',
   })
   materialWeight!: number;
 
   @ApiProperty({
     description: 'Configured weight for online meetings component',
-    example: 0.5,
+    example: 0.25,
     type: 'number',
   })
   meetingWeight!: number;
+
+  @ApiProperty({
+    description: 'Configured weight for assignments component',
+    example: 0.25,
+    type: 'number',
+  })
+  assignmentWeight!: number;
+
+  @ApiProperty({
+    description: 'Configured weight for quizzes component',
+    example: 0.25,
+    type: 'number',
+  })
+  quizWeight!: number;
 
   @ApiProperty({
     description: 'Target attendance grade category identifier',

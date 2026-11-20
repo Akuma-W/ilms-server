@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import { IMeetingProvider } from '../interfaces/meeting-provider.interface';
 import { MeetingTokenPayload } from '../interfaces/meeting-token-payload.interface';
 import { MeetingTokenResult } from '../interfaces/meeting-token-result.interface';
@@ -47,9 +47,20 @@ export class LiveKitProvider implements IMeetingProvider {
     };
   }
 
-  // Closes or revokes active livekit room session
+  // Closes or revokes active livekit room session across LiveKit server
   async closeRoom(roomName: string): Promise<void> {
-    void roomName;
-    return Promise.resolve();
+    try {
+      const httpUrl = this.livekitUrl
+        .replace(/^ws:\/\//, 'http://')
+        .replace(/^wss:\/\//, 'https://');
+      const roomService = new RoomServiceClient(
+        httpUrl,
+        this.apiKey,
+        this.apiSecret,
+      );
+      await roomService.deleteRoom(roomName);
+    } catch {
+      // Room may already be closed or not established on LiveKit server
+    }
   }
 }

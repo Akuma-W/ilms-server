@@ -79,6 +79,48 @@ export class AttendanceStudentItemEntity {
   sessionRate!: number;
 
   @ApiProperty({
+    description: 'Number of submitted assignments',
+    example: 3,
+    type: 'number',
+  })
+  submittedAssignments!: number;
+
+  @ApiProperty({
+    description: 'Total number of assignments in the class',
+    example: 4,
+    type: 'number',
+  })
+  totalAssignments!: number;
+
+  @ApiProperty({
+    description: 'Submission rate of assignments (%)',
+    example: 75,
+    type: 'number',
+  })
+  assignmentRate!: number;
+
+  @ApiProperty({
+    description: 'Number of attempted quizzes',
+    example: 2,
+    type: 'number',
+  })
+  attemptedQuizzes!: number;
+
+  @ApiProperty({
+    description: 'Total number of quizzes in the class',
+    example: 2,
+    type: 'number',
+  })
+  totalQuizzes!: number;
+
+  @ApiProperty({
+    description: 'Attempt rate of quizzes (%)',
+    example: 100,
+    type: 'number',
+  })
+  quizRate!: number;
+
+  @ApiProperty({
     description: 'Calculated attendance score on a 10-point scale',
     example: 8.0,
     type: 'number',

@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CalculateAttendanceDto {
   @ApiPropertyOptional({
@@ -54,4 +62,81 @@ export class CalculateAttendanceDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Whether to preserve manually overridden student scores without overwriting',
+    example: true,
+    type: 'boolean',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  preserveOverrides?: boolean = true;
+
+  @ApiPropertyOptional({
+    description:
+      'Minimum meeting attendance rate percentage required for full meeting score (0 to 100)',
+    example: 80,
+    type: 'number',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  meetingMinRate?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Minimum material reading progress rate percentage required for full material score (0 to 100)',
+    example: 50,
+    type: 'number',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  materialMinRate?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Threshold of attended meeting sessions required for full score',
+    example: 4,
+    type: 'number',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  meetingThreshold?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Threshold of completed learning materials required for full score',
+    example: 8,
+    type: 'number',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  materialThreshold?: number;
+
+  @ApiPropertyOptional({
+    description: 'Threshold of submitted assignments required for full score',
+    example: 3,
+    type: 'number',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  assignmentThreshold?: number;
+
+  @ApiPropertyOptional({
+    description: 'Threshold of attempted quizzes required for full score',
+    example: 2,
+    type: 'number',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  quizThreshold?: number;
 }

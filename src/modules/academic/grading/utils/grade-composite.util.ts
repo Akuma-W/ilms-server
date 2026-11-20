@@ -2,12 +2,12 @@ import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { GradeBreakdownItemEntity } from '../gradebook/entities/grade-breakdown-item.entity';
 import { CompositeItemConfig } from '../interfaces/grade-category-config.interface';
 
-// Calculates composite score by averaging or weighting multiple assignments and quizzes
+// Calculates composite score by averaging, weighting, or taking highest across multiple assignments and quizzes
 export async function computeCompositeScore(
   prisma: PrismaService,
   studentId: string,
   items: CompositeItemConfig[],
-  isWeighted = false,
+  strategy = 'average',
 ): Promise<{
   score: number;
   breakdownItems: GradeBreakdownItemEntity[];
@@ -39,7 +39,8 @@ export async function computeCompositeScore(
       const rawScore = sub?.score ?? null;
       const normalizedScore =
         rawScore !== null
-          ? Math.round((rawScore / (assignment.maxScore || 10)) * 10 * 10) / 10
+          ? Math.round((rawScore / (assignment.maxScore || 10)) * 10 * 10000) /
+            10000
           : 0;
 
       breakdownItems.push({
@@ -56,26 +57,47 @@ export async function computeCompositeScore(
       totalScore += normalizedScore * weight;
       totalWeight += weight;
     } else if (item.type === 'quiz') {
-      const publication = await prisma.quizPublication.findUnique({
-        where: { id: item.id },
-        include: { quiz: { select: { title: true } } },
+      const publication = await prisma.quizPublication.findFirst({
+        where: {
+          OR: [{ id: item.id }, { quizId: item.id }],
+        },
+        include: {
+          quiz: {
+            select: {
+              title: true,
+              questions: { select: { points: true } },
+            },
+          },
+        },
       });
 
       if (!publication) continue;
 
       const attempts = await prisma.quizAttempt.findMany({
         where: {
-          publicationId: item.id,
           studentId,
           submittedAt: { not: null },
+          score: { not: null },
+          OR: [
+            { publicationId: publication.id },
+            { quizId: publication.quizId },
+          ],
         },
         select: { score: true },
         orderBy: { score: 'desc' },
       });
 
+      const totalQuizPoints =
+        publication.quiz.questions.reduce(
+          (sum, q) => sum + (q.points && q.points > 0 ? q.points : 1),
+          0,
+        ) || 10;
+
       const highestScore = attempts.length > 0 ? attempts[0].score : null;
       const normalizedScore =
-        highestScore !== null ? Math.round(highestScore * 10) / 10 : 0;
+        highestScore !== null
+          ? Math.round((highestScore / totalQuizPoints) * 10 * 10000) / 10000
+          : 0;
 
       breakdownItems.push({
         id: publication.id,
@@ -93,9 +115,20 @@ export async function computeCompositeScore(
     }
   }
 
-  const denominator = isWeighted ? totalWeight : items.length;
-  const finalScore =
-    denominator > 0 ? Math.round((totalScore / denominator) * 10) / 10 : 0;
+  let finalScore = 0;
+  if (strategy === 'highest') {
+    const validScores = breakdownItems
+      .map((b) => b.score)
+      .filter((s): s is number => typeof s === 'number');
+    finalScore = validScores.length > 0 ? Math.max(...validScores) : 0;
+  } else {
+    const isWeighted = strategy === 'composite_weighted';
+    const denominator = isWeighted ? totalWeight : items.length;
+    finalScore =
+      denominator > 0
+        ? Math.round((totalScore / denominator) * 10000) / 10000
+        : 0;
+  }
 
   return {
     score: finalScore,

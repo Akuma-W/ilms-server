@@ -60,4 +60,25 @@ export class CreateMeetingDto {
   @IsOptional()
   @IsString()
   language?: 'vi' | 'en' = 'en';
+
+  @ApiPropertyOptional({
+    description:
+      'Whether this session counts towards student attendance scoring',
+    example: true,
+    type: 'boolean',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isGraded?: boolean = true;
+
+  @ApiPropertyOptional({
+    description:
+      'Number of consecutive weeks to batch create recurring weekly meetings (1 to 20)',
+    example: 1,
+    type: 'number',
+    default: 1,
+  })
+  @IsOptional()
+  recurringWeeks?: number = 1;
 }

@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
-import { EnrollmentStatus, Role } from 'src/generated/prisma/enums';
+import {
+  EnrollmentStatus,
+  GradeSourceType,
+  Role,
+} from 'src/generated/prisma/enums';
 import { checkTeacherPermission } from '../../utils/academic-permission.util';
 import { CategoriesService } from '../categories/categories.service';
 import { ClassGradeMatrixEntity } from './entities/grade-matrix.entity';
@@ -122,26 +126,51 @@ export class GradebookService {
     );
 
     const finalScore = hasAnyScore
-      ? Number((Math.round(weightedSum * 10) / 10).toFixed(1))
+      ? Number((Math.round(weightedSum * 10000) / 10000).toFixed(4))
       : null;
     const letterGrade =
       finalScore !== null ? convertToLetterGrade(finalScore) : null;
     const gpa4 = finalScore !== null ? convertToGpa4(finalScore) : null;
     const isPassed = finalScore !== null ? finalScore >= 4.0 : null;
 
-    // Step 5: Fetch classroom assignments and submission records for detailed items
-    const assignments = await this.prisma.assignment.findMany({
-      where: { classId },
-      include: {
-        submissions: {
-          where: { studentId },
+    // Step 5: Fetch classroom assignments, quizzes, and attendance records for detailed items
+    const [assignments, publications] = await Promise.all([
+      this.prisma.assignment.findMany({
+        where: { classId },
+        include: {
+          submissions: {
+            where: { studentId },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.quizPublication.findMany({
+        where: { classId },
+        include: {
+          quiz: {
+            include: {
+              questions: { select: { points: true } },
+            },
+          },
+          attempts: {
+            where: {
+              studentId,
+              submittedAt: { not: null },
+              score: { not: null },
+            },
+            orderBy: [{ score: 'desc' }, { submittedAt: 'desc' }],
+            take: 1,
+          },
+        },
+        orderBy: { publishedAt: 'desc' },
+      }),
+    ]);
 
     let submittedCount = 0;
-    const detailedItems: DetailedGradeItemEntity[] = assignments.map((a) => {
+    const detailedItems: DetailedGradeItemEntity[] = [];
+
+    // Maps assignment items
+    for (const a of assignments) {
       const sub = a.submissions[0];
       const isGraded = sub?.score !== null && sub?.score !== undefined;
       const status: 'graded' | 'pending' | 'unsubmitted' = sub
@@ -154,22 +183,108 @@ export class GradebookService {
         submittedCount += 1;
       }
 
-      return {
+      const maxScore = a.maxScore || 10;
+      const rawScore = sub?.score ?? null;
+      const earnedScore =
+        rawScore !== null
+          ? Math.round((rawScore / maxScore) * 10 * 10000) / 10000
+          : null;
+
+      detailedItems.push({
         id: a.id,
         title: a.title,
         type: 'assignment',
         maxScore: 10,
-        earnedScore: sub?.score ?? null,
+        rawScore,
+        originalMaxScore: maxScore,
+        earnedScore,
         status,
         feedback: sub?.feedback ?? null,
         submittedAt: sub?.submittedAt ? sub.submittedAt.toISOString() : null,
-      };
-    });
+      });
+    }
 
+    // Maps quiz assessment items
+    for (const pub of publications) {
+      const bestAttempt = pub.attempts[0];
+      const isAttempted = Boolean(bestAttempt);
+      const isGraded =
+        bestAttempt?.score !== null && bestAttempt?.score !== undefined;
+      const status: 'graded' | 'pending' | 'unsubmitted' = isAttempted
+        ? isGraded
+          ? 'graded'
+          : 'pending'
+        : 'unsubmitted';
+
+      if (isAttempted) {
+        submittedCount += 1;
+      }
+
+      const totalQuizPoints =
+        pub.quiz.questions?.reduce(
+          (sum, q) => sum + (q.points && q.points > 0 ? q.points : 1),
+          0,
+        ) || 10;
+      const rawScore = bestAttempt?.score ?? null;
+      const earnedScore =
+        rawScore !== null
+          ? Math.round((rawScore / totalQuizPoints) * 10 * 10000) / 10000
+          : null;
+
+      detailedItems.push({
+        id: pub.quizId,
+        title: pub.quiz.title,
+        type: 'quiz',
+        maxScore: 10,
+        rawScore,
+        originalMaxScore: totalQuizPoints,
+        earnedScore,
+        status,
+        feedback: bestAttempt ? 'Đã hoàn thành bài kiểm tra trắc nghiệm' : null,
+        submittedAt: bestAttempt?.submittedAt
+          ? bestAttempt.submittedAt.toISOString()
+          : null,
+      });
+    }
+
+    // Maps attendance evaluation item if attendance category exists
+    const attendanceCat = categories.find(
+      (c) => c.sourceType === GradeSourceType.attendance,
+    );
+    if (attendanceCat) {
+      const attGrade = grades.find((g) => g.categoryId === attendanceCat.id);
+      detailedItems.push({
+        id: `att-${attendanceCat.id}`,
+        title: attendanceCat.name,
+        type: 'attendance',
+        maxScore: 10,
+        rawScore: attGrade?.rawScore ?? attGrade?.score ?? null,
+        originalMaxScore: 10,
+        earnedScore: attGrade?.score ?? null,
+        status:
+          attGrade?.score !== null && attGrade?.score !== undefined
+            ? 'graded'
+            : 'pending',
+        feedback: attGrade?.isOverridden
+          ? 'Giảng viên đã điều chỉnh trực tiếp'
+          : 'Đánh giá quá trình tự động',
+        submittedAt: null,
+      });
+    }
+
+    const totalEvaluations =
+      assignments.length + publications.length + (attendanceCat ? 1 : 0);
     const completionRate =
-      assignments.length > 0
-        ? Number(((submittedCount / assignments.length) * 100).toFixed(1))
+      totalEvaluations > 0
+        ? Number(((submittedCount / totalEvaluations) * 100).toFixed(1))
         : 100;
+
+    const attSummary = await computeClassAttendanceSummary(
+      this.prisma,
+      classId,
+    );
+    const attendanceSummary =
+      attSummary.students.find((s) => s.studentId === studentId) ?? null;
 
     return {
       studentId,
@@ -184,6 +299,7 @@ export class GradebookService {
       gpa4,
       isPassed,
       completionRate,
+      attendanceSummary,
     };
   }
 

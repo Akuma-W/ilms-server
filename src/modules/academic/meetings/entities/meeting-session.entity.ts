@@ -50,6 +50,14 @@ export class MeetingSessionEntity {
   })
   isLive!: boolean;
 
+  @ApiProperty({
+    description:
+      'Whether session attendance counts towards student attendance grade',
+    example: true,
+    type: 'boolean',
+  })
+  isGraded!: boolean;
+
   @ApiPropertyOptional({
     description: 'Review recording URL',
     example: 'https://drive.google.com/file/d/sample-id/view',

@@ -148,22 +148,6 @@ export class EnrolledClassEntity {
   isPrivate!: boolean;
 
   @ApiProperty({
-    description: 'Google Meet or online conference link',
-    type: 'string',
-    nullable: true,
-    example: 'https://meet.google.com/abc-defg-hij',
-  })
-  meetingUri!: string | null;
-
-  @ApiProperty({
-    description: 'Online meeting space identifier',
-    type: 'string',
-    nullable: true,
-    example: 'space-123456',
-  })
-  meetingSpaceId!: string | null;
-
-  @ApiProperty({
     description: 'Read-only archive state',
     type: 'boolean',
     example: false,

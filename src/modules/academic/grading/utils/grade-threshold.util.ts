@@ -4,25 +4,56 @@ import {
   PillarWeightConfig,
 } from '../interfaces/grade-category-config.interface';
 
-// Calculates pillar contribution score based on completion rate, minimum threshold, and deduction policy
-function calculatePillarScore(
-  completionRate: number,
-  config?: PillarWeightConfig,
+// Determines threshold count based on integer count or percentage fallback
+function getPillarThresholdCount(
+  configMinRate: number | undefined,
+  totalItems: number,
 ): number {
-  if (!config) return 0;
-  const minRate = config.minRate ?? 0;
+  if (!configMinRate || configMinRate <= 0) return 0;
+  if (configMinRate <= totalItems) return configMinRate;
+  if (totalItems <= 0) return 0;
+  return Math.ceil((configMinRate / 100) * totalItems);
+}
 
-  if (minRate > 0) {
-    if (completionRate >= minRate) {
-      return config.weight * 10;
+// Calculates pillar contribution score based on actual count, minimum threshold, and deduction policy
+function calculatePillarScoreFromCounts(
+  actualCount: number,
+  totalItems: number,
+  config?: PillarWeightConfig,
+): { score: number; achieved: boolean; score10: number } {
+  if (!config || config.weight <= 0) {
+    return { score: 0, achieved: true, score10: 0 };
+  }
+  const threshold = getPillarThresholdCount(config.minRate, totalItems);
+
+  if (threshold > 0) {
+    const achieved = actualCount >= threshold;
+    if (achieved) {
+      return { score: config.weight * 10, achieved: true, score10: 10 };
     }
     if (config.strictThreshold) {
-      return 0;
+      return { score: 0, achieved: false, score10: 0 };
     }
-    return (completionRate / minRate) * config.weight * 10;
+    const scaledScore = (actualCount / threshold) * config.weight * 10;
+    const score10 = Math.min(
+      10,
+      Math.round((actualCount / threshold) * 10 * 10000) / 10000,
+    );
+    return {
+      score: Math.min(config.weight * 10, scaledScore),
+      achieved: false,
+      score10,
+    };
   }
 
-  return (completionRate / 100) * config.weight * 10;
+  // No threshold set: proportional to total items
+  if (totalItems > 0) {
+    const rate = Math.min(1, actualCount / totalItems);
+    const score10 = Math.round(rate * 10 * 10000) / 10000;
+    return { score: rate * config.weight * 10, achieved: true, score10 };
+  }
+
+  return { score: 0, achieved: false, score10: 0 };
 }
 
 // Evaluates attendance threshold criteria and calculates direct item contribution
@@ -38,8 +69,28 @@ export async function computeThresholdAttendanceScore(
     materialAchieved: boolean;
     assignmentAchieved: boolean;
     quizAchieved: boolean;
+    meetingScore10?: number;
+    materialScore10?: number;
+    assignmentScore10?: number;
+    quizScore10?: number;
     thresholdPoints: number;
     directItemScore: number;
+    counts: {
+      totalMeetings: number;
+      attendedMeetings: number;
+      totalMaterials: number;
+      readMaterials: number;
+      totalAssignments: number;
+      submittedAssignments: number;
+      totalQuizzes: number;
+      attemptedQuizzes: number;
+    };
+    rates: {
+      meetingRate: number;
+      materialRate: number;
+      assignmentRate: number;
+      quizRate: number;
+    };
   };
 }> {
   // 1. Evaluate Meeting Attendance rate
@@ -102,20 +153,29 @@ export async function computeThresholdAttendanceScore(
 
   // Check whether modern 4-pillar weighting schema is configured
   if (config.pillars) {
-    let scoreAccumulator = 0;
-    scoreAccumulator += calculatePillarScore(
-      meetingRate,
+    const resMeet = calculatePillarScoreFromCounts(
+      attendedMeetings,
+      totalMeetings,
       config.pillars.meetings,
     );
-    scoreAccumulator += calculatePillarScore(
-      materialRate,
+    const resMat = calculatePillarScoreFromCounts(
+      readMaterials,
+      totalMaterials,
       config.pillars.materials,
     );
-    scoreAccumulator += calculatePillarScore(
-      assignmentRate,
+    const resAssign = calculatePillarScoreFromCounts(
+      submittedAssignments,
+      totalAssignments,
       config.pillars.assignments,
     );
-    scoreAccumulator += calculatePillarScore(quizRate, config.pillars.quizzes);
+    const resQuiz = calculatePillarScoreFromCounts(
+      attemptedQuizzes,
+      totalQuizzes,
+      config.pillars.quizzes,
+    );
+
+    const scoreAccumulator =
+      resMeet.score + resMat.score + resAssign.score + resQuiz.score;
 
     // Evaluate modern multiple direct items
     let directItemsSum = 0;
@@ -152,20 +212,38 @@ export async function computeThresholdAttendanceScore(
 
     const calculatedScore = Math.min(
       10,
-      Math.round((scoreAccumulator + directItemsSum) * 10) / 10,
+      Math.round((scoreAccumulator + directItemsSum) * 10000) / 10000,
     );
 
     return {
       score: calculatedScore,
       breakdown: {
-        meetingAchieved: meetingRate >= (config.pillars.meetings?.minRate ?? 0),
-        materialAchieved:
-          materialRate >= (config.pillars.materials?.minRate ?? 0),
-        assignmentAchieved:
-          assignmentRate >= (config.pillars.assignments?.minRate ?? 0),
-        quizAchieved: quizRate >= (config.pillars.quizzes?.minRate ?? 0),
+        meetingAchieved: resMeet.achieved,
+        materialAchieved: resMat.achieved,
+        assignmentAchieved: resAssign.achieved,
+        quizAchieved: resQuiz.achieved,
+        meetingScore10: resMeet.score10,
+        materialScore10: resMat.score10,
+        assignmentScore10: resAssign.score10,
+        quizScore10: resQuiz.score10,
         thresholdPoints: scoreAccumulator,
         directItemScore: directItemsSum,
+        counts: {
+          totalMeetings,
+          attendedMeetings,
+          totalMaterials,
+          readMaterials,
+          totalAssignments,
+          submittedAssignments,
+          totalQuizzes,
+          attemptedQuizzes,
+        },
+        rates: {
+          meetingRate,
+          materialRate,
+          assignmentRate,
+          quizRate,
+        },
       },
     };
   }
@@ -208,7 +286,7 @@ export async function computeThresholdAttendanceScore(
 
   const finalScore = Math.min(
     10,
-    Math.round((thresholdPoints + directItemScore) * 10) / 10,
+    Math.round((thresholdPoints + directItemScore) * 10000) / 10000,
   );
 
   return {
@@ -218,8 +296,28 @@ export async function computeThresholdAttendanceScore(
       materialAchieved,
       assignmentAchieved,
       quizAchieved,
+      meetingScore10: meetingAchieved ? 10 : 0,
+      materialScore10: materialAchieved ? 10 : 0,
+      assignmentScore10: assignmentAchieved ? 10 : 0,
+      quizScore10: quizAchieved ? 10 : 0,
       thresholdPoints,
       directItemScore,
+      counts: {
+        totalMeetings,
+        attendedMeetings,
+        totalMaterials,
+        readMaterials,
+        totalAssignments,
+        submittedAssignments,
+        totalQuizzes,
+        attemptedQuizzes,
+      },
+      rates: {
+        meetingRate,
+        materialRate,
+        assignmentRate,
+        quizRate,
+      },
     },
   };
 }

@@ -51,4 +51,12 @@ export class MaterialEntity {
     type: 'string',
   })
   createdAt?: Date | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Whether the current authenticated student has completed studying this material',
+    example: true,
+    type: 'boolean',
+  })
+  isCompleted?: boolean;
 }

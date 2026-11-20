@@ -37,4 +37,13 @@ export class UpdateMeetingDto {
   @IsOptional()
   @IsDateString()
   startTime?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Whether this session counts towards student attendance scoring',
+    example: true,
+    type: 'boolean',
+  })
+  @IsOptional()
+  isGraded?: boolean;
 }

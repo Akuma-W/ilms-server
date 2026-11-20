@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -21,6 +22,7 @@ import { MeetingTokenResponseEntity } from './entities/meeting-token-response.en
 import { MeetingsService } from './meetings.service';
 import { ApiCloseMeetingSession } from './swagger/close-meeting.swagger';
 import { ApiCreateMeeting } from './swagger/create-meeting.swagger';
+import { ApiDeleteMeetingSession } from './swagger/delete-meeting.swagger';
 import { ApiGetMeetingAttendances } from './swagger/get-meeting-attendances.swagger';
 import { ApiGetMeetingDetail } from './swagger/get-meeting-detail.swagger';
 import { ApiGetClassMeetings } from './swagger/get-meetings.swagger';
@@ -81,6 +83,17 @@ export class MeetingsController {
     return this.meetingsService.joinMeeting(id, userId, role);
   }
 
+  // Fallback GET handler ensuring token generation works across all client contexts
+  @Get('meetings/:id/join')
+  @Roles(Role.student, Role.teacher, Role.admin)
+  async joinMeetingGet(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: Role,
+  ): Promise<MeetingTokenResponseEntity> {
+    return this.meetingsService.joinMeeting(id, userId, role);
+  }
+
   // Updates meeting session details
   @Patch('meetings/:id')
   @Roles(Role.teacher, Role.admin)
@@ -101,19 +114,35 @@ export class MeetingsController {
   async closeMeeting(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') teacherId: string,
+    @CurrentUser('role') role: Role,
     @Body() dto: CloseMeetingDto,
   ): Promise<MeetingSessionEntity> {
-    return this.meetingsService.closeMeeting(id, teacherId, dto);
+    return this.meetingsService.closeMeeting(id, teacherId, role, dto);
+  }
+
+  // Deletes scheduled or closed meeting session
+  @Delete('meetings/:id')
+  @Roles(Role.teacher, Role.admin)
+  @ApiDeleteMeetingSession()
+  async deleteMeeting(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: Role,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.meetingsService.deleteMeeting(id, userId, role);
   }
 
   // Retrieves detailed list of student attendees for grading
   @Get('meetings/:id/attendances')
-  @Roles(Role.teacher, Role.admin)
+  @Roles(Role.student, Role.teacher, Role.admin)
   @ApiGetMeetingAttendances()
   async getMeetingAttendances(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') teacherId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role?: Role,
   ): Promise<MeetingAttendanceEntity[]> {
-    return this.meetingsService.getMeetingAttendances(id, teacherId);
+    return role !== undefined
+      ? this.meetingsService.getMeetingAttendances(id, userId, role)
+      : this.meetingsService.getMeetingAttendances(id, userId);
   }
 }

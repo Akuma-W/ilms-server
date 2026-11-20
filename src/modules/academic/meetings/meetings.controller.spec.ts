@@ -110,13 +110,19 @@ describe('MeetingsController', () => {
       isLive: false,
     });
 
-    const res = await controller.closeMeeting(meetingId, teacherId, {
-      recordingUrl: 'https://video.url',
-    });
+    const res = await controller.closeMeeting(
+      meetingId,
+      teacherId,
+      Role.teacher,
+      {
+        recordingUrl: 'https://video.url',
+      },
+    );
     expect(res.isLive).toBe(false);
     expect(mockService.closeMeeting).toHaveBeenCalledWith(
       meetingId,
       teacherId,
+      Role.teacher,
       {
         recordingUrl: 'https://video.url',
       },

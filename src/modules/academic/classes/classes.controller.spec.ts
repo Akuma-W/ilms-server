@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ValidationPipe } from '@nestjs/common';
 import { ClassesController } from './classes.controller';
 import { ClassesService } from './classes.service';
 import { PrismaService } from 'src/infrastructures/prisma/prisma.service';
 import { Role } from 'src/generated/prisma/enums';
 import { AuthUser } from 'src/modules/auth/session/interfaces/auth-user.interface';
+import { QueryClassDto } from './dto/query-class.dto';
 
 describe('ClassesController', () => {
   let controller: ClassesController;
@@ -58,6 +60,25 @@ describe('ClassesController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('should validate and transform query params with ValidationPipe', async () => {
+    const pipe = new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      transformOptions: { enableImplicitConversion: true },
+    });
+    const transformed = (await pipe.transform(
+      { isArchived: 'false', page: '1', limit: '10' },
+      { type: 'query', metatype: QueryClassDto },
+    )) as QueryClassDto;
+    expect(transformed.isArchived).toBe(false);
+
+    const transformedTrue = (await pipe.transform(
+      { isArchived: 'true', page: '1', limit: '10' },
+      { type: 'query', metatype: QueryClassDto },
+    )) as QueryClassDto;
+    expect(transformedTrue.isArchived).toBe(true);
   });
 
   it('should create a class by teacher', async () => {

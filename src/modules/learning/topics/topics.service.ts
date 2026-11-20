@@ -36,20 +36,72 @@ export class TopicsService {
     };
   }
 
-  // Retrieves all topics for a class with eagerly loaded materials and references.
-  async findAll(classId: string) {
-    return this.prisma.topic.findMany({
+  // Retrieves all topics for a class with eagerly loaded materials, references, assignments, quizzes, and user reading progress.
+  async findAll(classId: string, userId?: string) {
+    const topics = await this.prisma.topic.findMany({
       where: { classId },
       include: {
         materials: {
+          include: userId
+            ? {
+                materialProgresses: {
+                  where: { studentId: userId },
+                  select: { isCompleted: true },
+                },
+              }
+            : undefined,
           orderBy: { createdAt: 'asc' },
         },
         references: {
           orderBy: { title: 'asc' },
         },
+        assignments: {
+          orderBy: { createdAt: 'asc' },
+        },
+        quizPublications: {
+          include: {
+            quiz: true,
+          },
+          orderBy: { publishedAt: 'asc' },
+        },
       },
       orderBy: { orderIndex: 'asc' },
     });
+
+    const mapTopicResources = (topic: (typeof topics)[number]) => {
+      const mappedMaterials = topic.materials.map((m) => {
+        const progresses = (
+          m as typeof m & {
+            materialProgresses?: Array<{ isCompleted: boolean }>;
+          }
+        ).materialProgresses;
+        const isCompleted = progresses?.[0]?.isCompleted ?? false;
+        const rest = { ...m };
+        delete (rest as { materialProgresses?: unknown }).materialProgresses;
+        return {
+          ...rest,
+          isCompleted,
+        };
+      });
+
+      const mappedQuizzes = (topic.quizPublications || []).map((pub) => ({
+        ...pub.quiz,
+        id: pub.id,
+        quizId: pub.quizId,
+        publicationId: pub.id,
+        openAt: pub.openAt,
+        closeAt: pub.closeAt,
+      }));
+
+      return {
+        ...topic,
+        materials: mappedMaterials,
+        assignments: topic.assignments || [],
+        quizzes: mappedQuizzes,
+      };
+    };
+
+    return topics.map(mapTopicResources);
   }
 
   // Searches topics within a class by matching title substring.

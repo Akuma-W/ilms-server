@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
+import { ToBoolean } from 'src/common/decorators/to-boolean.decorator';
 import { QueryDto } from 'src/common/dto/query.dto';
 
 export class QueryAdminClassesDto extends QueryDto {
@@ -28,14 +28,7 @@ export class QueryAdminClassesDto extends QueryDto {
     type: 'boolean',
   })
   @IsOptional()
-  @Transform(
-    ({ value, obj }: { value: unknown; obj?: Record<string, unknown> }) => {
-      const rawVal = obj?.isArchived ?? value;
-      if (rawVal === 'true' || rawVal === true) return true;
-      if (rawVal === 'false' || rawVal === false) return false;
-      return undefined;
-    },
-  )
+  @ToBoolean()
   @IsBoolean()
   isArchived?: boolean;
 }
